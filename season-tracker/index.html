@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Season Tracker • F1</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="topbar" role="banner">
+      <div class="topbar__inner">
+        <a class="back" href="/" aria-label="Back to Anthology home">
+          <span class="back__chev" aria-hidden="true">←</span>
+          <span class="back__text">Back</span>
+        </a>
+        <div class="brand">
+          <div class="brand__kicker">Formula 1</div>
+          <div class="brand__title">Season Tracker</div>
+        </div>
+        <div class="topbar__right">
+          <button class="pill pill--ghost" id="pillNextRace" type="button" aria-live="polite">
+            <span class="pill__label">Loading…</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="page" role="main">
+      <section class="hero io-section" aria-label="Season overview" data-io>
+        <div class="hero__bg" aria-hidden="true"></div>
+        <div class="hero__grain" aria-hidden="true"></div>
+        <div class="hero__inner">
+          <div class="hero__left panel panel--hero">
+            <div class="hero__meta">
+              <div class="tag" id="tagSeason">Season 2025</div>
+              <div class="tag tag--muted" id="tagRounds">—</div>
+            </div>
+            <h1 class="hero__headline">
+              <span class="hero__headlineSmall hero__pulseLabel" id="heroPulseLabel">Championship leader</span>
+              <span class="hero__headlineBig hero__pulseTarget" id="heroLeader" data-hero-pulse>—</span>
+            </h1>
+            <div class="hero__sub" id="heroLeaderSub">—</div>
+
+            <div class="hero__stats">
+              <div class="stat">
+                <div class="stat__k">Points</div>
+                <div class="stat__v" id="statPoints">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat__k">Wins</div>
+                <div class="stat__v" id="statWins">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat__k">Chase gap</div>
+                <div class="stat__v" id="statGap">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero__right">
+            <div class="panel panel--glass" id="heroCards">
+              <div class="panel__titleRow">
+                <div class="panel__title">Top 3</div>
+                <div class="panel__hint">Click a team to change accent.</div>
+              </div>
+              <div class="cards" id="top3Cards"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section io-section" id="live" aria-label="Live timing" data-io>
+        <div class="section__head">
+          <h2 class="section__title">Live Timing</h2>
+          <div class="section__tools">
+            <div class="badge" id="liveBadge" hidden>
+              <span class="badge__dot" aria-hidden="true"></span>
+              LIVE
+            </div>
+            <div class="small" id="liveStatus">—</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="panel panel--glass towerWrap" id="liveTowerPanel">
+            <div class="panel__titleRow">
+              <div class="panel__title" id="towerTitle">Drivers</div>
+              <div class="panel__hint" id="towerHint">Standings format (not live).</div>
+            </div>
+            <ol class="tower" id="timingTower" aria-label="Timing tower"></ol>
+            <div class="tower__footer">
+              <div class="tower__banner" id="raceControlBanner" hidden></div>
+              <div class="tower__lap" id="lapCounter">—</div>
+            </div>
+          </div>
+
+          <div class="panel panel--glass">
+            <div class="panel__titleRow">
+              <div class="panel__title">Constructors</div>
+              <div class="panel__hint">Click a constructor to set accent.</div>
+            </div>
+            <ol class="constructors" id="constructorsList" aria-label="Constructor standings"></ol>
+          </div>
+        </div>
+      </section>
+
+      <section class="section io-section" id="calendar" aria-label="Race calendar" data-io>
+        <div class="section__head">
+          <h2 class="section__title">Race Calendar</h2>
+          <div class="section__tools">
+            <div class="small">Use ← → to navigate</div>
+          </div>
+        </div>
+
+        <div class="rail" id="calendarRail" tabindex="0" aria-label="Calendar rail"></div>
+      </section>
+
+      <section class="section io-section" id="history" aria-label="Historical standings" data-io>
+        <div class="section__head">
+          <h2 class="section__title">Season Switcher</h2>
+          <div class="section__tools">
+            <div class="tabs" role="tablist" aria-label="Years">
+              <button class="tab is-active" role="tab" aria-selected="true" data-year="2025" type="button">2025</button>
+              <button class="tab" role="tab" aria-selected="false" data-year="2024" type="button">2024</button>
+              <button class="tab" role="tab" aria-selected="false" data-year="2023" type="button">2023</button>
+              <button class="tab" role="tab" aria-selected="false" data-year="2022" type="button">2022</button>
+              <button class="tab" role="tab" aria-selected="false" data-year="2021" type="button">2021</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid--history">
+          <div class="panel panel--glass">
+            <div class="panel__titleRow">
+              <div class="panel__title" id="histTitle">Final Driver Standings</div>
+              <div class="panel__hint" id="histHint">Select a year to load.</div>
+            </div>
+            <ol class="tower tower--static" id="historyDrivers"></ol>
+          </div>
+          <div class="panel panel--glass">
+            <div class="panel__titleRow">
+              <div class="panel__title">Champion snapshot</div>
+              <div class="panel__hint">Final standings (year end).</div>
+            </div>
+            <div class="champ" id="champCard"></div>
+            <div class="divider"></div>
+            <ol class="constructors constructors--static" id="historyConstructors"></ol>
+          </div>
+        </div>
+      </section>
+
+      <section class="section io-section" id="snapshot" aria-label="Season snapshot" data-io>
+        <div class="section__head">
+          <h2 class="section__title">Season Snapshot</h2>
+          <div class="section__tools">
+            <div class="small">Loads on scroll (cached per session)</div>
+          </div>
+        </div>
+
+        <div class="grid grid--snap">
+          <div class="panel panel--glass">
+            <div class="panel__titleRow">
+              <div class="panel__title">Tyre strategy</div>
+              <div class="panel__hint">Compound usage across completed races.</div>
+            </div>
+            <div class="bars" id="tyreBars"></div>
+            <div class="small muted" id="tyreNote"></div>
+          </div>
+
+          <div class="panel panel--glass">
+            <div class="panel__titleRow">
+              <div class="panel__title">Team wins distribution</div>
+              <div class="panel__hint">Wins by constructor.</div>
+            </div>
+            <div class="bars" id="winsBars"></div>
+            <div class="small muted" id="winsNote"></div>
+          </div>
+
+          <div class="panel panel--glass">
+            <div class="panel__titleRow">
+              <div class="panel__title">Closest finish</div>
+              <div class="panel__hint">Smallest winning margin so far.</div>
+            </div>
+            <div class="editorial" id="closestCard"></div>
+            <div class="small muted" id="closestNote"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="modal" id="raceModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="raceModalTitle">
+      <div class="modal__backdrop" data-close="true"></div>
+      <div class="modal__panel" role="document">
+        <div class="modal__head">
+          <div>
+            <div class="modal__kicker" id="raceModalKicker">Race</div>
+            <div class="modal__title" id="raceModalTitle">—</div>
+          </div>
+          <button class="iconBtn" type="button" data-close="true" aria-label="Close dialog">✕</button>
+        </div>
+        <div class="modal__body">
+          <div class="modal__grid">
+            <div class="modal__imgWrap">
+              <div class="imgShell imgShell--wide">
+                <div class="shimmer" aria-hidden="true"></div>
+                <img id="raceModalImg" alt="" loading="lazy" decoding="async" />
+              </div>
+            </div>
+            <div class="modal__facts" id="raceModalFacts"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
+

@@ -1,6 +1,6 @@
 /**
- * Local dev server for /api routes (news, health).
- * Used when running "npm run dev" so that fetch('/api/news') works without Vercel.
+ * Local dev server for /api routes (news, health, f1-live, f1-season).
+ * Used when running "npm run dev" so that fetch('/api/...') works without Vercel.
  */
 import http from 'http';
 import { URL } from 'url';
@@ -22,8 +22,18 @@ function patchReq(req: http.IncomingMessage): http.IncomingMessage & { query: Re
 }
 
 // Patch Node's ServerResponse with Vercel-style .status() and .json()
-function patchRes(res: http.ServerResponse): http.ServerResponse & { status: (code: number) => typeof res; json: (body: unknown) => void } {
-  const orig = res as http.ServerResponse & { status?: (code: number) => typeof res; json?: (body: unknown) => void };
+function patchRes(
+  res: http.ServerResponse,
+): http.ServerResponse & {
+  status: (code: number) => typeof res;
+  json: (body: unknown) => void;
+  send: (body: string | Buffer) => void;
+} {
+  const orig = res as http.ServerResponse & {
+    status?: (code: number) => typeof res;
+    json?: (body: unknown) => void;
+    send?: (body: string | Buffer) => void;
+  };
   orig.status = function (code: number) {
     this.statusCode = code;
     return this;
@@ -32,7 +42,14 @@ function patchRes(res: http.ServerResponse): http.ServerResponse & { status: (co
     this.setHeader('Content-Type', 'application/json');
     this.end(JSON.stringify(body));
   };
-  return orig as http.ServerResponse & { status: (code: number) => typeof res; json: (body: unknown) => void };
+  orig.send = function (body: string | Buffer) {
+    this.end(body);
+  };
+  return orig as http.ServerResponse & {
+    status: (code: number) => typeof res;
+    json: (body: unknown) => void;
+    send: (body: string | Buffer) => void;
+  };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -77,6 +94,16 @@ const server = http.createServer(async (req, res) => {
       const mod = await import('../api/health');
       const handler = mod.default;
       await handler(patchedReq as any, patchedRes as any);
+      return;
+    }
+    if (pathname === '/api/f1-live' || pathname === '/api/f1-live/') {
+      const mod = await import('../api/f1-live');
+      await mod.default(patchedReq as any, patchedRes as any);
+      return;
+    }
+    if (pathname === '/api/f1-season' || pathname === '/api/f1-season/') {
+      const mod = await import('../api/f1-season');
+      await mod.default(patchedReq as any, patchedRes as any);
       return;
     }
   } catch (err) {
