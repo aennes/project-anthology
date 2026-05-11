@@ -13,3 +13,22 @@ if (!fs.existsSync(src)) {
 }
 fs.mkdirSync(path.dirname(dest), { recursive: true });
 fs.cpSync(src, dest, { recursive: true });
+
+const mustExist = ['index.html', 'app.js', 'styles.css'];
+for (const f of mustExist) {
+  const p = path.join(dest, f);
+  if (!fs.existsSync(p)) {
+    console.error('copy-season-tracker: expected file missing after copy:', p);
+    process.exit(1);
+  }
+}
+let count = 0;
+function walk(d) {
+  for (const ent of fs.readdirSync(d, { withFileTypes: true })) {
+    const p = path.join(d, ent.name);
+    if (ent.isDirectory()) walk(p);
+    else count += 1;
+  }
+}
+walk(dest);
+console.log(`copy-season-tracker: ok → ${path.relative(root, dest)} (${count} files)`);
