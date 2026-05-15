@@ -1,8 +1,7 @@
-import React, { useEffect, useState, Suspense, useCallback } from 'react';
+import React, { useEffect, useState, Suspense, useCallback, lazy } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Routes, Route, useLocation, useMatch, useNavigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
-import ChipCircuitLoader from './components/ui/ChipCircuitLoader';
 import ShortcutsModal from './components/ui/ShortcutsModal';
 import OfflineIndicator from './components/OfflineIndicator';
 import NavBar from './components/ui/NavBar';
@@ -13,18 +12,17 @@ import { preloadStoryHeroes } from './utils/imagePreloader';
 import { getDesktopOptimizedImage } from './utils/optimizedImages';
 import { useMetadata } from './hooks/useMetadata';
 import { warmNewsOnLoad } from './utils/newsService';
-import { lazyWithMinDisplay, CHIP_CIRCUIT_LOADER_MIN_MS } from './utils/lazyWithMinDisplay';
 import metadata from './metadata.json';
 
-const HeroSection = lazyWithMinDisplay(() => import('./components/HeroSection'), CHIP_CIRCUIT_LOADER_MIN_MS);
-const ArchiveSection = lazyWithMinDisplay(() => import('./components/ArchiveSection'), CHIP_CIRCUIT_LOADER_MIN_MS);
-const StoryModal = lazyWithMinDisplay(() => import('./components/StoryModal'), CHIP_CIRCUIT_LOADER_MIN_MS);
-const Timeline = lazyWithMinDisplay(() => import('./components/Timeline'), CHIP_CIRCUIT_LOADER_MIN_MS);
-const News = lazyWithMinDisplay(() => import('./components/News'), CHIP_CIRCUIT_LOADER_MIN_MS);
+const HeroSection = lazy(() => import('./components/HeroSection'));
+const ArchiveSection = lazy(() => import('./components/ArchiveSection'));
+const StoryModal = lazy(() => import('./components/StoryModal'));
+const Timeline = lazy(() => import('./components/Timeline'));
+const News = lazy(() => import('./components/News'));
 
 const routePageSuspenseFallback = (
   <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center bg-f1-black px-6 pt-28 pb-20">
-    <ChipCircuitLoader className="max-w-xl w-full opacity-90" />
+    <p className="font-mono text-sm text-gray-500">Loading…</p>
   </div>
 );
 
@@ -145,14 +143,6 @@ const Shell: React.FC = () => {
 
   return (
     <div className="relative min-h-screen bg-f1-black text-paper selection:bg-f1-red selection:text-white overflow-x-hidden">
-      {/* Film Grain Noise Overlay */}
-      <div
-        className="fixed inset-0 pointer-events-none z-50 opacity-[0.05] mix-blend-overlay animate-grain will-change-transform"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        }}
-      ></div>
-
       <OfflineIndicator />
 
       <NavBar variant="overlay" showCategories />
@@ -162,7 +152,7 @@ const Shell: React.FC = () => {
           <Suspense
             fallback={
               <div className="flex min-h-[50vh] items-center justify-center px-6 py-24">
-                <ChipCircuitLoader className="max-w-xl w-full opacity-90" />
+                <p className="font-mono text-sm text-gray-500">Loading…</p>
               </div>
             }
           >
@@ -178,7 +168,7 @@ const Shell: React.FC = () => {
             <Suspense
               fallback={
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-f1-black/90 px-6">
-                  <ChipCircuitLoader className="max-w-xl w-full" label="Opening story" />
+                  <p className="font-mono text-sm text-gray-500">Loading…</p>
                 </div>
               }
             >

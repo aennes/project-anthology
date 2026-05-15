@@ -38,6 +38,11 @@
   html, body {
     overflow-x: hidden;
     max-width: 100vw;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-archive-section] {
+    touch-action: pan-y;
   }
   
   * {

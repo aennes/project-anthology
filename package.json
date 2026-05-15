@@ -7,13 +7,14 @@
     "node": "20.x"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev:api\" \"vite\"",
+    "dev": "concurrently \"npm run dev:api\" \"npx --yes wait-on tcp:127.0.0.1:3001 && vite\"",
     "dev:api": "npx --yes kill-port 3001 2>nul & tsx server/dev-api-server.ts",
     "dev:vite": "vite",
     "dev:e2e": "concurrently -k \"npm run dev:api\" \"npm run dev:vite -- --port 5173 --strictPort\"",
-    "build": "npm run images:gen && npm run images:optimize-story-38-40 && vite build && node scripts/copy-season-tracker.mjs",
+    "fonts:season-tracker": "node scripts/copy-season-tracker-fonts.mjs",
+    "build": "npm run images:gen && npm run images:optimize-story-38-40 && (npm run fonts:season-tracker || npm run nop) && vite build && node scripts/copy-season-tracker.mjs && node scripts/copy-tracks.mjs",
     "nop": "node -e \"process.exit(0)\"",
-    "build:vercel": "(npm run images:gen || npm run nop) && (npm run images:optimize-story-38-40 || npm run nop) && vite build && node scripts/copy-season-tracker.mjs",
+    "build:vercel": "(npm run images:gen || npm run nop) && (npm run images:optimize-story-38-40 || npm run nop) && (npm run fonts:season-tracker || npm run nop) && vite build && node scripts/copy-season-tracker.mjs && node scripts/copy-tracks.mjs",
     "build:check": "npm run build && node scripts/check-bundle-size.js",
     "preview": "vite preview",
     "images:gen": "node scripts/generate-responsive-images.js",

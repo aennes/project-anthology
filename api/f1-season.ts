@@ -69,6 +69,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(response.status).end(JSON.stringify(json));
   } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[f1-season]', error);
+    }
     const msg = error instanceof Error ? error.message : 'Unknown error';
     return res.status(500).json({ error: msg });
   }

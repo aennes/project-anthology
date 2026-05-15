@@ -150,7 +150,7 @@ const ArchiveSectionComponent: React.FC<ArchiveSectionProps> = ({ onStorySelect 
             The Archive
           </h2>
           <p className="font-mono text-[10px] md:text-xs text-f1-red uppercase tracking-[0.2em] flex items-center gap-3">
-            <span className="w-2 h-2 bg-f1-red rounded-full animate-pulse shadow-[0_0_10px_#ff1801]" />
+            <span className="w-2 h-2 bg-f1-red rounded-full shadow-[0_0_8px_rgba(255,24,1,0.55)]" />
             Sector 2 /// Classified Historical Records
           </p>
         </div>
@@ -269,7 +269,7 @@ const ArchiveSectionComponent: React.FC<ArchiveSectionProps> = ({ onStorySelect 
       {visibleCount < filteredStories.length && (
         <div className="flex justify-center items-center py-12">
           <div className="flex items-center gap-3 font-mono text-xs text-gray-400 uppercase tracking-widest">
-            <span className="w-2 h-2 bg-f1-red rounded-full animate-pulse" />
+            <span className="w-2 h-2 bg-f1-red rounded-full opacity-90" />
             Loading Archive...
           </div>
         </div>
@@ -407,7 +407,7 @@ const ArchiveCard: React.FC<{
             {/* Mobile optimized PNG */}
             <source 
               media="(max-width: 640px)" 
-              srcSet={mobileWebpOf(story.heroImage, 'hero')} 
+              srcSet={mobileWebpOf(story.heroImage, storyLayoutMap[story.id] || 'hero')} 
               type="image/png"
             />
             {/* Desktop optimized PNG */}
@@ -421,6 +421,7 @@ const ArchiveCard: React.FC<{
               decoding={index === 0 ? "sync" : "async"}
               width={1600}
               height={900}
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
               style={{ aspectRatio: '16/9' }}
               onLoad={() => {
                 setLoaded(true);

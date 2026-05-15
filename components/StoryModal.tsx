@@ -88,6 +88,7 @@ const StoryModal: React.FC<StoryModalProps> = ({ story, onClose, onOpenMenu, onS
       aria-labelledby="story-modal-title"
       data-testid="story-modal"
       className="fixed inset-0 z-50 bg-f1-black flex flex-col text-white"
+      data-anthology-story-modal
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

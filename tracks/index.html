@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" class="antialiased">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#ff1801" />
+    <title>Circuit Atlas • Project Anthology</title>
+    <!--
+      Routing: single index.html + location.hash (e.g. #monaco). No server round-trips for detail;
+      static hosting + optional Vercel rewrites keep one HTML shell while JS swaps index grid vs detail.
+    -->
+    <!--
+      Lazy fetch (race history): IntersectionObserver on #sectionHistory fires once per circuit visit when
+      the section enters the viewport (~120px early). Each year row then reads sessionStorage
+      (key circuitId+year, see app.js RACE_HISTORY_CACHE_PREFIX) or fetches /api/f1-season.
+    -->
+    <link rel="preload" href="/fonts/st/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/st/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/nav-shell.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="has-anthology-nav">
+    <div class="site-grain" aria-hidden="true"></div>
+
+    <a class="skip" href="#main">Skip to content</a>
+
+    <div id="anthology-nav-root"></div>
+
+    <header class="page-subbar" role="banner">
+      <div class="page-subbar__inner">
+        <div class="brand">
+          <div class="brand__kicker">Formula 1</div>
+          <div class="brand__title">Circuit Atlas</div>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="page" role="main" tabindex="-1">
+      <div id="viewIndex" class="tracksIndex">
+        <section class="atlasHero" aria-labelledby="atlasHeroTitle">
+          <div class="atlasHero__pulse" aria-hidden="true"></div>
+          <div class="atlasHero__inner">
+            <h1 class="atlasHero__title" id="atlasHeroTitle">Circuit Atlas</h1>
+            <p class="atlasHero__sub">Every track. Every story. 2021 onward.</p>
+          </div>
+          <div class="atlasHero__scroll" aria-hidden="true">
+            <span class="atlasHero__scrollLine"></span>
+            <span class="atlasHero__scrollLab">Scroll</span>
+          </div>
+        </section>
+
+        <section class="atlasGridSection io-section" aria-label="Circuit cards" data-io>
+          <div class="tracksMasonry" id="tracksGrid"></div>
+          <p class="tracksEmpty" id="tracksEmpty" hidden>No circuits to show.</p>
+        </section>
+      </div>
+
+      <div id="viewDetail" class="tracksDetail" hidden>
+        <article id="detailArticle" class="detailArticle"></article>
+        <a class="detailNav" id="detailNav" href="#" hidden aria-label="Back to all circuits">← All circuits</a>
+      </div>
+    </main>
+
+    <script src="/nav-shell.js" defer></script>
+    <script src="./app.js" defer></script>
+  </body>
+</html>

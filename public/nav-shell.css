@@ -1,0 +1,301 @@
+/* Shared top nav + drawer for vanilla mini-apps (matches React NavBar). */
+:root {
+  --anthology-nav-h: 4.75rem;
+  --anthology-nav-z: 80;
+  --anthology-drawer-z: 90;
+}
+
+body.has-anthology-nav {
+  padding-top: var(--anthology-nav-h);
+}
+
+.anthology-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--anthology-nav-z);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: var(--anthology-nav-h);
+  padding: 1.25rem 1.5rem;
+  box-sizing: border-box;
+  mix-blend-mode: difference;
+  color: #fff;
+  pointer-events: none;
+}
+
+.anthology-nav.is-solid {
+  mix-blend-mode: normal;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.anthology-nav > * {
+  pointer-events: auto;
+}
+
+.anthology-nav__home {
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: inherit;
+  opacity: 0.9;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.anthology-nav__home:hover {
+  opacity: 1;
+}
+
+.anthology-nav__home:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #ff1801;
+}
+
+.anthology-nav__home em {
+  font-style: normal;
+  color: #ff1801;
+}
+
+.anthology-nav__menu {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.625rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition:
+    color 0.3s ease,
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.anthology-nav__menu:hover {
+  color: #fff;
+  background: #ff1801;
+  border-color: #ff1801;
+  box-shadow:
+    0 0 8px rgba(255, 24, 1, 0.45),
+    0 0 24px rgba(255, 24, 1, 0.28);
+}
+
+.anthology-nav__menu:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #ff1801;
+}
+
+.anthology-nav__menu[aria-expanded="true"] {
+  background: #ff1801;
+  border-color: #ff1801;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(255, 24, 1, 0.5);
+}
+
+.anthology-nav__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--anthology-drawer-z) - 1);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.anthology-nav__drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: var(--anthology-drawer-z);
+  width: min(100%, 28rem);
+  max-width: 28rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0a0a0a;
+  color: #f4f1ea;
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.45);
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.anthology-nav__drawer[open] {
+  transform: translateX(0);
+}
+
+.anthology-nav__drawer[hidden] {
+  display: none;
+}
+
+.anthology-nav__drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.anthology-nav__drawerTitle {
+  margin: 0;
+  font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.anthology-nav__drawerClose {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 0.875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  cursor: pointer;
+}
+
+.anthology-nav__drawerClose:hover {
+  color: #ff1801;
+}
+
+.anthology-nav__drawerClose:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #ff1801;
+}
+
+.anthology-nav__drawerBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+.anthology-nav__sectionLabel {
+  margin: 0 0 1rem;
+  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #ff1801;
+}
+
+.anthology-nav__links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.anthology-nav__link {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 1.125rem;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-decoration: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.anthology-nav__link:hover {
+  color: #ff1801;
+}
+
+.anthology-nav__link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #ff1801;
+}
+
+.anthology-nav__drawerFoot {
+  padding: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.anthology-nav__drawerFoot em {
+  font-style: normal;
+  color: #ff1801;
+}
+
+/* Page sub-bar sits below fixed anthology nav */
+.page-subbar {
+  position: sticky;
+  top: var(--anthology-nav-h);
+  z-index: 50;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 10, 10, 0.95);
+}
+
+.page-subbar__inner {
+  max-width: calc(1180px + 48px);
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.page-subbar__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-subbar .topbar__moments {
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .anthology-nav {
+    padding: 1rem;
+  }
+
+  .anthology-nav__home {
+    font-size: 0.65rem;
+    max-width: 58vw;
+  }
+}

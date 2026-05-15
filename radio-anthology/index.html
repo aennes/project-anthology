@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en" class="antialiased">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#ff1801" />
+    <meta
+      name="description"
+      content="Project Anthology — iconic Formula 1 team radio moments: context, significance, and links back to the archive."
+    />
+    <title>Radio Anthology • Project Anthology</title>
+    <!--
+      Routing: single index.html + location.hash (e.g. #multi-21-malaysia-2013).
+      Cards link to #id; hashchange swaps index grid vs editorial detail — no modal.
+    -->
+    <link rel="preload" href="/fonts/st/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/st/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/nav-shell.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="has-anthology-nav">
+    <div class="site-grain" aria-hidden="true"></div>
+
+    <a class="skip" href="#main">Skip to content</a>
+
+    <div id="anthology-nav-root"></div>
+
+    <header class="page-subbar" role="banner">
+      <div class="page-subbar__inner">
+        <div class="brand">
+          <div class="brand__kicker">Formula 1</div>
+          <div class="brand__title">Radio Anthology</div>
+        </div>
+        <a class="topbar__moments" id="topbarMoments" href="#" hidden>All moments</a>
+      </div>
+    </header>
+
+    <main id="main" class="page" role="main" tabindex="-1">
+      <div id="viewIndex" class="raIndex">
+        <section class="raHero" aria-labelledby="heroTitle">
+          <div class="raHero__pulse" aria-hidden="true"></div>
+          <div class="raHero__circuit" aria-hidden="true"></div>
+          <div class="raHero__inner">
+            <div class="raHero__pretitle">
+              <span class="raHero__rule" aria-hidden="true"></span>
+              <p class="raHero__eyebrow font-mono">Team radio &amp; pit wall</p>
+              <span class="raHero__rule" aria-hidden="true"></span>
+            </div>
+            <h1 id="heroTitle" class="raHero__title">Radio Anthology</h1>
+            <p class="raHero__sub">
+              Curated moments where the helmet comes off in audio — team orders, dry wit, pressure, and the human
+              voice inside the telemetry.
+            </p>
+            <p class="raHero__deck font-mono">Beyond the microphone — the narrative in a sentence.</p>
+          </div>
+          <div class="raHero__scroll" aria-hidden="true">
+            <span class="raHero__scrollLine"></span>
+            <span class="raHero__scrollLab">Scroll</span>
+          </div>
+        </section>
+
+        <section class="filters panel panel--glass" aria-label="Filter archive">
+          <div class="filters__row">
+            <div class="field">
+              <label class="field__label" for="filterTag">Tag</label>
+              <select id="filterTag" class="select" autocomplete="off"></select>
+            </div>
+            <div class="field">
+              <label class="field__label" for="filterDriver">Driver</label>
+              <select id="filterDriver" class="select" autocomplete="off"></select>
+            </div>
+            <div class="field">
+              <span class="field__label" id="eraLegend">Era</span>
+              <div class="seg" role="group" aria-labelledby="eraLegend">
+                <button type="button" class="seg__btn is-on" data-era="all" aria-pressed="true">All</button>
+                <button type="button" class="seg__btn" data-era="2000s" aria-pressed="false">2000s</button>
+                <button type="button" class="seg__btn" data-era="2010s" aria-pressed="false">2010s</button>
+                <button type="button" class="seg__btn" data-era="2021now" aria-pressed="false">2021–now</button>
+              </div>
+            </div>
+          </div>
+          <p class="filters__meta" id="filterCount" role="status" aria-live="polite">—</p>
+        </section>
+
+        <section class="gridSection" aria-label="Radio moments">
+          <div id="cardGrid" class="masonry" aria-live="polite"></div>
+          <p id="emptyState" class="empty" hidden>No clips match these filters.</p>
+        </section>
+      </div>
+
+      <div id="viewDetail" class="raDetail" hidden>
+        <article id="detailArticle" class="detailArticle"></article>
+        <p class="detailNavRow">
+          <a class="detailNav" id="detailBack" href="#">← All moments</a>
+        </p>
+      </div>
+    </main>
+
+    <footer class="ra-footer" role="contentinfo">
+      <div class="ra-footer__inner">
+        <span class="ra-footer__mono font-mono">Project Anthology</span>
+        <span class="ra-footer__rule" aria-hidden="true"></span>
+        <span class="ra-footer__muted">Radio moments are editorially framed; audio URLs may follow in a later pass.</span>
+      </div>
+    </footer>
+
+    <script src="/nav-shell.js" defer></script>
+    <script src="./app.js" defer></script>
+  </body>
+</html>

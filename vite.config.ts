@@ -1,10 +1,114 @@
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { defineConfig, loadEnv } from 'vite';
+import type { Connect } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import react from '@vitejs/plugin-react';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
+
+const VANILLA_STATIC_SITES: Array<{ prefix: string; dir: string }> = [
+  { prefix: '/season-tracker', dir: 'season-tracker' },
+  { prefix: '/radio-anthology', dir: 'radio-anthology' },
+  { prefix: '/tracks', dir: 'tracks' },
+];
+
+function contentTypeForExt(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  const map: Record<string, string> = {
+    '.html': 'text/html; charset=utf-8',
+    '.htm': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.mjs': 'text/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+  };
+  return map[ext] ?? 'application/octet-stream';
+}
+
+function vanillaStaticSitesDevPlugin(): Plugin {
+  return {
+    name: 'anthology-vanilla-static-sites-dev',
+    configureServer(server) {
+      server.middlewares.use(
+        (req: Connect.IncomingMessage, res: Connect.ServerResponse, next: Connect.NextFunction) => {
+          const rawUrl = req.url ?? '/';
+          let pathname: string;
+          try {
+            pathname = decodeURI(rawUrl.split('?')[0] ?? '/');
+          } catch {
+            res.statusCode = 400;
+            res.end('Bad Request');
+            return;
+          }
+
+          const site = VANILLA_STATIC_SITES.find(
+            (s) => pathname === s.prefix || pathname.startsWith(`${s.prefix}/`),
+          );
+          if (!site) {
+            next();
+            return;
+          }
+
+          if (pathname === site.prefix) {
+            const q = rawUrl.includes('?') ? rawUrl.slice(rawUrl.indexOf('?')) : '';
+            res.statusCode = 302;
+            res.setHeader('Location', `${site.prefix}/${q}`);
+            res.end();
+            return;
+          }
+
+          let relativePath = pathname.slice(site.prefix.length + 1);
+          if (relativePath === '' || relativePath === '/') {
+            relativePath = 'index.html';
+          }
+
+          relativePath = path.normalize(relativePath);
+          if (
+            relativePath.startsWith(`..${path.sep}`) ||
+            relativePath === '..' ||
+            relativePath.startsWith('/')
+          ) {
+            res.statusCode = 403;
+            res.end('Forbidden');
+            return;
+          }
+
+          const normalizedRoot = path.resolve(__dirname, site.dir);
+          const normalizedFile = path.resolve(normalizedRoot, relativePath);
+          const relToRoot = path.relative(normalizedRoot, normalizedFile);
+          if (relToRoot.startsWith('..') || path.isAbsolute(relToRoot)) {
+            res.statusCode = 403;
+            res.end('Forbidden');
+            return;
+          }
+
+          fs.stat(normalizedFile, (err, st) => {
+            if (err || !st.isFile()) {
+              res.statusCode = 404;
+              res.end('Not Found');
+              return;
+            }
+            res.setHeader('Content-Type', contentTypeForExt(normalizedFile));
+            fs.createReadStream(normalizedFile).on('error', () => {
+              if (!res.headersSent) res.statusCode = 500;
+              res.end();
+            }).pipe(res);
+          });
+        }
+      );
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
@@ -47,6 +151,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       plugins: [
+        vanillaStaticSitesDevPlugin(),
         react(),
         ViteImageOptimizer({
           png: {

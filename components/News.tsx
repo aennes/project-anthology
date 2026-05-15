@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
-import { fetchNews, refreshFromNetwork, readNewsCache, sortByDate, NewsItem } from '../utils/newsService';
+import { fetchNews, refreshFromNetwork, readNewsCache, isCacheFresh, sortByDate, NewsItem } from '../utils/newsService';
 import { imagePreloader } from '../utils/imagePreloader';
 import ImageShimmer from './ui/ImageShimmer';
 
@@ -41,16 +41,25 @@ const News: React.FC<NewsProps> = React.memo(() => {
     let cancelled = false;
 
     const initial = async () => {
+      const cached = readNewsCache();
+      if (cached?.length) {
+        if (!cancelled) {
+          applyItems(cached);
+          setError(null);
+          setLoading(false);
+        }
+        if (isCacheFresh()) return;
+      }
       try {
         const data = await fetchNews();
         if (!cancelled && data.length > 0) {
           applyItems(data);
           setError(null);
-        } else if (!cancelled && items.length === 0) {
+        } else if (!cancelled && !cached?.length) {
           setError('Could not load latest headlines.');
         }
       } catch (err) {
-        if (!cancelled && items.length === 0) {
+        if (!cancelled && !cached?.length) {
           setError('Could not load latest headlines.');
         }
         console.warn('News initial load failed:', err);
@@ -130,24 +139,7 @@ const News: React.FC<NewsProps> = React.memo(() => {
         </motion.div>
 
         {showSkeleton && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <div
-                key={`skeleton-${i}`}
-                className="bg-f1-carbon/80 border border-white/10 rounded-xl overflow-hidden flex flex-col min-h-[280px] md:min-h-[300px]"
-              >
-                <div className="relative h-36 md:h-40 bg-f1-black/50 shrink-0">
-                  <ImageShimmer />
-                </div>
-                <div className="p-4 md:p-5 space-y-3 flex-1">
-                  <div className="h-5 bg-white/10 rounded w-4/5" />
-                  <div className="h-3 bg-white/5 rounded w-full" />
-                  <div className="h-3 bg-white/5 rounded w-full" />
-                  <div className="h-3 bg-white/5 rounded w-2/3" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <p className="text-center font-mono text-sm text-gray-500 py-16">Loading…</p>
         )}
 
         {(error || showEmpty) && !showSkeleton && (
@@ -213,9 +205,10 @@ const News: React.FC<NewsProps> = React.memo(() => {
                         }
                         handleImageLoad(item.id);
                       }}
-                      loading={index < 9 ? 'eager' : 'lazy'}
+                      loading={index < 3 ? 'eager' : 'lazy'}
                       decoding="async"
-                      fetchPriority={index < 6 ? 'high' : index < 12 ? 'auto' : 'low'}
+                      fetchPriority={index < 3 ? 'high' : index < 9 ? 'auto' : 'low'}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       referrerPolicy="no-referrer"
                       width={640}
                       height={360}

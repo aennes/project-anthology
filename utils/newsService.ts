@@ -161,6 +161,7 @@ export async function fetchNews(): Promise<NewsItem[]> {
  * to the UI; the News page itself handles error UI via fetchNews().
  */
 export function warmNewsOnLoad(): void {
+  if (isCacheFresh()) return;
   try {
     void refreshFromNetwork().catch(() => {
       /* intentionally silent — non-blocking warmup */
