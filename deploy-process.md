@@ -14,6 +14,8 @@ Komutlar **PowerShell** içindir (Windows). Sırasıyla uygula; her adımı aç�
 | --- | --- |
 | Proje klasörü | `c:\Users\ts\Desktop\Coding\Anthology` |
 | GitHub deposu | `https://github.com/ugurshelby/project-anthology` |
+| **Vercel projesi (tek)** | **project-anthology** — başka isimle (`anthology` vb.) ikinci proje oluşturma |
+| Canlı URL | `https://project-anthology-ugurshelbys-projects-56bd68c2.vercel.app` |
 | Yayına alma yöntemi | GitHub `main` branch'ına push → Vercel otomatik deploy |
 
 Tüm komutları aşağıdaki klasörde, **PowerShell** açıkken çalıştırırsın:
@@ -219,15 +221,30 @@ npm install
 
 ---
 
-## (Opsiyonel) Vercel CLI ile manuel deploy
+## Vercel: tek proje kuralı
 
-GitHub push'a gerek kalmadan, hızlı bir önizleme veya production deploy istersen:
+Bu depo yalnızca Vercel'deki **project-anthology** projesine bağlı olmalıdır.
+
+- Dashboard: [project-anthology → Deployments](https://vercel.com/dashboard)
+- Aynı GitHub reposuna ikinci bir Vercel projesi bağlarsan her `git push` **çift deploy** üretir.
+- Yerelde CLI kullanmadan önce (veya yanlış projeye linklendiyse):
 
 ```powershell
-npm install -g vercel            # bir defa kurulum
-vercel login                     # bir defa giriş
-vercel                           # geçici preview URL
-vercel --prod                    # doğrudan production
+npm run vercel:link
 ```
 
-> Normal akışta bu gerekli değildir — `git push origin main` yeterlidir.
+Bu komut `.vercel/repo.json` içinde yalnızca `project-anthology` kaydını tutar. **Yeni proje adı öneren** etkileşimli `vercel link` akışından kaçın.
+
+---
+
+## (Opsiyonel) Vercel CLI ile manuel deploy
+
+GitHub push'a gerek kalmadan production deploy istersen:
+
+```powershell
+vercel login                     # bir defa giriş
+npm run vercel:deploy            # project-anthology'ye prod deploy
+```
+
+> Normal akışta bu gerekli değildir — `git push origin main` yeterlidir.  
+> Ham `vercel --prod` kullanma; önce `npm run vercel:link` ile doğru projeye bağlandığından emin ol.

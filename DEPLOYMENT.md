@@ -129,10 +129,15 @@ Vercel Dashboard > Deployments > Previous deployment > "..." > "Promote to Produ
 
 ## CI/CD
 
+Vercel projesi: **project-anthology** (GitHub `ugurshelby/project-anthology` → `main` push).
+
+Aynı repoya ikinci bir Vercel projesi bağlamayın; her push çift deploy üretir.
+
 Vercel otomatik olarak GitHub push'larından sonra deploy yapar. Manuel deploy için:
 
 ```bash
-vercel --prod
+npm run vercel:link    # yerelde doğru projeye bağlan
+npm run vercel:deploy  # production
 ```
 
 ## Domain Ayarlama
