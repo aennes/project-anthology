@@ -19,7 +19,6 @@
     { "source": "/radio-anthology", "destination": "/radio-anthology/index.html" },
     { "source": "/tracks", "destination": "/tracks/index.html" },
     { "source": "/tracks/", "destination": "/tracks/index.html" },
-    { "source": "/tracks/:path*", "destination": "/tracks/index.html" },
     { "source": "/news", "destination": "/" },
     { "source": "/timeline", "destination": "/" },
     { "source": "/(.*)", "destination": "/" }
