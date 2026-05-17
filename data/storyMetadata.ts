@@ -6,7 +6,7 @@ export const storyMetadata: Array<Omit<Story, 'content'>> = [
   {
     id: 'senna-monaco',
     title: 'The Divine Lap',
-    subtitle: 'Ayrton Senna\'s transcendental qualification lap at Monaco, 1988. A moment where man and machine became one, before the crash that brought him back to earth.',
+    subtitle: 'Monaco, 1988. Senna on the limit in the MP4/4, Prost on the data—and two seconds between two philosophies before the crash at Portier.',
     year: '1988',
     category: 'Legend',
     heroImage: '/1988_McLaren-Honda_MP4_4_Goodwood,_2009.jpeg',
@@ -30,7 +30,7 @@ export const storyMetadata: Array<Omit<Story, 'content'>> = [
   {
     id: 'schumacher-ferrari',
     title: 'The Red Baron',
-    subtitle: 'How Michael Schumacher rebuilt the church of Ferrari and turned it into an empire of efficiency.',
+    subtitle: 'Todt, Brawn, and a factory finally run like a clock—not one driver alone—turning Maranello into an empire of process.',
     year: '2000',
     category: 'Dynasty',
     heroImage: '/Michael_Schumacher_Ferrari_2004.jpg',
@@ -46,7 +46,7 @@ export const storyMetadata: Array<Omit<Story, 'content'>> = [
   {
     id: 'hamilton-silverstone',
     title: 'Copse Corner',
-    subtitle: 'Lewis Hamilton vs Max Verstappen. A rivalry reaching its boiling point at 180mph on British soil.',
+    subtitle: 'Copse, 2021. Mercedes and Red Bull, two championship cars, one corner—and a collision the factories would argue about for months.',
     year: '2021',
     category: 'Modern Era',
     heroImage: '/Lewis_Hamilton_on_his_victory_lap_(14634946913).jpg',
@@ -126,7 +126,7 @@ export const storyMetadata: Array<Omit<Story, 'content'>> = [
   {
     id: 'senna-donington-1993',
     title: 'The Ghost of Donington',
-    subtitle: 'While the world struggled to survive the deluge, Ayrton Senna treated the water as his canvas. The greatest opening lap in the history of the sport.',
+    subtitle: 'Donington, 1993. Active Williams versus a McLaren in the rain—and Senna\'s opening lap as intimidation made visible.',
     year: '1993',
     category: 'Legend',
     heroImage: '/Senna_Donington_1993_Rain.jpg',

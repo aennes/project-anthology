@@ -8,6 +8,21 @@ import {
 
 const ERGAST_BASE = 'https://api.jolpi.ca/ergast/f1';
 
+/** Longer edge cache for completed seasons; current year stays shorter. */
+function ergastCacheControl(path: string, ok: boolean): string {
+  if (!ok) return 's-maxage=60, stale-while-revalidate=300';
+  const m = path.match(/^(\d{4})(?:\/|\.json)/);
+  const year = m ? Number(m[1]) : NaN;
+  const current = new Date().getFullYear();
+  if (Number.isFinite(year) && year < current) {
+    return 'public, s-maxage=604800, stale-while-revalidate=86400';
+  }
+  if (Number.isFinite(year) && year === current) {
+    return 'public, s-maxage=7200, stale-while-revalidate=3600';
+  }
+  return 's-maxage=300, stale-while-revalidate=3600';
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const allowedOrigin = getAllowedOrigin(req);
   if (allowedOrigin) res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
@@ -46,8 +61,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const text = await response.text();
+    const cacheCtl = ergastCacheControl(pathResult.path, response.ok);
     if (!text.trim()) {
-      res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=3600');
+      res.setHeader('Cache-Control', ergastCacheControl(pathResult.path, false));
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(response.status).end('null');
     }
@@ -56,7 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       json = JSON.parse(text);
     } catch {
-      res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=3600');
+      res.setHeader('Cache-Control', ergastCacheControl(pathResult.path, false));
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       const snippet = text.length > 400 ? `${text.slice(0, 400)}…` : text;
       if (!response.ok) {
@@ -65,14 +81,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: 'Upstream returned non-JSON' });
     }
 
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=3600');
+    res.setHeader('Cache-Control', cacheCtl);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(response.status).end(JSON.stringify(json));
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
       console.error('[f1-season]', error);
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      return res.status(500).json({ error: msg });
     }
-    const msg = error instanceof Error ? error.message : 'Unknown error';
-    return res.status(500).json({ error: msg });
+    return res.status(500).json({ error: 'Upstream request failed' });
   }
 }

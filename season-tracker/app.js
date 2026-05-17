@@ -4,7 +4,22 @@
   const SEASON_MIN = 2021;
   const SEASON_CURRENT = Math.max(SEASON_MIN, new Date().getFullYear());
   /** Bump when cache key shape changes so sessionStorage does not mix incompatible payloads. */
-  const CACHE_VERSION = 'v3';
+  const CACHE_VERSION = 'v4';
+  const F1_STATIC_MANIFEST_URL = '/data/f1/index.json';
+  /**
+   * Ergast / historical cache keys (sessionStorage + localStorage via `f1_season_local_${key}`):
+   * | Key pattern | Example | Payload |
+   * |---|---|---|
+   * | `f1_season_${CACHE_VERSION}_${year}_calendar` | …_2024_calendar | season race table |
+   * | `f1_season_${CACHE_VERSION}_${year}_driverStandings` | …_2024_driverStandings | driver standings |
+   * | `f1_season_${CACHE_VERSION}_${year}_constructorStandings` | …_constructorStandings | constructor standings |
+   * | `f1_season_${CACHE_VERSION}_${year}_round_${round}_result` | …_round_3_result | winner (results/1) |
+   * | `f1_season_${CACHE_VERSION}_${year}_round_${round}_top2` | …_round_3_top2 | P1–P2 for snapshot |
+   * | `f1_season_${CACHE_VERSION}_${year}_round_${round}_qualifying_1` | modal pole | qualifying/1 |
+   * | `f1_season_${CACHE_VERSION}_${year}_round_${round}_results` | modal top-10 | full results |
+   * | `f1_openf1_${CACHE_VERSION}_${year}_race_sessions` | OpenF1 race sessions | sessionStorage only (live-adjacent) |
+   * Negative miss: `f1_season_neg_${key}` (short TTL, never stores empty MRData).
+   */
   const WIKI_LOGO_MISS_PREFIX = 'st_wiki_logo_miss:';
   const IS_DEV =
     typeof location !== 'undefined' &&
@@ -48,26 +63,85 @@
    * Ergast-backed `cachedSeasonJson` entries also persist in localStorage so new tabs / cold opens
    * avoid re-hitting `/api/f1-season` for the same keys. TTL is a trade-off vs freshness.
    */
-  const SEASON_LOCAL_TTL_MS = 2 * 60 * 60 * 1000;
+  const SEASON_LOCAL_TTL_CURRENT_MS = 2 * 60 * 60 * 1000;
+  const SEASON_LOCAL_TTL_HISTORICAL_MS = 7 * 24 * 60 * 60 * 1000;
+  /** After a failed fetch with no stale payload, avoid hammering the proxy. */
+  const SEASON_NEGATIVE_CACHE_MS = 5 * 60 * 1000;
 
   function seasonLocalStorageKey(sessionKey) {
     return `f1_season_local_${sessionKey}`;
   }
 
+  function seasonNegativeCacheKey(sessionKey) {
+    return `f1_season_neg_${sessionKey}`;
+  }
+
+  function parseYearFromSeasonCacheKey(sessionKey) {
+    const m = String(sessionKey || '').match(/_(\d{4})_/);
+    if (!m) return null;
+    const y = Number(m[1]);
+    return Number.isFinite(y) ? y : null;
+  }
+
+  function seasonLocalTtlMs(sessionKey) {
+    const y = parseYearFromSeasonCacheKey(sessionKey);
+    if (y != null && y < SEASON_CURRENT) return SEASON_LOCAL_TTL_HISTORICAL_MS;
+    return SEASON_LOCAL_TTL_CURRENT_MS;
+  }
+
+  function isOpenF1SeasonCacheKey(sessionKey) {
+    return String(sessionKey || '').startsWith(`f1_openf1_${CACHE_VERSION}_`);
+  }
+
+  function readSeasonNegative(sessionKey) {
+    try {
+      const raw = sessionStorage.getItem(seasonNegativeCacheKey(sessionKey));
+      if (!raw) return false;
+      const o = JSON.parse(raw);
+      if (!o || typeof o.t !== 'number') return false;
+      if (Date.now() - o.t >= SEASON_NEGATIVE_CACHE_MS) {
+        sessionStorage.removeItem(seasonNegativeCacheKey(sessionKey));
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function writeSeasonNegative(sessionKey) {
+    try {
+      sessionStorage.setItem(seasonNegativeCacheKey(sessionKey), JSON.stringify({ t: Date.now() }));
+    } catch {
+      // ignore
+    }
+  }
+
+  function clearSeasonNegative(sessionKey) {
+    try {
+      sessionStorage.removeItem(seasonNegativeCacheKey(sessionKey));
+    } catch {
+      // ignore
+    }
+  }
+
   function readSeasonLocalBundle(sessionKey) {
+    if (isOpenF1SeasonCacheKey(sessionKey)) return null;
     try {
       const raw = localStorage.getItem(seasonLocalStorageKey(sessionKey));
       if (!raw) return null;
       const o = JSON.parse(raw);
       if (!o || typeof o !== 'object' || typeof o.t !== 'number' || !('d' in o)) return null;
       const age = Date.now() - o.t;
-      return { data: o.d, isFresh: age >= 0 && age < SEASON_LOCAL_TTL_MS };
+      const ttl = seasonLocalTtlMs(sessionKey);
+      return { data: o.d, isFresh: age >= 0 && age < ttl };
     } catch {
       return null;
     }
   }
 
   function writeSeasonLocalBundle(sessionKey, data) {
+    if (isOpenF1SeasonCacheKey(sessionKey)) return;
     try {
       localStorage.setItem(seasonLocalStorageKey(sessionKey), JSON.stringify({ t: Date.now(), d: data }));
     } catch {
@@ -99,10 +173,14 @@
     liveBadge: $('#liveBadge'),
     liveStatus: $('#liveStatus'),
     liveDataBanner: $('#liveDataBanner'),
+    liveTimingGrid: $('#liveTimingGrid'),
     liveTowerPanel: $('#liveTowerPanel'),
+    towerScroll: $('#towerScroll'),
     towerTitle: $('#towerTitle'),
     towerHint: $('#towerHint'),
     timingTower: $('#timingTower'),
+    constructorsPanel: $('#constructorsPanel'),
+    constructorsScroll: $('#constructorsScroll'),
     constructorsList: $('#constructorsList'),
     raceControlBanner: $('#raceControlBanner'),
     lapCounter: $('#lapCounter'),
@@ -135,10 +213,6 @@
     modeSimple: $('#modeSimple'),
     modeNerd: $('#modeNerd'),
     nerdPitMount: $('#nerdPitMount'),
-    h2hDriverA: $('#h2hDriverA'),
-    h2hDriverB: $('#h2hDriverB'),
-    h2hRun: $('#h2hRun'),
-    h2hOut: $('#h2hOut'),
     nerdSimMount: $('#nerdSimMount'),
     stintModal: $('#stintModal'),
     stintModalTitle: $('#stintModalTitle'),
@@ -299,6 +373,15 @@
     nerdPanelsReady: false,
     /** Pit strategy visualizer rendered at least once. */
     pitVizRendered: false,
+    /** OpenF1 session_key for expanded pit accordion race (string). */
+    pitExpandedSessionKey: null,
+    /** Cached stint payloads per session_key for re-render (show all). */
+    pitRaceCache: new Map(),
+    /** Session keys with “show all drivers” enabled. */
+    pitShowAllSessions: new Set(),
+    /** Championship sim: active remaining round tab. */
+    simActiveRound: null,
+    simDebounceTimer: 0,
     /** Coalesces live timing DOM paints to one frame per poll. */
     liveDomRaf: 0,
     /**
@@ -570,19 +653,96 @@
     return F1_POINTS[p - 1] ?? 0;
   }
 
-  function compoundHexPitViz(c) {
+  const PIT_TOP_DRIVERS = 10;
+
+  function compoundPitClass(c) {
     const k = normalizeCompound(c);
-    if (k === 'SOFT') return '#ff4d4d';
-    if (k === 'MEDIUM') return '#ffb020';
-    if (k === 'HARD') return '#f3f4f6';
-    if (k === 'INTERMEDIATE') return '#22c55e';
-    if (k === 'WET') return '#3b82f6';
-    return compoundColor(c);
+    if (k === 'SOFT') return 'pitStint--soft';
+    if (k === 'MEDIUM') return 'pitStint--medium';
+    if (k === 'HARD') return 'pitStint--hard';
+    if (k === 'INTERMEDIATE') return 'pitStint--inter';
+    if (k === 'WET') return 'pitStint--wet';
+    return 'pitStint--unknown';
+  }
+
+  function compoundPitLabel(c) {
+    const k = normalizeCompound(c);
+    if (k === 'SOFT') return 'Soft';
+    if (k === 'MEDIUM') return 'Medium';
+    if (k === 'HARD') return 'Hard';
+    if (k === 'INTERMEDIATE') return 'Inter';
+    if (k === 'WET') return 'Wet';
+    return String(c || '—').trim() || '—';
+  }
+
+  let pitTipEl = null;
+  let pitTipHideTimer = 0;
+
+  function ensurePitTip() {
+    if (pitTipEl instanceof HTMLElement) return pitTipEl;
+    const tip = document.createElement('div');
+    tip.id = 'pitTip';
+    tip.className = 'pitTip';
+    tip.setAttribute('role', 'tooltip');
+    tip.hidden = true;
+    document.body.appendChild(tip);
+    pitTipEl = tip;
+    return tip;
+  }
+
+  function hidePitTip() {
+    window.clearTimeout(pitTipHideTimer);
+    const tip = pitTipEl;
+    if (tip instanceof HTMLElement) tip.hidden = true;
+  }
+
+  function showPitTip(anchor, payload) {
+    const tip = ensurePitTip();
+    const laps =
+      payload.lapEnd != null && payload.lapStart != null
+        ? `L${payload.lapStart}–${payload.lapEnd}`
+        : payload.lapStart != null
+          ? `L${payload.lapStart}`
+          : '—';
+    tip.innerHTML = `
+      <span class="pitTip__code">${escapeHtml(payload.driverCode || '')}</span>
+      <span class="pitTip__compound ${compoundPitClass(payload.compoundRaw || '')}">${escapeHtml(compoundPitLabel(payload.compoundRaw || ''))}</span>
+      <span class="pitTip__laps mono">${escapeHtml(laps)}</span>
+      <span class="pitTip__dur mono">${escapeHtml(payload.durationText || '')}</span>
+    `;
+    tip.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    const tipW = tip.offsetWidth || 140;
+    let left = r.left + r.width / 2 - tipW / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tipW - 8));
+    const top = Math.max(8, r.top - tip.offsetHeight - 8);
+    tip.style.left = `${left}px`;
+    tip.style.top = `${top}px`;
+  }
+
+  function scheduleHidePitTip() {
+    window.clearTimeout(pitTipHideTimer);
+    pitTipHideTimer = window.setTimeout(hidePitTip, 120);
+  }
+
+  function bindPitStintTip(btn, payload) {
+    btn.addEventListener('mouseenter', () => {
+      window.clearTimeout(pitTipHideTimer);
+      showPitTip(btn, payload);
+    });
+    btn.addEventListener('mouseleave', scheduleHidePitTip);
+    btn.addEventListener('focus', () => {
+      window.clearTimeout(pitTipHideTimer);
+      showPitTip(btn, payload);
+    });
+    btn.addEventListener('blur', scheduleHidePitTip);
   }
 
   function readStoredUiMode() {
     try {
-      if (localStorage.getItem(MODE_STORAGE_KEY) === 'nerd') return 'nerd';
+      const raw = localStorage.getItem(MODE_STORAGE_KEY);
+      if (raw === 'nerd') return 'nerd';
+      if (raw && raw !== 'simple') localStorage.setItem(MODE_STORAGE_KEY, 'simple');
     } catch {
       // ignore
     }
@@ -654,7 +814,6 @@
   async function ensureNerdPanels() {
     if (state.nerdPanelsReady) return;
     state.nerdPanelsReady = true;
-    void populateH2hDriverSelects();
     renderChampionshipSim();
     if (!state.pitVizRendered) {
       state.pitVizRendered = true;
@@ -662,194 +821,27 @@
     }
   }
 
-  async function populateH2hDriverSelects() {
-    const aSel = el.h2hDriverA;
-    const bSel = el.h2hDriverB;
-    if (!aSel || !bSel) return;
-    if (aSel.dataset.wired === '1' && aSel.options.length > 1) return;
-    aSel.dataset.wired = '1';
-    const byId = new Map();
-    for (let y = SEASON_MIN; y <= SEASON_CURRENT; y += 1) {
-      // eslint-disable-next-line no-await-in-loop
-      const json = await cachedSeasonJson(seasonCacheKey(y, 'driverStandings'), () => fetchErgastJson(`${y}/driverStandings.json`));
-      for (const d of extractDriverStandings(json)) {
-        if (!d.driverId) continue;
-        const label = `${d.givenName} ${d.familyName}`.trim() || d.code;
-        byId.set(d.driverId, { id: d.driverId, label, code: d.code });
-      }
-    }
-    const list = [...byId.values()].sort((x, y) => x.label.localeCompare(y.label));
-    const mkOpts = (sel, otherVal) => {
-      sel.innerHTML = '';
-      const ph = document.createElement('option');
-      ph.value = '';
-      ph.textContent = 'Choose…';
-      sel.appendChild(ph);
-      for (const d of list) {
-        if (d.id === otherVal) continue;
-        const o = document.createElement('option');
-        o.value = d.id;
-        o.textContent = `${d.label} (${d.code})`;
-        sel.appendChild(o);
-      }
-    };
-    mkOpts(aSel, bSel.value);
-    mkOpts(bSel, aSel.value);
-    aSel.addEventListener('change', () => mkOpts(bSel, aSel.value));
-    bSel.addEventListener('change', () => mkOpts(aSel, bSel.value));
+  function syncTimingBentoMode() {
+    el.liveTimingGrid?.classList.toggle('timingBento--standings', !state.live);
   }
 
-  async function runH2hCompare() {
-    const out = el.h2hOut;
-    const idA = el.h2hDriverA?.value || '';
-    const idB = el.h2hDriverB?.value || '';
-    if (!out || !idA || !idB || idA === idB) {
-      if (out) out.innerHTML = '<p class="small muted">Pick two different drivers.</p>';
-      return;
-    }
-    out.innerHTML = '<p class="small muted">Loading season stats…</p>';
-    const years = [];
-    for (let y = SEASON_MIN; y <= SEASON_CURRENT; y += 1) years.push(y);
+  const SIM_DEBOUNCE_MS = 140;
 
-    const perYear = [];
-    for (const y of years) {
-      // eslint-disable-next-line no-await-in-loop
-      const standingsJson = await cachedSeasonJson(seasonCacheKey(y, 'driverStandings'), () =>
-        fetchErgastJson(`${y}/driverStandings.json`),
-      );
-      const standings = extractDriverStandings(standingsJson);
-      const rowA = standings.find((d) => d.driverId === idA) || null;
-      const rowB = standings.find((d) => d.driverId === idB) || null;
-      perYear.push({ year: y, rowA, rowB, standings });
-    }
+  function abbrevRaceName(name) {
+    const s = String(name || '').trim();
+    if (s.length <= 14) return s;
+    return s.replace(/\s+Grand Prix$/i, ' GP').replace(/^FORMULA 1\s+/i, '');
+  }
 
-    const wins = { a: 0, b: 0 };
-    let podiumsA = 0;
-    let podiumsB = 0;
-    const finishesA = [];
-    const finishesB = [];
-
-    function ingestDriverRaceResults(json, driverId, finishes, addPodium) {
-      const races = json?.MRData?.RaceTable?.Races || [];
-      for (const race of races) {
-        const results = race?.Results || [];
-        for (const res of results) {
-          if ((res.Driver || {}).driverId !== driverId) continue;
-          const pos = Number(res.position || 0);
-          if (!Number.isFinite(pos)) continue;
-          finishes.push(pos);
-          if (pos <= 3) addPodium();
-          break;
-        }
-      }
-    }
-
-    for (const { year, rowA, rowB } of perYear) {
-      if (rowA) wins.a += rowA.wins || 0;
-      if (rowB) wins.b += rowB.wins || 0;
-      // eslint-disable-next-line no-await-in-loop
-      const [resA, resB] = await Promise.all([
-        fetchErgastJson(`${year}/drivers/${idA}/results.json`).catch(() => null),
-        fetchErgastJson(`${year}/drivers/${idB}/results.json`).catch(() => null),
-      ]);
-      ingestDriverRaceResults(resA, idA, finishesA, () => {
-        podiumsA += 1;
-      });
-      ingestDriverRaceResults(resB, idB, finishesB, () => {
-        podiumsB += 1;
-      });
-    }
-
-    const ptsA = perYear.map((x) => (x.rowA ? x.rowA.points : 0));
-    const ptsB = perYear.map((x) => (x.rowB ? x.rowB.points : 0));
-
-    const avg = (arr) => {
-      if (!arr.length) return null;
-      const s = arr.reduce((x, v) => x + v, 0);
-      return s / arr.length;
-    };
-    const avgA = avg(finishesA);
-    const avgB = avg(finishesB);
-
-    function teammateRatioFor(id, standings) {
-      const self = standings.find((d) => d.driverId === id);
-      if (!self) return null;
-      const mates = standings.filter((d) => d.constructorName === self.constructorName && d.driverId !== id);
-      if (mates.length !== 1) return null;
-      const t = mates[0];
-      const tot = self.points + t.points;
-      if (!tot) return null;
-      return self.points / tot;
-    }
-
-    const ratiosA = [];
-    const ratiosB = [];
-    for (const { rowA, rowB, standings } of perYear) {
-      if (rowA) {
-        const r = teammateRatioFor(idA, standings);
-        if (r != null) ratiosA.push(r);
-      }
-      if (rowB) {
-        const r = teammateRatioFor(idB, standings);
-        if (r != null) ratiosB.push(r);
-      }
-    }
-    const meanRatio = (arr) => (arr.length ? arr.reduce((x, v) => x + v, 0) / arr.length : null);
-    const rA = meanRatio(ratiosA);
-    const rB = meanRatio(ratiosB);
-
-    const labelA =
-      el.h2hDriverA && el.h2hDriverA.selectedIndex > 0 ? el.h2hDriverA.selectedOptions[0]?.textContent || 'A' : 'A';
-    const labelB =
-      el.h2hDriverB && el.h2hDriverB.selectedIndex > 0 ? el.h2hDriverB.selectedOptions[0]?.textContent || 'B' : 'B';
-    const w = 320;
-    const h = 120;
-    const pad = 8;
-    const minP = Math.min(0, ...ptsA, ...ptsB);
-    const maxP = Math.max(1, ...ptsA, ...ptsB);
-    const xStep = years.length > 1 ? (w - pad * 2) / (years.length - 1) : 0;
-    const toY = (p) => pad + ((maxP - p) / (maxP - minP || 1)) * (h - pad * 2);
-    const linePath = (arr) =>
-      arr
-        .map((p, i) => {
-          const x = pad + (years.length === 1 ? (w - pad * 2) / 2 : i * xStep);
-          const y = toY(p);
-          return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-        })
-        .join(' ');
-    const pathA = linePath(ptsA);
-    const pathB = linePath(ptsB);
-
-    const svgChart = `<svg class="nerdH2h__chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Points by season">
-        <rect x="0" y="0" width="${w}" height="${h}" fill="rgba(255,255,255,0.02)" rx="10" />
-        <path d="${escapeHtml(pathA)}" stroke="#ff4d4d" fill="none" />
-        <path d="${escapeHtml(pathB)}" stroke="#38bdf8" fill="none" />
-      </svg>`;
-
-    out.innerHTML = `
-      <div class="nerdH2h__grid">
-        <div class="nerdH2h__card">
-          <div class="small muted">${escapeHtml(labelA)}</div>
-          <div><strong>Wins</strong> ${wins.a} · <strong>Podiums</strong> ${podiumsA}</div>
-          <div><strong>Avg finish</strong> ${avgA == null ? '—' : escapeHtml(avgA.toFixed(2))}</div>
-          <div><strong>Teammate pts share</strong> ${rA == null ? '—' : escapeHtml((rA * 100).toFixed(1))}%</div>
-        </div>
-        <div class="nerdH2h__card">
-          <div class="small muted">${escapeHtml(labelB)}</div>
-          <div><strong>Wins</strong> ${wins.b} · <strong>Podiums</strong> ${podiumsB}</div>
-          <div><strong>Avg finish</strong> ${avgB == null ? '—' : escapeHtml(avgB.toFixed(2))}</div>
-          <div><strong>Teammate pts share</strong> ${rB == null ? '—' : escapeHtml((rB * 100).toFixed(1))}%</div>
-        </div>
-      </div>
-      <div class="small muted" style="margin-top:10px">Points per season (Jolpica / Ergast driver standings).</div>
-      ${svgChart}
-    `;
+  function scheduleSimRecalc(drivers, remaining) {
+    window.clearTimeout(state.simDebounceTimer);
+    state.simDebounceTimer = window.setTimeout(() => computeSimStandings(drivers, remaining), SIM_DEBOUNCE_MS);
   }
 
   function renderChampionshipSim() {
     const root = el.nerdSimMount;
     if (!root) return;
-    if (root._nerdSimChange) root.removeEventListener('change', root._nerdSimChange);
+    if (root._nerdSimInput) root.removeEventListener('input', root._nerdSimInput);
     if (root._nerdSimClick) root.removeEventListener('click', root._nerdSimClick);
     if (state.year !== SEASON_CURRENT || !state.standings || !state.calendar.length) {
       root.innerHTML = '<p class="small muted">Simulator uses the current season calendar and standings. Switch to the current year tab.</p>';
@@ -864,58 +856,81 @@
     }
     if (!state.simPred || typeof state.simPred !== 'object') state.simPred = {};
 
-    const thead = `<tr><th>Driver</th>${remaining
-      .map((r) => `<th title="${escapeHtml(r.raceName)}">R${r.round}</th>`)
-      .join('')}</tr>`;
+    const activeRound =
+      remaining.some((r) => r.round === state.simActiveRound) ? state.simActiveRound : remaining[0].round;
+    state.simActiveRound = activeRound;
 
-    const tbody = drivers
+    const driverCards = drivers
       .map((d) => {
         state.simPred[d.driverId] = state.simPred[d.driverId] || {};
-        const cells = remaining
-          .map((r) => {
-            const cur = state.simPred[d.driverId][r.round];
-            const def = Math.min(20, Math.max(1, d.position || 10));
-            const opts = [`<option value=""${cur == null ? ' selected' : ''}>Auto (${def})</option>`]
-              .concat(
-                Array.from({ length: 20 }, (_, i) => {
-                  const p = i + 1;
-                  return `<option value="${p}"${cur === p ? ' selected' : ''}>P${p}</option>`;
-                }),
-              )
-              .join('');
-            return `<td><select data-sim="${escapeHtml(d.driverId)}" data-round="${r.round}" aria-label="Predicted finish ${escapeHtml(d.code)} round ${r.round}">${opts}</select></td>`;
-          })
-          .join('');
-        return `<tr><td>${escapeHtml(d.code)} ${escapeHtml(`${d.givenName} ${d.familyName}`.trim())}</td>${cells}</tr>`;
+        const cur = state.simPred[d.driverId][activeRound];
+        const def = Math.min(20, Math.max(1, d.position || 10));
+        const val = cur == null ? '' : String(cur);
+        const name = `${d.givenName} ${d.familyName}`.trim();
+        return `
+          <label class="nerdSimCard">
+            <span class="nerdSimCard__code">${escapeHtml(d.code)}</span>
+            <span class="nerdSimCard__name" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+            <input
+              type="number"
+              class="nerdSimCard__pos"
+              min="1"
+              max="20"
+              step="1"
+              placeholder="${def}"
+              value="${escapeHtml(val)}"
+              data-sim="${escapeHtml(d.driverId)}"
+              data-round="${activeRound}"
+              aria-label="Predicted finish ${escapeHtml(d.code)} round ${activeRound}"
+            />
+          </label>`;
+      })
+      .join('');
+
+    const roundChips = remaining
+      .map((r) => {
+        const on = r.round === activeRound;
+        return `<button type="button" class="nerdSimChip${on ? ' is-active' : ''}" data-sim-round="${r.round}" role="tab" aria-selected="${on ? 'true' : 'false'}" title="${escapeHtml(r.raceName)}">R${r.round}</button>`;
       })
       .join('');
 
     root.innerHTML = `
-      <div class="nerdSimActions">
-        <button type="button" class="pill pill--ghost" id="simRecalc">Recalculate</button>
-        <button type="button" class="pill pill--ghost" id="simReset">Reset auto</button>
+      <div class="nerdSimBento" data-sim-remaining="${remaining.length}">
+        <div class="nerdSimBento__rounds" role="tablist" aria-label="Remaining rounds">${roundChips}</div>
+        <div class="nerdSimBento__grid" id="simDriverGrid">${driverCards}</div>
+        <div class="nerdSimBento__actions">
+          <button type="button" class="pill pill--ghost pill--compact" id="simReset">Reset all</button>
+        </div>
+        <div class="nerdSimStandings nerdSimStandings--compact" id="simStandingsOut"></div>
       </div>
-      <table class="nerdSimTable" aria-label="Championship forecast inputs">
-        <thead>${thead}</thead>
-        <tbody>${tbody}</tbody>
-      </table>
-      <div class="nerdSimStandings" id="simStandingsOut"></div>
     `;
 
-    const onChange = (e) => {
+    const onInput = (e) => {
       const t = e.target;
-      if (!(t instanceof HTMLSelectElement) || !t.dataset.sim) return;
+      if (!(t instanceof HTMLInputElement) || !t.dataset.sim) return;
       const did = t.dataset.sim;
       const rd = Number(t.dataset.round);
-      const v = t.value === '' ? null : Number(t.value);
+      const raw = t.value.trim();
+      let v = null;
+      if (raw !== '') {
+        const n = Number(raw);
+        if (!Number.isFinite(n) || n < 1 || n > 20) return;
+        v = Math.round(n);
+        t.value = String(v);
+      }
       state.simPred[did] = state.simPred[did] || {};
       state.simPred[did][rd] = v;
-      computeSimStandings(drivers, remaining);
+      scheduleSimRecalc(drivers, remaining);
     };
     const onClick = (e) => {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
-      if (t.id === 'simRecalc') computeSimStandings(drivers, remaining);
+      const roundBtn = t.closest('[data-sim-round]');
+      if (roundBtn instanceof HTMLElement && roundBtn.dataset.simRound) {
+        state.simActiveRound = Number(roundBtn.dataset.simRound);
+        renderChampionshipSim();
+        return;
+      }
       if (t.id === 'simReset') {
         drivers.forEach((d) => {
           state.simPred[d.driverId] = {};
@@ -923,9 +938,10 @@
         renderChampionshipSim();
       }
     };
-    root._nerdSimChange = onChange;
+    if (root._nerdSimInput) root.removeEventListener('input', root._nerdSimInput);
+    root._nerdSimInput = onInput;
     root._nerdSimClick = onClick;
-    root.addEventListener('change', onChange);
+    root.addEventListener('input', onInput);
     root.addEventListener('click', onClick);
     computeSimStandings(drivers, remaining);
   }
@@ -969,15 +985,244 @@
         </li>`;
       })
       .join('');
-    host.innerHTML = `<div class="panel__titleRow" style="margin-top:8px"><div class="panel__title">Projected standings</div></div><ol>${list}</ol>`;
+    host.innerHTML = `<div class="nerdSimStandings__head">Projected</div><ol class="nerdSimStandings__list">${list}</ol>`;
+  }
+
+  function collapsePitAccordion(exceptArticle) {
+    const root = el.nerdPitMount;
+    if (!root) return;
+    root.querySelectorAll('.pitAcc').forEach((acc) => {
+      if (exceptArticle && acc === exceptArticle) return;
+      const sk = acc instanceof HTMLElement ? acc.dataset.sessionKey : null;
+      if (sk) state.pitShowAllSessions.delete(sk);
+      const head = acc.querySelector('.pitAcc__head');
+      const body = acc.querySelector('.pitAcc__body');
+      if (head instanceof HTMLButtonElement) head.setAttribute('aria-expanded', 'false');
+      acc.classList.remove('is-open');
+      if (body instanceof HTMLElement) {
+        body.hidden = true;
+        body.replaceChildren();
+      }
+    });
+    if (!exceptArticle) state.pitExpandedSessionKey = null;
+    hidePitTip();
+  }
+
+  function buildPitCodeMap(driversJson) {
+    const map = new Map();
+    if (!Array.isArray(driversJson)) return map;
+    for (const d of driversJson) {
+      if (!d || typeof d !== 'object') continue;
+      const dn = Number(d.driver_number ?? d.number);
+      if (!Number.isFinite(dn)) continue;
+      const code = String(d.name_acronym || d.code || '').trim().toUpperCase();
+      map.set(dn, code || `#${dn}`);
+    }
+    return map;
+  }
+
+  function buildPitFinishMap(posRows) {
+    const latest = latestByDriverNumber(posRows, 'date');
+    const map = new Map();
+    for (const [dn, row] of latest) {
+      const p = Number(row.position ?? row.pos);
+      if (Number.isFinite(p) && p > 0) map.set(dn, p);
+    }
+    return map;
+  }
+
+  function renderPitRaceLanes(body, sessionKey, pack) {
+    const sk = String(sessionKey);
+    const { stints, codeByNum, posByNum } = pack;
+    body.replaceChildren();
+    let maxLap = 1;
+    for (const st of stints) {
+      const le = Number(st.lap_end ?? st.lap_finish ?? 0);
+      const ls = Number(st.lap_start ?? 1);
+      if (Number.isFinite(le)) maxLap = Math.max(maxLap, le);
+      if (Number.isFinite(ls)) maxLap = Math.max(maxLap, ls);
+    }
+    const byNum = new Map();
+    for (const st of stints) {
+      const dn = Number(st.driver_number);
+      if (!Number.isFinite(dn)) continue;
+      if (!byNum.has(dn)) byNum.set(dn, []);
+      byNum.get(dn).push(st);
+    }
+    for (const arr of byNum.values()) {
+      arr.sort((a, b) => Number(a.stint_number || 0) - Number(b.stint_number || 0));
+    }
+    const allDrivers = [...byNum.keys()].sort((a, b) => {
+      const pa = posByNum.get(a) ?? 999;
+      const pb = posByNum.get(b) ?? 999;
+      if (pa !== pb) return pa - pb;
+      return (byNum.get(b)?.length || 0) - (byNum.get(a)?.length || 0);
+    });
+    const showAll = state.pitShowAllSessions.has(sk);
+    const hiddenCount = Math.max(0, allDrivers.length - PIT_TOP_DRIVERS);
+    const driversVisible = showAll || hiddenCount === 0 ? allDrivers : allDrivers.slice(0, PIT_TOP_DRIVERS);
+
+    const viz = document.createElement('div');
+    viz.className = 'pitViz';
+
+    const legend = document.createElement('div');
+    legend.className = 'pitViz__legend';
+    legend.setAttribute('aria-hidden', 'true');
+    for (const [cls, labelText] of [
+      ['pitStint--soft', 'S'],
+      ['pitStint--medium', 'M'],
+      ['pitStint--hard', 'H'],
+      ['pitStint--inter', 'I'],
+      ['pitStint--wet', 'W'],
+    ]) {
+      const chip = document.createElement('span');
+      chip.className = `pitLegendChip ${cls}`;
+      chip.textContent = labelText;
+      legend.appendChild(chip);
+    }
+    viz.appendChild(legend);
+
+    const scroll = document.createElement('div');
+    scroll.className = 'pitViz__scroll';
+    const lanes = document.createElement('div');
+    lanes.className = 'pitLanes';
+
+    for (const dn of driversVisible) {
+      const row = document.createElement('div');
+      row.className = 'pitLane';
+      const label = document.createElement('span');
+      label.className = 'pitLane__code';
+      const code = codeByNum.get(dn) || `#${dn}`;
+      label.textContent = code;
+      label.title = String(dn);
+      const track = document.createElement('div');
+      track.className = 'pitLane__track';
+      for (const st of byNum.get(dn) || []) {
+        const ls = Number(st.lap_start ?? 1);
+        const le = Number(st.lap_end ?? st.lap_finish ?? ls);
+        const compoundRaw = st.compound || st.tyre_compound || '';
+        const left = ((ls - 1) / maxLap) * 100;
+        const width = (Math.max(1, le - ls + 1) / maxLap) * 100;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `pitStint ${compoundPitClass(compoundRaw)}`;
+        btn.style.left = `${left}%`;
+        btn.style.width = `${width}%`;
+        const lapEnd = Number.isFinite(le) ? le : ls;
+        const lapStart = Number.isFinite(ls) ? ls : 1;
+        const durRaw = st.stint_duration ?? st.duration ?? st.lap_duration;
+        const durationText =
+          typeof durRaw === 'number' && Number.isFinite(durRaw)
+            ? `${durRaw.toFixed(1)}s`
+            : typeof durRaw === 'string' && durRaw.trim()
+              ? durRaw.trim()
+              : `${Math.max(0, lapEnd - lapStart + 1)} laps`;
+        btn.setAttribute('aria-label', `${code} ${compoundPitLabel(compoundRaw)} laps ${lapStart} to ${lapEnd}`);
+        bindPitStintTip(btn, {
+          driverCode: code,
+          compoundRaw,
+          lapStart,
+          lapEnd,
+          durationText,
+        });
+        track.appendChild(btn);
+      }
+      row.appendChild(label);
+      row.appendChild(track);
+      lanes.appendChild(row);
+    }
+    scroll.appendChild(lanes);
+    viz.appendChild(scroll);
+
+    if (!showAll && hiddenCount > 0) {
+      const foot = document.createElement('div');
+      foot.className = 'pitViz__foot';
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'pill pill--ghost pill--compact pitShowAll';
+      more.dataset.pitShowAll = sk;
+      more.textContent = `Show all ${allDrivers.length} drivers`;
+      foot.appendChild(more);
+      viz.appendChild(foot);
+    }
+
+    const axis = document.createElement('div');
+    axis.className = 'pitAxis';
+    axis.innerHTML = `<span class="mono">1</span><span class="mono">${escapeHtml(String(maxLap))}</span>`;
+    viz.appendChild(axis);
+    body.appendChild(viz);
+  }
+
+  async function expandPitRace(article, sessionKey) {
+    const body = article.querySelector('.pitAcc__body');
+    const head = article.querySelector('.pitAcc__head');
+    if (!(body instanceof HTMLElement) || !(head instanceof HTMLButtonElement)) return;
+    const sk = String(sessionKey);
+    if (state.pitExpandedSessionKey === sk && article.classList.contains('is-open')) {
+      collapsePitAccordion(null);
+      return;
+    }
+    collapsePitAccordion(article);
+    state.pitExpandedSessionKey = sk;
+    article.classList.add('is-open');
+    head.setAttribute('aria-expanded', 'true');
+    body.hidden = false;
+    body.innerHTML = '<p class="pitViz__loading small muted">Loading…</p>';
+
+    let pack = state.pitRaceCache.get(sk);
+    if (!pack) {
+      const [stRes, drvRes, posRes] = await Promise.all([
+        fetchLiveJson('stints', { session_key: sk }),
+        fetchLiveJson('drivers', { session_key: sk }),
+        fetchLiveJson('position', { session_key: sk }),
+      ]);
+      const stints = stRes.ok ? assertLivePayloadArray('stints', stRes.data) : [];
+      const drivers = drvRes.ok ? assertLivePayloadArray('drivers', drvRes.data) : [];
+      const positions = posRes.ok ? assertLivePayloadArray('position', posRes.data) : [];
+      pack = {
+        stints,
+        codeByNum: buildPitCodeMap(drivers),
+        posByNum: buildPitFinishMap(positions),
+      };
+      state.pitRaceCache.set(sk, pack);
+    }
+
+    if (!pack.stints.length) {
+      body.innerHTML = '<p class="pitViz__loading small muted">No stint data for this session.</p>';
+      return;
+    }
+    renderPitRaceLanes(body, sk, pack);
+  }
+
+  function onPitMountClick(e) {
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    const showBtn = t.closest('[data-pit-show-all]');
+    if (showBtn instanceof HTMLElement && showBtn.dataset.pitShowAll) {
+      const sk = showBtn.dataset.pitShowAll;
+      const pack = state.pitRaceCache.get(sk);
+      const article = showBtn.closest('.pitAcc');
+      const body = article?.querySelector('.pitAcc__body');
+      if (pack && body instanceof HTMLElement) {
+        state.pitShowAllSessions.add(sk);
+        renderPitRaceLanes(body, sk, pack);
+      }
+      return;
+    }
+    const head = t.closest('.pitAcc__head');
+    if (!(head instanceof HTMLButtonElement)) return;
+    const article = head.closest('.pitAcc');
+    if (!(article instanceof HTMLElement) || !article.dataset.sessionKey) return;
+    void expandPitRace(article, article.dataset.sessionKey);
   }
 
   async function renderPitStrategyViz() {
     const root = el.nerdPitMount;
     if (!root) return;
-    root.innerHTML = '<p class="small muted">Loading OpenF1 race sessions…</p>';
+    root.className = 'nerdPitMount';
+    root.innerHTML = '<p class="pitList__loading small muted">Loading races…</p>';
     const year = 2025;
-    const calJson = await cachedSeasonJson(seasonCacheKey(year, 'calendar'), () => fetchErgastJson(`${year}.json`));
+    const calJson = await cachedSeasonJson(seasonCacheKey(year, 'calendar'), (k) => fetchErgastJson(`${year}.json`, k));
     const cal = extractCalendar(calJson);
     const now = new Date();
     const done = cal.filter((r) => r.season === year && isRaceDone(r, now));
@@ -995,98 +1240,39 @@
     const sortedRaces = [...done].sort((a, b) => String(a.date).localeCompare(String(b.date)));
     const n = Math.min(sortedSess.length, sortedRaces.length);
 
-    const chunks = [];
+    const list = document.createElement('div');
+    list.className = 'pitList';
+    list.setAttribute('role', 'list');
     for (let i = 0; i < n; i += 1) {
       const race = sortedRaces[i];
       const sk = sortedSess[i]?.session_key;
       if (sk == null) continue;
-      // eslint-disable-next-line no-await-in-loop
-      const stRes = await fetchLiveJson('stints', { session_key: String(sk) });
-      const stints = stRes.ok ? assertLivePayloadArray('stints', stRes.data) : [];
-      chunks.push({ race, stints });
+      const article = document.createElement('article');
+      article.className = 'pitAcc';
+      article.dataset.sessionKey = String(sk);
+      article.dataset.round = String(race.round);
+      article.setAttribute('role', 'listitem');
+      const shortName = abbrevRaceName(race.raceName);
+      article.innerHTML = `
+        <button type="button" class="pitAcc__head" aria-expanded="false">
+          <span class="pitAcc__round mono">R${escapeHtml(String(race.round))}</span>
+          <span class="pitAcc__name">${escapeHtml(shortName)}</span>
+          <span class="pitAcc__chev" aria-hidden="true"></span>
+        </button>
+        <div class="pitAcc__body" hidden></div>
+      `;
+      list.appendChild(article);
+    }
+    root.replaceChildren(list);
+
+    if (!list.children.length) {
+      root.innerHTML = '<p class="small muted">No paired OpenF1 race sessions found.</p>';
+      return;
     }
 
-    root.innerHTML = '';
-    for (const { race, stints } of chunks) {
-      if (!stints.length) continue;
-      let maxLap = 1;
-      for (const s of stints) {
-        const le = Number(s.lap_end ?? s.lap_finish ?? 0);
-        const ls = Number(s.lap_start ?? 1);
-        if (Number.isFinite(le)) maxLap = Math.max(maxLap, le);
-        if (Number.isFinite(ls)) maxLap = Math.max(maxLap, ls);
-      }
-      const byNum = new Map();
-      for (const s of stints) {
-        const dn = Number(s.driver_number);
-        if (!Number.isFinite(dn)) continue;
-        if (!byNum.has(dn)) byNum.set(dn, []);
-        byNum.get(dn).push(s);
-      }
-      for (const arr of byNum.values()) {
-        arr.sort((a, b) => Number(a.stint_number || 0) - Number(b.stint_number || 0));
-      }
-      const driversSorted = [...byNum.keys()].sort((a, b) => a - b);
-      const wrap = document.createElement('div');
-      wrap.className = 'pitRace';
-      wrap.innerHTML = `
-        <h3 class="pitRace__title">${escapeHtml(race.raceName)}</h3>
-        <div class="pitRace__sub">Round ${escapeHtml(String(race.round))} · session stints · max lap ${escapeHtml(String(maxLap))}</div>
-      `;
-      const lanes = document.createElement('div');
-      for (const dn of driversSorted) {
-        const row = document.createElement('div');
-        row.className = 'pitLane';
-        const label = document.createElement('div');
-        label.className = 'pitLane__no';
-        label.textContent = String(dn);
-        const track = document.createElement('div');
-        track.className = 'pitLane__track';
-        for (const s of byNum.get(dn) || []) {
-          const ls = Number(s.lap_start ?? 1);
-          const le = Number(s.lap_end ?? s.lap_finish ?? ls);
-          const compound = normalizeCompound(s.compound || s.tyre_compound || '');
-          const left = ((ls - 1) / maxLap) * 100;
-          const width = (Math.max(1, le - ls + 1) / maxLap) * 100;
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'pitStint';
-          btn.style.left = `${left}%`;
-          btn.style.width = `${width}%`;
-          btn.style.background = compoundHexPitViz(compound);
-          const lapEnd = Number.isFinite(le) ? le : ls;
-          const lapStart = Number.isFinite(ls) ? ls : 1;
-          const durRaw = s.stint_duration ?? s.duration ?? s.lap_duration;
-          const durationText =
-            typeof durRaw === 'number' && Number.isFinite(durRaw)
-              ? `${durRaw.toFixed(1)}s`
-              : typeof durRaw === 'string' && durRaw.trim()
-                ? durRaw.trim()
-                : `${Math.max(0, lapEnd - lapStart + 1)} lap(s)`;
-          btn.addEventListener('click', () =>
-            openStintModal({
-              compound: compound || 'UNKNOWN',
-              lapStart,
-              lapEnd,
-              durationText,
-              driverNumber: dn,
-            }),
-          );
-          track.appendChild(btn);
-        }
-        row.appendChild(label);
-        row.appendChild(track);
-        lanes.appendChild(row);
-      }
-      const axis = document.createElement('div');
-      axis.className = 'pitAxis';
-      axis.innerHTML = `<span>1</span><span>${escapeHtml(String(maxLap))}</span>`;
-      wrap.appendChild(lanes);
-      wrap.appendChild(axis);
-      root.appendChild(wrap);
-    }
-    if (!root.children.length) {
-      root.innerHTML = '<p class="small muted">No stint rows returned for paired sessions.</p>';
+    if (!root._pitClick) {
+      root._pitClick = onPitMountClick;
+      root.addEventListener('click', root._pitClick);
     }
   }
 
@@ -1124,22 +1310,30 @@
     state.uiMode = readStoredUiMode();
     document.body.classList.toggle('is-nerd', state.uiMode === 'nerd');
     syncModeToggleButtons();
+    syncTimingBentoMode();
     bindUI();
     setupSectionIo();
+    void loadF1StaticManifest();
+    const tabYears = [];
+    for (let i = 0; i < 5; i += 1) {
+      const y = SEASON_CURRENT - i;
+      if (y >= SEASON_MIN) tabYears.push(y);
+    }
     const activeYear = await resolveActiveSeasonYear();
     state.activeSeason = activeYear;
     state.year = activeYear;
     syncActiveSeasonTab(activeYear);
     await warmSeason(activeYear);
-    await warmHeadshotsFromOpenF1();
     await renderSeason(activeYear);
-    await decideLiveAndStart();
-    await refreshIdleInsight();
+    void decideLiveAndStart();
+    void refreshIdleInsight();
     setupSnapshotLazyLoad();
     if (state.uiMode === 'nerd') {
       $$('.nerd-only.io-section').forEach((n) => n.classList.add('io-in'));
       void ensureNerdPanels();
     }
+    void Promise.all(tabYears.filter((y) => y !== activeYear).map((y) => prefetchSeasonBundle(y)));
+    void warmHeadshotsFromOpenF1();
   }
 
   function syncActiveSeasonTab(year) {
@@ -1310,7 +1504,6 @@
     el.modeSimple?.addEventListener('click', () => setUiMode('simple'));
     el.modeNerd?.addEventListener('click', () => setUiMode('nerd'));
     el.stintModalClose?.addEventListener('click', () => closeStintModal());
-    el.h2hRun?.addEventListener('click', () => void runH2hCompare());
     el.stintModal?.addEventListener('click', (e) => {
       if (e.target === el.stintModal) closeStintModal();
     });
@@ -1319,9 +1512,9 @@
   async function warmSeason(year) {
     if (year !== state.activeSeason && year !== SEASON_CURRENT) return;
     const [drivers, constructors, calendar] = await Promise.all([
-      cachedSeasonJson(seasonCacheKey(year, 'driverStandings'), () => fetchErgastJson(`${year}/driverStandings.json`)),
-      cachedSeasonJson(seasonCacheKey(year, 'constructorStandings'), () => fetchErgastJson(`${year}/constructorStandings.json`)),
-      cachedSeasonJson(seasonCacheKey(year, 'calendar'), () => fetchErgastJson(`${year}.json`)),
+      cachedSeasonJson(seasonCacheKey(year, 'driverStandings'), (k) => fetchErgastJson(`${year}/driverStandings.json`, k)),
+      cachedSeasonJson(seasonCacheKey(year, 'constructorStandings'), (k) => fetchErgastJson(`${year}/constructorStandings.json`, k)),
+      cachedSeasonJson(seasonCacheKey(year, 'calendar'), (k) => fetchErgastJson(`${year}.json`, k)),
     ]);
     state.standings = drivers;
     state.constructors = constructors;
@@ -1330,10 +1523,15 @@
 
   async function resolveActiveSeasonYear() {
     for (let y = SEASON_CURRENT; y >= SEASON_MIN; y -= 1) {
+      const key = seasonCacheKey(y, 'driverStandings');
+      const cached = readCachedSeasonJson(key);
+      if (cached && extractDriverStandings(cached).length > 0) return y;
+    }
+    for (let y = SEASON_CURRENT; y >= SEASON_MIN; y -= 1) {
       try {
         // eslint-disable-next-line no-await-in-loop
-        const json = await cachedSeasonJson(seasonCacheKey(y, 'driverStandings'), () =>
-          fetchErgastJson(`${y}/driverStandings.json`),
+        const json = await cachedSeasonJson(seasonCacheKey(y, 'driverStandings'), (cacheKey) =>
+          fetchErgastJson(`${y}/driverStandings.json`, cacheKey),
         );
         if (extractDriverStandings(json).length > 0) return y;
       } catch (err) {
@@ -1349,16 +1547,16 @@
 
     const driversJson =
       state.standings ||
-      (await cachedSeasonJson(seasonCacheKey(year, 'driverStandings'), () => fetchErgastJson(`${year}/driverStandings.json`)));
+      (await cachedSeasonJson(seasonCacheKey(year, 'driverStandings'), (k) => fetchErgastJson(`${year}/driverStandings.json`, k)));
     const constructorsJson =
       state.constructors ||
-      (await cachedSeasonJson(seasonCacheKey(year, 'constructorStandings'), () =>
-        fetchErgastJson(`${year}/constructorStandings.json`),
+      (await cachedSeasonJson(seasonCacheKey(year, 'constructorStandings'), (cacheKey) =>
+        fetchErgastJson(`${year}/constructorStandings.json`, cacheKey),
       ));
     const calendarJson =
       state.calendar.length
         ? null
-        : await cachedSeasonJson(seasonCacheKey(year, 'calendar'), () => fetchErgastJson(`${year}.json`));
+        : await cachedSeasonJson(seasonCacheKey(year, 'calendar'), (k) => fetchErgastJson(`${year}.json`, k));
 
     if (!state.calendar.length && calendarJson) state.calendar = extractCalendar(calendarJson);
 
@@ -1368,6 +1566,7 @@
     renderHero(driverStandings, constructorStandings, state.calendar);
     renderTowerStatic(driverStandings);
     renderConstructors(constructorStandings);
+    syncTimingBentoMode();
     renderCalendar(state.calendar);
   }
 
@@ -1376,8 +1575,8 @@
     el.histHint.textContent = `Loading ${year}…`;
 
     const [driversJson, constructorsJson] = await Promise.all([
-      cachedSeasonJson(seasonCacheKey(year, 'driverStandings'), () => fetchErgastJson(`${year}/driverStandings.json`)),
-      cachedSeasonJson(seasonCacheKey(year, 'constructorStandings'), () => fetchErgastJson(`${year}/constructorStandings.json`)),
+      cachedSeasonJson(seasonCacheKey(year, 'driverStandings'), (k) => fetchErgastJson(`${year}/driverStandings.json`, k)),
+      cachedSeasonJson(seasonCacheKey(year, 'constructorStandings'), (k) => fetchErgastJson(`${year}/constructorStandings.json`, k)),
     ]);
 
     const driverStandings = extractDriverStandings(driversJson);
@@ -1598,7 +1797,9 @@
     if (!(chip instanceof HTMLElement)) return;
     try {
       const k = roundCacheKey(race.season, race.round, 'result');
-      const data = await cachedSeasonJson(k, () => fetchErgastJson(`${race.season}/${race.round}/results/1.json`));
+      const data = await cachedSeasonJson(k, (cacheKey) =>
+        fetchErgastJson(`${race.season}/${race.round}/results/1.json`, cacheKey),
+      );
       const win = extractRaceWinner(data);
       if (!win) return;
       chip.hidden = false;
@@ -1764,6 +1965,7 @@
       clearLiveDataBanner();
       stopLivePolling();
     }
+    syncTimingBentoMode();
     void refreshIdleInsight();
   }
 
@@ -2235,9 +2437,15 @@
     openModal();
 
     const [result1, qual1, resultsFull] = await Promise.all([
-      fetchErgastJson(`${season}/${round}/results/1.json`).catch(() => null),
-      fetchErgastJson(`${season}/${round}/qualifying/1.json`).catch(() => null),
-      fetchErgastJson(`${season}/${round}/results.json`).catch(() => null),
+      cachedSeasonJson(roundCacheKey(season, round, 'result'), (cacheKey) =>
+        fetchErgastJson(`${season}/${round}/results/1.json`, cacheKey),
+      ).catch(() => null),
+      cachedSeasonJson(roundCacheKey(season, round, 'qualifying_1'), (cacheKey) =>
+        fetchErgastJson(`${season}/${round}/qualifying/1.json`, cacheKey),
+      ).catch(() => null),
+      cachedSeasonJson(roundCacheKey(season, round, 'results'), (cacheKey) =>
+        fetchErgastJson(`${season}/${round}/results.json`, cacheKey),
+      ).catch(() => null),
     ]);
 
     if (circuitGen !== state.modalCircuitGen) return;
@@ -2334,7 +2542,7 @@
     // - fetch Ergast winner info per round to compute wins & closest margin
     // - tyre usage: only possible via OpenF1 stints, so we attempt to map Race sessions by year + session_name=Race
     const yr = state.activeSeason || SEASON_CURRENT;
-    const calendarJson = await cachedSeasonJson(seasonCacheKey(yr, 'calendar'), () => fetchErgastJson(`${yr}.json`));
+    const calendarJson = await cachedSeasonJson(seasonCacheKey(yr, 'calendar'), (k) => fetchErgastJson(`${yr}.json`, k));
     const calendar = extractCalendar(calendarJson);
     const now = new Date();
     const done = calendar.filter((r) => isRaceDone(r, now));
@@ -2357,7 +2565,7 @@
       doneRaces,
       4,
       async (r) =>
-        cachedSeasonJson(roundCacheKey(r.season, r.round, 'top2'), () => fetchErgastJson(`${r.season}/${r.round}/results/2.json`)),
+        cachedSeasonJson(roundCacheKey(r.season, r.round, 'top2'), (k) => fetchErgastJson(`${r.season}/${r.round}/results/2.json`, k)),
     );
 
     results.forEach((json, idx) => {
@@ -2708,29 +2916,143 @@
   }
 
   // ---------------------------
-  // Data helpers (Ergast)
+  // Data helpers (Ergast + static snapshots)
   // ---------------------------
 
-  async function fetchErgastJson(path) {
-    const url = `/api/f1-season?path=${encodeURIComponent(path)}`;
+  const f1StaticMem = new Map();
+  let f1StaticManifest = null;
+
+  function parseYearFromErgastPath(ergastPath) {
+    const m = String(ergastPath || '').match(/^(\d{4})/);
+    if (!m) return null;
+    const y = Number(m[1]);
+    return Number.isFinite(y) ? y : null;
+  }
+
+  function ergastPathToStaticUrl(ergastPath) {
+    const p = String(ergastPath || '')
+      .replace(/^\//, '')
+      .trim();
+    if (!p) return null;
+    const calendar = p.match(/^(\d{4})\.json$/);
+    if (calendar) return `/data/f1/${calendar[1]}/calendar.json`;
+    const standings = p.match(/^(\d{4})\/(driverStandings|constructorStandings)\.json$/);
+    if (standings) return `/data/f1/${standings[1]}/${standings[2]}.json`;
+    const resultsFull = p.match(/^(\d{4})\/(\d+)\/results\.json$/);
+    if (resultsFull) return `/data/f1/${resultsFull[1]}/rounds/${resultsFull[2]}/results.json`;
+    const resultsLimit = p.match(/^(\d{4})\/(\d+)\/results\/(\d+)\.json$/);
+    if (resultsLimit) {
+      return `/data/f1/${resultsLimit[1]}/rounds/${resultsLimit[2]}/results-${resultsLimit[3]}.json`;
+    }
+    const qualifyingFull = p.match(/^(\d{4})\/(\d+)\/qualifying\.json$/);
+    if (qualifyingFull) return `/data/f1/${qualifyingFull[1]}/rounds/${qualifyingFull[2]}/qualifying.json`;
+    const qualifyingLimit = p.match(/^(\d{4})\/(\d+)\/qualifying\/(\d+)\.json$/);
+    if (qualifyingLimit) {
+      return `/data/f1/${qualifyingLimit[1]}/rounds/${qualifyingLimit[2]}/qualifying-${qualifyingLimit[3]}.json`;
+    }
+    return null;
+  }
+
+  function hasUsableMrData(json) {
+    return Boolean(json && typeof json === 'object' && json.MRData && typeof json.MRData === 'object');
+  }
+
+  async function loadF1StaticManifest() {
+    if (f1StaticManifest) return f1StaticManifest;
     try {
-      const r = await fetch(url, { headers: { Accept: 'application/json' } });
-      if (!r.ok) {
-        if (r.status === 404) return { MRData: {} };
-        const snippet = await r.text().catch(() => '');
-        logDataError('fetchErgastJson', new Error(`HTTP ${r.status}`), { path, snippet: snippet.slice(0, 200) });
-        throw new Error(`Ergast fetch failed (${r.status})`);
-      }
+      const r = await fetch(F1_STATIC_MANIFEST_URL, { headers: { Accept: 'application/json' } });
+      if (!r.ok) return null;
+      f1StaticManifest = await r.json();
+      return f1StaticManifest;
+    } catch {
+      return null;
+    }
+  }
+
+  async function fetchF1StaticJson(staticUrl) {
+    if (!staticUrl) return null;
+    if (f1StaticMem.has(staticUrl)) return f1StaticMem.get(staticUrl);
+    try {
+      const r = await fetch(staticUrl, { headers: { Accept: 'application/json' } });
+      if (!r.ok) return null;
       const json = await r.json();
-      if (json && typeof json === 'object' && 'error' in json && !json.MRData) {
-        logDataError('fetchErgastJson', new Error('proxy error'), { path, error: json.error });
-        return { MRData: {} };
-      }
+      if (!hasUsableMrData(json)) return null;
+      f1StaticMem.set(staticUrl, json);
       return json;
+    } catch {
+      return null;
+    }
+  }
+
+  async function fetchErgastApiJson(path) {
+    const url = `/api/f1-season?path=${encodeURIComponent(path)}`;
+    const r = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!r.ok) {
+      if (r.status === 404) return { MRData: {} };
+      const snippet = await r.text().catch(() => '');
+      logDataError('fetchErgastApiJson', new Error(`HTTP ${r.status}`), { path, snippet: snippet.slice(0, 200) });
+      throw new Error(`Ergast fetch failed (${r.status})`);
+    }
+    const json = await r.json();
+    if (json && typeof json === 'object' && 'error' in json && !json.MRData) {
+      logDataError('fetchErgastApiJson', new Error('proxy error'), { path, error: json.error });
+      return { MRData: {} };
+    }
+    return json;
+  }
+
+  function revalidateErgastInBackground(path, fullKey) {
+    if (!fullKey || isOpenF1SeasonCacheKey(fullKey)) return;
+    void (async () => {
+      try {
+        const fresh = await fetchErgastApiJson(path);
+        if (isCacheableSeasonPayload(fullKey, fresh)) writeCachedSeasonJson(fullKey, fresh);
+      } catch (err) {
+        logDataError('revalidateErgast', err, { path });
+      }
+    })();
+  }
+
+  async function fetchErgastJson(path, cacheKeyForRevalidate) {
+    const staticUrl = ergastPathToStaticUrl(path);
+    const year = parseYearFromErgastPath(path);
+    const historical = year != null && year < SEASON_CURRENT;
+
+    if (staticUrl) {
+      const staticJson = await fetchF1StaticJson(staticUrl);
+      if (staticJson) {
+        if (historical) return staticJson;
+        if (cacheKeyForRevalidate) revalidateErgastInBackground(path, cacheKeyForRevalidate);
+        return staticJson;
+      }
+    }
+
+    try {
+      return await fetchErgastApiJson(path);
     } catch (err) {
       logDataError('fetchErgastJson', err, { path });
       throw err;
     }
+  }
+
+  async function prefetchSeasonBundle(year) {
+    const items = [
+      { suffix: 'driverStandings', path: `${year}/driverStandings.json` },
+      { suffix: 'constructorStandings', path: `${year}/constructorStandings.json` },
+      { suffix: 'calendar', path: `${year}.json` },
+    ];
+    await Promise.all(
+      items.map(async ({ suffix, path: ergastPath }) => {
+        const key = seasonCacheKey(year, suffix);
+        if (readCachedSeasonJson(key)) return;
+        try {
+          const data = await fetchErgastJson(ergastPath, key);
+          if (isCacheableSeasonPayload(key, data)) writeCachedSeasonJson(key, data);
+        } catch (err) {
+          logDataError('prefetchSeasonBundle', err, { year, suffix });
+        }
+      }),
+    );
   }
 
   /**
@@ -2791,6 +3113,16 @@
       const races = data?.MRData?.RaceTable?.Races;
       return Array.isArray(races) && races.length > 0;
     }
+    if (key.includes('qualifying')) {
+      const races = data?.MRData?.RaceTable?.Races;
+      if (!Array.isArray(races) || races.length === 0) return false;
+      return Boolean(races[0]?.QualifyingResults?.length);
+    }
+    if (key.includes('_results') && !key.includes('constructor')) {
+      const races = data?.MRData?.RaceTable?.Races;
+      if (!Array.isArray(races) || races.length === 0) return false;
+      return Boolean(races[0]?.Results?.length);
+    }
     if (key.includes('_round_')) {
       const races = data?.MRData?.RaceTable?.Races;
       if (!Array.isArray(races) || races.length === 0) return false;
@@ -2827,7 +3159,7 @@
         // ignore
       }
     }
-    return loc?.data && isCacheableSeasonPayload(fullKey, loc.data) ? loc.data : null;
+    return null;
   }
 
   function writeCachedSeasonJson(fullKey, data) {
@@ -2845,9 +3177,17 @@
     const cached = readCachedSeasonJson(fullKey);
     if (cached) return cached;
 
+    if (!isOpenF1SeasonCacheKey(fullKey) && readSeasonNegative(fullKey)) {
+      throw new Error('season_cache_negative');
+    }
+
     const loc = readSeasonLocalBundle(fullKey);
     try {
-      const data = await loader();
+      const data = await loader(fullKey);
+      if (!isCacheableSeasonPayload(fullKey, data)) {
+        throw new Error('season_cache_empty');
+      }
+      clearSeasonNegative(fullKey);
       writeCachedSeasonJson(fullKey, data);
       return data;
     } catch (err) {
@@ -2856,6 +3196,7 @@
         writeCachedSeasonJson(fullKey, loc.data);
         return loc.data;
       }
+      if (!isOpenF1SeasonCacheKey(fullKey)) writeSeasonNegative(fullKey);
       throw err;
     }
   }
@@ -3072,7 +3413,9 @@
     let asideBlocks = '';
     if (py >= SEASON_MIN) {
       try {
-        const prev = await fetchErgastJson(`${py}/${nr.round}/results.json`);
+        const prev = await cachedSeasonJson(roundCacheKey(py, nr.round, 'results'), (cacheKey) =>
+          fetchErgastJson(`${py}/${nr.round}/results.json`, cacheKey),
+        );
         const w = extractRaceWinner(prev);
         const f = extractFastestLap(prev);
         asideBlocks += `<p class="idleInsight__fact"><strong>${py} winner</strong> · ${escapeHtml(w?.name || '—')}</p>`;

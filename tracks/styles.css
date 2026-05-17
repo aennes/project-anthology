@@ -424,7 +424,7 @@ body {
   color: var(--muted2);
 }
 
-/* —— Masonry grid —— */
+/* —— Editorial card grid —— */
 .atlasGridSection {
   padding: 8px 20px 80px;
   max-width: calc(var(--max) + 80px);
@@ -432,9 +432,9 @@ body {
 }
 .tracksMasonry {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: 120px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 14px;
+  align-items: stretch;
 }
 .tracksEmpty {
   text-align: center;
@@ -447,11 +447,10 @@ body {
 .trackCard {
   position: relative;
   display: block;
-  grid-column: span 4;
-  grid-row: span 3;
-  min-height: 280px;
+  aspect-ratio: 4 / 5;
+  min-height: 0;
   content-visibility: auto;
-  contain-intrinsic-size: auto 280px;
+  contain-intrinsic-size: auto 360px;
   border-radius: var(--radius-lg);
   border: 1px solid transparent;
   text-decoration: none;
@@ -462,33 +461,22 @@ body {
     border-color 200ms ease,
     box-shadow 200ms ease,
     transform 200ms ease;
-  will-change: transform;
 }
-.trackCard--wide {
-  grid-column: span 8;
-  grid-row: span 4;
-}
-.trackCard--tall {
-  grid-column: span 4;
-  grid-row: span 5;
-}
-.trackCard--feature {
-  grid-column: span 6;
-  grid-row: span 5;
+@media (min-width: 900px) {
+  .trackCard--accent {
+    grid-column: span 2;
+    aspect-ratio: 2 / 1;
+  }
 }
 @media (max-width: 767px) {
   .tracksMasonry {
     grid-template-columns: 1fr;
-    grid-auto-rows: auto;
     gap: 16px;
   }
   .trackCard,
-  .trackCard--wide,
-  .trackCard--tall,
-  .trackCard--feature {
+  .trackCard--accent {
+    aspect-ratio: 4 / 5;
     grid-column: 1;
-    grid-row: auto;
-    min-height: 320px;
   }
 }
 .trackCard:hover {
@@ -518,6 +506,15 @@ body {
 }
 .trackCard__cover.is-loaded {
   opacity: 1;
+}
+.trackCard__cover.is-map {
+  object-fit: contain;
+  opacity: 0.42;
+  padding: 12%;
+  filter: drop-shadow(0 0 24px rgba(255, 24, 1, 0.2));
+}
+.trackCard__cover.is-map.is-loaded {
+  opacity: 0.42;
 }
 .trackCard__fallback {
   position: absolute;

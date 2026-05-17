@@ -229,6 +229,8 @@ flowchart LR
 | Tracks | `anthologyTracksRace_*` | Yok | Yalnızca f1-season |
 | Radio | Yok | Yok | Yok (gömülü veri) |
 
+**Statik F1 (Mayıs 2026):** `public/data/f1/` Jolpica anlık görüntüleri; season-tracker önce `/data/f1/…`, gerekirse `/api/f1-season`. Deploy öncesi `npm run sync:f1:seasons` veya `npm run sync:f1` — `DEPLOYMENT.md`.
+
 ### Orta vadeli öneri (henüz uygulanmadı)
 
 - **Sunucu tarafı önbellek:** Ergast/OpenF1 yanıtlarını Vercel KV veya edge cache ile TTL (ör. takvim 15 dk, canlı 5 sn).

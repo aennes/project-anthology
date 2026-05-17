@@ -114,25 +114,29 @@
         </div>
         <div class="liveBanner" id="liveDataBanner" role="status" aria-live="polite" hidden></div>
 
-        <div class="grid">
-          <div class="panel panel--glass towerWrap" id="liveTowerPanel">
+        <div class="grid timingBento" id="liveTimingGrid">
+          <div class="panel panel--glass towerWrap timingBento__panel" id="liveTowerPanel">
             <div class="panel__titleRow">
               <div class="panel__title" id="towerTitle">Drivers</div>
               <div class="panel__hint" id="towerHint">Standings format (not live).</div>
             </div>
-            <ol class="tower" id="timingTower" aria-label="Timing tower"></ol>
+            <div class="timingBento__scroll" id="towerScroll">
+              <ol class="tower" id="timingTower" aria-label="Timing tower"></ol>
+            </div>
             <div class="tower__footer">
               <div class="tower__banner" id="raceControlBanner" hidden></div>
               <div class="tower__lap" id="lapCounter">—</div>
             </div>
           </div>
 
-          <div class="panel panel--glass">
+          <div class="panel panel--glass timingBento__panel" id="constructorsPanel">
             <div class="panel__titleRow">
               <div class="panel__title">Constructors</div>
               <div class="panel__hint">Click a constructor to set accent.</div>
             </div>
-            <ol class="constructors" id="constructorsList" aria-label="Constructor standings"></ol>
+            <div class="timingBento__scroll" id="constructorsScroll">
+              <ol class="constructors" id="constructorsList" aria-label="Constructor standings"></ol>
+            </div>
           </div>
         </div>
       </section>
@@ -186,32 +190,9 @@
         <div class="panel panel--glass">
           <div class="panel__titleRow">
             <div class="panel__title">Stint timelines</div>
-            <div class="panel__hint">Each row is a driver; blocks are stints by compound. Click a stint for lap range.</div>
+            <div class="panel__hint">Expand a race · hover a stint for laps & compound</div>
           </div>
           <div id="nerdPitMount" class="nerdPitMount" aria-live="polite"></div>
-        </div>
-      </section>
-
-      <section class="section io-section nerd-only" id="nerdH2h" aria-label="Driver head to head" data-io>
-        <div class="section__head">
-          <h2 class="section__title">Driver H2H</h2>
-          <div class="section__tools">
-            <div class="small">2021–2025 · Jolpica / Ergast via <code class="inlineCode">/api/f1-season</code></div>
-          </div>
-        </div>
-        <div class="panel panel--glass nerdH2h">
-          <div class="nerdH2h__controls">
-            <label class="nerdField">
-              <span class="nerdField__k">Driver A</span>
-              <select id="h2hDriverA" class="nerdSelect" aria-label="Driver A"></select>
-            </label>
-            <label class="nerdField">
-              <span class="nerdField__k">Driver B</span>
-              <select id="h2hDriverB" class="nerdSelect" aria-label="Driver B"></select>
-            </label>
-            <button type="button" class="pill pill--ghost" id="h2hRun">Compare</button>
-          </div>
-          <div id="h2hOut" class="nerdH2h__out" aria-live="polite"></div>
         </div>
       </section>
 
@@ -224,8 +205,8 @@
         </div>
         <div class="panel panel--glass">
           <div class="panel__titleRow">
-            <div class="panel__title">Forecast grid</div>
-            <div class="panel__hint">Set finishing position per driver for each remaining race (1–20). Blank uses current championship rank as a neutral default.</div>
+            <div class="panel__title">Forecast</div>
+            <div class="panel__hint">Pick a round, set P1–P20 per driver (blank = auto from current rank).</div>
           </div>
           <div id="nerdSimMount" class="nerdSimMount" aria-live="polite"></div>
         </div>
@@ -240,7 +221,7 @@
         </div>
 
         <div class="grid grid--snap">
-          <div class="panel panel--glass">
+          <div class="panel panel--glass panel--snap">
             <div class="panel__titleRow">
               <div class="panel__title">Tyre strategy</div>
               <div class="panel__hint">Compound usage across completed races.</div>
@@ -249,7 +230,7 @@
             <div class="small muted" id="tyreNote"></div>
           </div>
 
-          <div class="panel panel--glass">
+          <div class="panel panel--glass panel--snap">
             <div class="panel__titleRow">
               <div class="panel__title">Team wins distribution</div>
               <div class="panel__hint">Wins by constructor.</div>
@@ -258,7 +239,7 @@
             <div class="small muted" id="winsNote"></div>
           </div>
 
-          <div class="panel panel--glass">
+          <div class="panel panel--glass panel--snap">
             <div class="panel__titleRow">
               <div class="panel__title">Closest finish</div>
               <div class="panel__hint">Smallest winning margin so far.</div>

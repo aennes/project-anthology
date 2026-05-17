@@ -12,6 +12,8 @@
     "dev:vite": "vite",
     "dev:e2e": "concurrently -k \"npm run dev:api\" \"npm run dev:vite -- --port 5173 --strictPort\"",
     "fonts:season-tracker": "node scripts/copy-season-tracker-fonts.mjs",
+    "sync:f1": "node scripts/sync-f1-snapshots.mjs",
+    "sync:f1:seasons": "node scripts/sync-f1-snapshots.mjs --seasons-only",
     "build": "npm run images:gen && npm run images:optimize-story-38-40 && (npm run fonts:season-tracker || npm run nop) && vite build && node scripts/copy-season-tracker.mjs && node scripts/copy-tracks.mjs",
     "nop": "node -e \"process.exit(0)\"",
     "build:vercel": "(npm run images:gen || npm run nop) && (npm run images:optimize-story-38-40 || npm run nop) && (npm run fonts:season-tracker || npm run nop) && vite build && node scripts/copy-season-tracker.mjs && node scripts/copy-tracks.mjs",
@@ -26,8 +28,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "check:bundle": "node scripts/check-bundle-size.js",
-    "vercel:link": "vercel link --yes --project project-anthology",
-    "vercel:deploy": "npm run vercel:link && vercel deploy --prod --yes"
+    "vercel:link": "npx vercel link --yes --project project-anthology",
+    "vercel:deploy": "npm run vercel:link && npx vercel deploy --prod --yes"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.2.7",

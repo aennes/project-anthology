@@ -12,8 +12,8 @@
     -->
     <!--
       Lazy fetch (race history): IntersectionObserver on #sectionHistory fires once per circuit visit when
-      the section enters the viewport (~120px early). Each year row then reads sessionStorage
-      (key circuitId+year, see app.js RACE_HISTORY_CACHE_PREFIX) or fetches /api/f1-season.
+      the section enters the viewport (~120px early). Each year row reads sessionStorage/local cache
+      (anthologyTracksRace_{circuitId}_{year}) or fetches /api/f1-season; only non-empty results are stored.
     -->
     <link rel="preload" href="/fonts/st/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/st/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />

@@ -4,12 +4,22 @@
    * Lazy fetch triggers (race history 2021–present):
    * - IntersectionObserver on #sectionHistory: when the block crosses into view (~120px margin), we start
    *   loading per-year rows for the active circuit (at most once per circuit per page load).
-   * - Each calendar year uses sessionStorage first; network only on cache miss.
+   * - Each calendar year: sessionStorage → localStorage (TTL) → network (max 2 concurrent, staggered).
+   *
+   * Cache keys (value is `{ t, d }` in localStorage; session may store bare `d` or wrapped):
+   * | Key | Example |
+   * |---|---|
+   * | `anthologyTracksRace_${circuitId}_${year}` | `anthologyTracksRace_monaco_2024` |
+   * | `anthologyTracksRace_neg_${circuitId}_${year}` | short-lived failed fetch (sessionStorage) |
    */
   const SEASON_MIN = 2021;
   const SEASON_CURRENT = Math.max(SEASON_MIN, new Date().getFullYear());
-  /** sessionStorage: `${RACE_HISTORY_CACHE_PREFIX}${circuitId}_${year}` — payload is JSON (see loadYearRow). */
   const RACE_HISTORY_CACHE_PREFIX = 'anthologyTracksRace_';
+  const RACE_HISTORY_TTL_CURRENT_MS = 2 * 60 * 60 * 1000;
+  const RACE_HISTORY_TTL_HISTORICAL_MS = 7 * 24 * 60 * 60 * 1000;
+  const RACE_HISTORY_NEGATIVE_MS = 5 * 60 * 1000;
+  /** Gap between starting each year fetch (ms) to avoid proxy bursts. */
+  const RACE_HISTORY_STAGGER_MS = 120;
   const WIKI_COVER_MISS_PREFIX = 'tracks_wiki_cover_miss:';
 
   const prefersReducedMotion =
@@ -28,6 +38,8 @@
     historyObserver: null,
     historyWiredCircuit: '',
     historyStarted: false,
+    indexScrollY: 0,
+    coverObserver: null,
   };
 
   const COUNTRY_CODES = {
@@ -39,11 +51,66 @@
     Brazil: 'BRA',
     Bahrain: 'BHR',
     'Saudi Arabia': 'KSA',
+    Australia: 'AUS',
+    USA: 'USA',
+    Azerbaijan: 'AZE',
+    Spain: 'ESP',
+    Hungary: 'HUN',
+    Turkey: 'TUR',
+    Qatar: 'QAT',
+    Singapore: 'SGP',
+    Portugal: 'PRT',
+    Austria: 'AUT',
+    France: 'FRA',
+    Mexico: 'MEX',
+    China: 'CHN',
+    Russia: 'RUS',
+    Canada: 'CAN',
+    UAE: 'UAE',
+    Netherlands: 'NLD',
   };
 
   const SAFE_IMAGE_HOSTS = new Set(['upload.wikimedia.org']);
 
-  const MASONRY_SPANS = ['trackCard--feature', 'trackCard--wide', '', 'trackCard--tall', '', 'trackCard--wide', '', ''];
+  const WIKI_GAP_MS = 400;
+  let wikiChain = Promise.resolve();
+  let wikiNextAt = 0;
+
+  /** @param {Partial<Circuit> & Pick<Circuit, 'circuitId'|'name'|'country'|'flag_emoji'|'first_f1_race_year'|'lap_length_km'|'total_laps_typical'|'iconic_moment'>} partial */
+  function seedCircuit(partial) {
+    const id = String(partial.circuitId || '').trim().toLowerCase();
+    const city = partial.city || partial.country;
+    return {
+      circuitId: id,
+      hash: partial.hash ?? id,
+      name: partial.name,
+      country: partial.country,
+      city,
+      flag_emoji: partial.flag_emoji,
+      first_f1_race_year: partial.first_f1_race_year,
+      lap_length_km: partial.lap_length_km,
+      total_laps_typical: partial.total_laps_typical,
+      lap_record: partial.lap_record ?? { driver: '—', time: '—', year: SEASON_CURRENT - 1 },
+      character_tags: partial.character_tags ?? ['Modern', 'Grand prix'],
+      drs_zones: partial.drs_zones ?? 2,
+      overtaking_difficulty: partial.overtaking_difficulty ?? 3,
+      editorial_description:
+        partial.editorial_description ??
+        `${partial.name} is a fixture on the hybrid-era calendar — a venue where setup, tyre life, and race-weekend rhythm show clearly in the timing sheets.`,
+      motorsport_legacy:
+        partial.motorsport_legacy ??
+        `From ${partial.first_f1_race_year} onward it has hosted world-championship rounds that shaped seasons and careers.`,
+      pull_quotes: partial.pull_quotes ?? [
+        { text: `${partial.name} rewards preparation as much as outright pace.`, attribution: 'Anthology notes' },
+      ],
+      iconic_moment: partial.iconic_moment,
+      sector_profile: partial.sector_profile ?? {
+        s1: 'Opening sector: traction, braking, and early-lap positioning.',
+        s2: 'Middle sector: tyre temperature and minimum-speed balance.',
+        s3: 'Final sector: DRS zones and the run to the line.',
+      },
+    };
+  }
 
   /**
    * @typedef {object} LapRecord
@@ -336,9 +403,350 @@
         s3: 'Harbour sector: late braking and defensive weaving.',
       },
     },
+    seedCircuit({
+      circuitId: 'albert_park',
+      name: 'Albert Park Circuit',
+      country: 'Australia',
+      city: 'Melbourne',
+      flag_emoji: '🇦🇺',
+      first_f1_race_year: 1996,
+      lap_length_km: 5.278,
+      total_laps_typical: 58,
+      drs_zones: 3,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2024,
+        description: 'Ferrari front-row lockout and a race that felt like a reset for the scarlet squad.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'americas',
+      name: 'Circuit of the Americas',
+      country: 'USA',
+      city: 'Austin',
+      flag_emoji: '🇺🇸',
+      first_f1_race_year: 2012,
+      lap_length_km: 5.513,
+      total_laps_typical: 56,
+      drs_zones: 2,
+      overtaking_difficulty: 2,
+      iconic_moment: {
+        year: 2021,
+        description:
+          'Hamilton’s charge from the back after a title-fight penalty — COTA as courtroom and theatre.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'baku',
+      name: 'Baku City Circuit',
+      country: 'Azerbaijan',
+      city: 'Baku',
+      flag_emoji: '🇦🇿',
+      first_f1_race_year: 2016,
+      lap_length_km: 6.003,
+      total_laps_typical: 51,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2021,
+        description: 'The castle-walls race that rewrote the championship with a late-race restart.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'catalunya',
+      name: 'Circuit de Barcelona-Catalunya',
+      country: 'Spain',
+      city: 'Montmeló',
+      flag_emoji: '🇪🇸',
+      first_f1_race_year: 1991,
+      lap_length_km: 4.675,
+      total_laps_typical: 66,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2021,
+        description: 'Verstappen’s first Barcelona win — proof the Red Bull could hurt Mercedes on merit.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'hungaroring',
+      name: 'Hungaroring',
+      country: 'Hungary',
+      city: 'Budapest',
+      flag_emoji: '🇭🇺',
+      first_f1_race_year: 1986,
+      lap_length_km: 4.381,
+      total_laps_typical: 70,
+      drs_zones: 1,
+      overtaking_difficulty: 4,
+      iconic_moment: {
+        year: 2021,
+        description: 'Ocon’s maiden win in a chaotic wet-dry Hungarian afternoon.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'imola',
+      name: 'Autodromo Enzo e Dino Ferrari',
+      country: 'Italy',
+      city: 'Imola',
+      flag_emoji: '🇮🇹',
+      first_f1_race_year: 1980,
+      lap_length_km: 4.909,
+      total_laps_typical: 63,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2021,
+        description: 'Hamilton’s recovery drive after a Turn 1 tangle — Imola as pressure cooker.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'istanbul',
+      name: 'Istanbul Park',
+      country: 'Turkey',
+      city: 'Istanbul',
+      flag_emoji: '🇹🇷',
+      first_f1_race_year: 2005,
+      lap_length_km: 5.338,
+      total_laps_typical: 58,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2021,
+        description: 'Inter wet-tyre mastery — Hamilton’s eighth Turkish win in treacherous conditions.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'losail',
+      name: 'Losail International Circuit',
+      country: 'Qatar',
+      city: 'Lusail',
+      flag_emoji: '🇶🇦',
+      first_f1_race_year: 2021,
+      lap_length_km: 5.419,
+      total_laps_typical: 57,
+      drs_zones: 1,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2021,
+        description: 'Verstappen’s first Qatar win under the floodlights as the title fight tightened.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'madring',
+      name: 'Madring Circuit',
+      country: 'Spain',
+      city: 'Madrid',
+      flag_emoji: '🇪🇸',
+      first_f1_race_year: 2026,
+      lap_length_km: 5.47,
+      total_laps_typical: 57,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2026,
+        description: 'A new European chapter — Madrid’s first world-championship round.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'marina_bay',
+      name: 'Marina Bay Street Circuit',
+      country: 'Singapore',
+      city: 'Singapore',
+      flag_emoji: '🇸🇬',
+      first_f1_race_year: 2008,
+      lap_length_km: 4.928,
+      total_laps_typical: 62,
+      drs_zones: 3,
+      overtaking_difficulty: 4,
+      iconic_moment: {
+        year: 2023,
+        description: 'A night race that bent strategies under Safety Cars and street-light glare.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'miami',
+      name: 'Miami International Autodrome',
+      country: 'USA',
+      city: 'Miami',
+      flag_emoji: '🇺🇸',
+      first_f1_race_year: 2022,
+      lap_length_km: 5.412,
+      total_laps_typical: 57,
+      drs_zones: 3,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2022,
+        description: 'Verstappen wins the inaugural Miami GP — neon, yachts, and flat-out slipstream.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'portimao',
+      name: 'Autódromo Internacional do Algarve',
+      country: 'Portugal',
+      city: 'Portimão',
+      flag_emoji: '🇵🇹',
+      first_f1_race_year: 2020,
+      lap_length_km: 4.653,
+      total_laps_typical: 66,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2021,
+        description: 'Hamilton wins in Portugal on a circuit F1 visited once in the hybrid era.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'red_bull_ring',
+      name: 'Red Bull Ring',
+      country: 'Austria',
+      city: 'Spielberg',
+      flag_emoji: '🇦🇹',
+      first_f1_race_year: 1970,
+      lap_length_km: 4.318,
+      total_laps_typical: 71,
+      drs_zones: 2,
+      overtaking_difficulty: 2,
+      iconic_moment: {
+        year: 2022,
+        description: 'A home-nation double-header where tyre wear and track limits told the story.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'ricard',
+      name: 'Circuit Paul Ricard',
+      country: 'France',
+      city: 'Le Castellet',
+      flag_emoji: '🇫🇷',
+      first_f1_race_year: 1971,
+      lap_length_km: 5.842,
+      total_laps_typical: 53,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2021,
+        description: 'Verstappen’s Paul Ricard win — blue-striped asphalt and French summer heat.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'rodriguez',
+      name: 'Autódromo Hermanos Rodríguez',
+      country: 'Mexico',
+      city: 'Mexico City',
+      flag_emoji: '🇲🇽',
+      first_f1_race_year: 1963,
+      lap_length_km: 4.304,
+      total_laps_typical: 71,
+      drs_zones: 2,
+      overtaking_difficulty: 2,
+      iconic_moment: {
+        year: 2021,
+        description: 'Hamilton’s 100th win in altitude-thin air at the Autódromo.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'shanghai',
+      name: 'Shanghai International Circuit',
+      country: 'China',
+      city: 'Shanghai',
+      flag_emoji: '🇨🇳',
+      first_f1_race_year: 2004,
+      lap_length_km: 5.451,
+      total_laps_typical: 56,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2024,
+        description: 'F1’s return to China after five years — a full grandstand roar.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'sochi',
+      name: 'Sochi Autodrom',
+      country: 'Russia',
+      city: 'Sochi',
+      flag_emoji: '🇷🇺',
+      first_f1_race_year: 2014,
+      lap_length_km: 5.848,
+      total_laps_typical: 53,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2021,
+        description: 'Norris’s near-miss heartbreak before the late Safety Car reshuffle.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'vegas',
+      name: 'Las Vegas Strip Circuit',
+      country: 'USA',
+      city: 'Las Vegas',
+      flag_emoji: '🇺🇸',
+      first_f1_race_year: 2023,
+      lap_length_km: 6.201,
+      total_laps_typical: 50,
+      drs_zones: 3,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2023,
+        description: 'The Strip under lights — Verstappen clinches a third title in the desert.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'villeneuve',
+      name: 'Circuit Gilles Villeneuve',
+      country: 'Canada',
+      city: 'Montreal',
+      flag_emoji: '🇨🇦',
+      first_f1_race_year: 1978,
+      lap_length_km: 4.361,
+      total_laps_typical: 70,
+      drs_zones: 2,
+      overtaking_difficulty: 2,
+      iconic_moment: {
+        year: 2022,
+        description: 'Wet-weather chaos and a Ferrari 1–2 when Montreal turned monsoon.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'yas_marina',
+      name: 'Yas Marina Circuit',
+      country: 'UAE',
+      city: 'Abu Dhabi',
+      flag_emoji: '🇦🇪',
+      first_f1_race_year: 2009,
+      lap_length_km: 5.281,
+      total_laps_typical: 58,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2021,
+        description: 'The controversial final-lap title decider that split a generation of fans.',
+      },
+    }),
+    seedCircuit({
+      circuitId: 'zandvoort',
+      name: 'Circuit Zandvoort',
+      country: 'Netherlands',
+      city: 'Zandvoort',
+      flag_emoji: '🇳🇱',
+      first_f1_race_year: 1952,
+      lap_length_km: 4.259,
+      total_laps_typical: 72,
+      drs_zones: 2,
+      overtaking_difficulty: 3,
+      iconic_moment: {
+        year: 2021,
+        description: 'Orange army euphoria — Verstappen’s first home Dutch Grand Prix win.',
+      },
+    }),
   ];
 
+  CIRCUITS.sort((a, b) => a.name.localeCompare(b.name, 'en'));
+
   const byHash = new Map(CIRCUITS.map((c) => [c.hash.toLowerCase(), c]));
+  const vegasCircuit = byHash.get('vegas');
+  if (vegasCircuit) byHash.set('las_vegas', vegasCircuit);
 
   function escapeHtml(s) {
     return String(s ?? '')
@@ -353,7 +761,157 @@
     return `${RACE_HISTORY_CACHE_PREFIX}${circuitId}_${year}`;
   }
 
-  async function fetchErgastJson(path) {
+  function raceHistoryNegativeKey(circuitId, year) {
+    return `${RACE_HISTORY_CACHE_PREFIX}neg_${circuitId}_${year}`;
+  }
+
+  function raceHistoryTtlMs(year) {
+    return year < SEASON_CURRENT ? RACE_HISTORY_TTL_HISTORICAL_MS : RACE_HISTORY_TTL_CURRENT_MS;
+  }
+
+  function isCacheableRaceHistory(data) {
+    if (!data || typeof data !== 'object' || data.absent === true) return false;
+    return Boolean(data.winner || data.pole || data.fl || (Array.isArray(data.podium) && data.podium.length));
+  }
+
+  function ergastCircuitIds(circuitId) {
+    const id = String(circuitId || '').trim().toLowerCase();
+    const out = [id];
+    const aliases = CIRCUIT_ASSET_ALIASES[id];
+    if (aliases) for (const a of aliases) if (!out.includes(a)) out.push(a);
+    return out;
+  }
+
+  function pickLatestRace(races) {
+    if (!Array.isArray(races) || races.length === 0) return null;
+    return races.reduce((best, r) => {
+      const round = Number(r?.round || 0);
+      if (!round) return best;
+      if (!best || round > Number(best.round || 0)) return r;
+      return best;
+    }, null);
+  }
+
+  function parseRaceHistoryEntry(raw) {
+    if (!raw) return null;
+    try {
+      const o = JSON.parse(raw);
+      if (o && typeof o === 'object' && typeof o.t === 'number' && 'd' in o) {
+        return { data: o.d, storedAt: o.t };
+      }
+      if (o && typeof o === 'object' && ('absent' in o || 'winner' in o)) {
+        return { data: o, storedAt: Date.now() };
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  function readRaceHistoryNegative(circuitId, year) {
+    const key = raceHistoryNegativeKey(circuitId, year);
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) return false;
+      const o = JSON.parse(raw);
+      if (!o || typeof o.t !== 'number') return false;
+      if (Date.now() - o.t >= RACE_HISTORY_NEGATIVE_MS) {
+        sessionStorage.removeItem(key);
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function writeRaceHistoryNegative(circuitId, year) {
+    try {
+      sessionStorage.setItem(raceHistoryNegativeKey(circuitId, year), JSON.stringify({ t: Date.now() }));
+    } catch {
+      // ignore
+    }
+  }
+
+  function clearRaceHistoryNegative(circuitId, year) {
+    try {
+      sessionStorage.removeItem(raceHistoryNegativeKey(circuitId, year));
+    } catch {
+      // ignore
+    }
+  }
+
+  function readRaceHistoryCache(circuitId, year) {
+    const key = raceHistoryCacheKey(circuitId, year);
+    const sess = parseRaceHistoryEntry(sessionStorage.getItem(key));
+    if (sess?.data && isCacheableRaceHistory(sess.data)) return sess.data;
+
+    try {
+      const raw = localStorage.getItem(key);
+      const loc = parseRaceHistoryEntry(raw);
+      if (!loc?.data || !isCacheableRaceHistory(loc.data)) {
+        if (loc && !isCacheableRaceHistory(loc.data)) localStorage.removeItem(key);
+        return null;
+      }
+      const age = Date.now() - (loc.storedAt || 0);
+      if (age >= 0 && age < raceHistoryTtlMs(year)) {
+        try {
+          sessionStorage.setItem(key, JSON.stringify({ t: loc.storedAt || Date.now(), d: loc.data }));
+        } catch {
+          // ignore
+        }
+        return loc.data;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  function writeRaceHistoryCache(circuitId, year, data) {
+    if (!isCacheableRaceHistory(data)) return;
+    const key = raceHistoryCacheKey(circuitId, year);
+    const bundle = JSON.stringify({ t: Date.now(), d: data });
+    try {
+      sessionStorage.setItem(key, bundle);
+    } catch {
+      // ignore
+    }
+    try {
+      localStorage.setItem(key, bundle);
+    } catch {
+      // ignore quota
+    }
+  }
+
+  const f1StaticMem = new Map();
+
+  function circuitHistoryStaticUrl(circuitId, year) {
+    const id = String(circuitId || '')
+      .trim()
+      .toLowerCase();
+    if (!id || !Number.isFinite(year)) return null;
+    return `/data/f1/circuits/${id}/${year}.json`;
+  }
+
+  async function fetchF1StaticHistory(circuitId, year) {
+    const url = circuitHistoryStaticUrl(circuitId, year);
+    if (!url) return null;
+    const memKey = url;
+    if (f1StaticMem.has(memKey)) return f1StaticMem.get(memKey);
+    try {
+      const r = await fetch(url, { headers: { Accept: 'application/json' } });
+      if (!r.ok) return null;
+      const data = await r.json();
+      if (!data || typeof data !== 'object') return null;
+      f1StaticMem.set(memKey, data);
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
+  async function fetchErgastApiJson(path) {
     const url = `/api/f1-season?path=${encodeURIComponent(path)}`;
     const r = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!r.ok) {
@@ -361,6 +919,10 @@
       throw new Error('Ergast fetch failed');
     }
     return r.json();
+  }
+
+  async function fetchErgastJson(path) {
+    return fetchErgastApiJson(path);
   }
 
   function normalizeCircuitBasename(raw) {
@@ -539,36 +1101,50 @@
     }
   }
 
+  function enqueueWiki(task) {
+    const run = wikiChain.then(async () => {
+      const wait = Math.max(0, wikiNextAt - Date.now());
+      if (wait) await new Promise((r) => window.setTimeout(r, wait));
+      const result = await task();
+      wikiNextAt = Date.now() + WIKI_GAP_MS;
+      return result;
+    });
+    wikiChain = run.catch(() => {});
+    return run;
+  }
+
   async function loadCircuitCoverFromWiki(c) {
-    const title = `${String(c.name || '').trim()} Formula 1`;
-    if (!title || title === 'Formula 1') return '';
-    if (isWikiCoverMiss(title)) return '';
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 4500);
-    try {
-      const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=1200&titles=${encodeURIComponent(title)}`;
-      const r = await fetch(url, { signal: controller.signal });
-      if (!r.ok) {
+    return enqueueWiki(async () => {
+      const title = `${String(c.name || '').trim()} Formula 1`;
+      if (!title || title === 'Formula 1') return '';
+      if (isWikiCoverMiss(title)) return '';
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 4500);
+      try {
+        const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=1200&titles=${encodeURIComponent(title)}`;
+        const r = await fetch(url, { signal: controller.signal });
+        if (!r.ok) {
+          markWikiCoverMiss(title);
+          return '';
+        }
+        const j = await r.json();
+        const thumb = wikiThumbFromQueryJson(j);
+        if (!thumb) markWikiCoverMiss(title);
+        return thumb;
+      } catch {
         markWikiCoverMiss(title);
         return '';
+      } finally {
+        window.clearTimeout(timer);
       }
-      const j = await r.json();
-      const thumb = wikiThumbFromQueryJson(j);
-      if (!thumb) markWikiCoverMiss(title);
-      return thumb;
-    } catch {
-      markWikiCoverMiss(title);
-      return '';
-    } finally {
-      window.clearTimeout(timer);
-    }
+    });
   }
 
   function circuitCoverCandidates(c) {
     const urls = [];
     for (const b of buildCircuitBasenames(c)) {
       for (const root of ['/circuits/', '../circuits/']) {
-        for (const ext of ['webp', 'jpg', 'png']) {
+        for (const ext of ['webp', 'jpg', 'png', 'svg']) {
           urls.push(`${root}${b}.${ext}`);
         }
       }
@@ -607,10 +1183,9 @@
     empty.hidden = true;
     grid.innerHTML = list
       .map((c, i) => {
-        const span = MASONRY_SPANS[i % MASONRY_SPANS.length];
-        const spanCls = span ? ` ${span}` : '';
+        const accent = i % 9 === 0 ? ' trackCard--accent' : '';
         return `
-<a class="trackCard${spanCls}" href="#${escapeHtml(c.hash)}" data-hash="${escapeHtml(c.hash)}">
+<a class="trackCard${accent}" href="#${escapeHtml(c.hash)}" data-hash="${escapeHtml(c.hash)}">
   <div class="trackCard__media">
     <img class="trackCard__cover" alt="" loading="lazy" decoding="async" />
     <div class="trackCard__fallback" hidden aria-hidden="true">
@@ -629,15 +1204,38 @@
       })
       .join('');
 
+    ensureCoverObserver();
     list.forEach((c) => {
       const card = grid.querySelector(`a.trackCard[data-hash="${c.hash}"]`);
       if (!(card instanceof HTMLElement)) return;
-      const cover = card.querySelector('img.trackCard__cover');
-      const svg = card.querySelector('img.trackCard__svg');
-      const fallback = card.querySelector('.trackCard__fallback');
-      if (cover instanceof HTMLImageElement) void attachCircuitCover(card, cover, fallback, c);
-      if (svg instanceof HTMLImageElement) void attachCircuitSvg(svg, c);
+      card.dataset.circuitReady = '0';
+      state.coverObserver?.observe(card);
     });
+  }
+
+  function ensureCoverObserver() {
+    if (state.coverObserver) return;
+    state.coverObserver = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          const card = e.target;
+          if (!(card instanceof HTMLElement)) continue;
+          if (card.dataset.circuitReady === '1') continue;
+          card.dataset.circuitReady = '1';
+          state.coverObserver?.unobserve(card);
+          const hash = card.dataset.hash || '';
+          const c = byHash.get(String(hash).toLowerCase());
+          if (!c) continue;
+          const cover = card.querySelector('img.trackCard__cover');
+          const svg = card.querySelector('img.trackCard__svg');
+          const fallback = card.querySelector('.trackCard__fallback');
+          if (cover instanceof HTMLImageElement) void attachCircuitCover(card, cover, fallback, c);
+          if (svg instanceof HTMLImageElement) void attachCircuitSvg(svg, c);
+        }
+      },
+      { rootMargin: '120px 0px', threshold: 0.01 },
+    );
   }
 
   async function attachCircuitCover(card, img, fallbackEl, c) {
@@ -648,6 +1246,7 @@
       decoding: 'async',
       referrerPolicy: 'no-referrer',
       onSuccess: () => {
+        if (/\.svg(?:$|\?)/i.test(img.src)) img.classList.add('is-map');
         img.classList.add('is-loaded');
         card.classList.remove('is-fallback');
         if (fallbackEl instanceof HTMLElement) fallbackEl.hidden = true;
@@ -886,16 +1485,10 @@
       row.innerHTML = `<td class="histYear">${y}</td><td colspan="4"><span class="histShimmer" aria-hidden="true"></span></td>`;
     });
 
-    const concurrency = 2;
-    let nextIdx = 0;
-    async function worker() {
-      while (true) {
-        const cur = nextIdx;
-        nextIdx += 1;
-        if (cur >= years.length) break;
-        const y = years[cur];
+    await Promise.all(
+      years.map(async (y) => {
         const row = tbody.querySelector(`tr[data-year="${y}"]`);
-        if (!(row instanceof HTMLTableRowElement)) continue;
+        if (!(row instanceof HTMLTableRowElement)) return;
         try {
           const data = await loadYearRow(c.circuitId, y);
           row.className = data?.absent ? 'histRow' : data?.winner ? 'histRow histRow--winner' : 'histRow';
@@ -904,36 +1497,61 @@
           row.className = 'histRow';
           row.innerHTML = `<td class="histYear">${y}</td><td colspan="4" class="cellErr">Could not load</td>`;
         }
-      }
-    }
-    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+      }),
+    );
   }
 
   async function loadYearRow(circuitId, year) {
-    const key = raceHistoryCacheKey(circuitId, year);
-    const raw = sessionStorage.getItem(key);
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch {
-        sessionStorage.removeItem(key);
+    const cached = readRaceHistoryCache(circuitId, year);
+    if (cached) return cached;
+
+    const staticRow = await fetchF1StaticHistory(circuitId, year);
+    if (staticRow) {
+      if (staticRow.absent === true) return staticRow;
+      if (isCacheableRaceHistory(staticRow)) {
+        clearRaceHistoryNegative(circuitId, year);
+        writeRaceHistoryCache(circuitId, year, staticRow);
+        return staticRow;
       }
     }
-    const data = await fetchYearAggregate(circuitId, year);
-    try {
-      sessionStorage.setItem(key, JSON.stringify(data));
-    } catch {
-      // quota
+
+    if (readRaceHistoryNegative(circuitId, year)) {
+      return { absent: true };
     }
-    return data;
+
+    try {
+      const data = await fetchYearAggregate(circuitId, year);
+      if (data?.absent) return data;
+      if (!isCacheableRaceHistory(data)) {
+        writeRaceHistoryNegative(circuitId, year);
+        return { absent: true };
+      }
+      clearRaceHistoryNegative(circuitId, year);
+      writeRaceHistoryCache(circuitId, year, data);
+      return data;
+    } catch (err) {
+      writeRaceHistoryNegative(circuitId, year);
+      throw err;
+    }
+  }
+
+  async function findRaceForCircuitYear(circuitId, year) {
+    for (const id of ergastCircuitIds(circuitId)) {
+      const racesJson = await fetchErgastJson(`${year}/circuits/${id}/races.json`);
+      const race = pickLatestRace(racesJson?.MRData?.RaceTable?.Races);
+      if (race) return race;
+    }
+    const seasonJson = await fetchErgastJson(`${year}.json`);
+    const ids = new Set(ergastCircuitIds(circuitId));
+    const matches = (seasonJson?.MRData?.RaceTable?.Races || []).filter((r) =>
+      ids.has(String(r?.Circuit?.circuitId || '').toLowerCase()),
+    );
+    return pickLatestRace(matches);
   }
 
   async function fetchYearAggregate(circuitId, year) {
-    const racesJson = await fetchErgastJson(`${year}/circuits/${circuitId}/races.json`);
-    const race = racesJson?.MRData?.RaceTable?.Races?.[0];
-    if (!race) {
-      return { absent: true };
-    }
+    const race = await findRaceForCircuitYear(circuitId, year);
+    if (!race) return { absent: true };
     const round = Number(race.round || 0);
     if (!round) return { absent: true };
 
@@ -946,6 +1564,10 @@
     const pole = extractPoleSitter(qualJson);
     const fl = extractFastestLap(resultsJson);
     const podium = extractPodium(resultsJson);
+
+    if (!winner && !pole && !(podium && podium.length)) {
+      return { absent: true };
+    }
 
     return {
       absent: false,
@@ -1050,6 +1672,22 @@
     return h;
   }
 
+  function scrollBehavior() {
+    return prefersReducedMotion ? 'auto' : 'smooth';
+  }
+
+  function scrollToDetailView() {
+    const el = $('#viewDetail') || document.querySelector('.detailHero');
+    if (!(el instanceof HTMLElement)) return;
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: Math.max(0, top - 4), behavior: scrollBehavior() });
+  }
+
+  function restoreIndexScroll() {
+    const y = state.indexScrollY;
+    window.scrollTo({ top: y, behavior: scrollBehavior() });
+  }
+
   function onRoute() {
     const slug = parseHash();
     if (!slug) {
@@ -1057,7 +1695,7 @@
       setView('index');
       document.title = 'Circuit Atlas • Project Anthology';
       $('#main')?.focus?.();
-      window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+      requestAnimationFrame(() => restoreIndexScroll());
       return;
     }
     const c = byHash.get(slug);
@@ -1066,12 +1704,14 @@
       setView('index');
       document.title = 'Circuit Atlas • Project Anthology';
       $('#main')?.focus?.();
-      window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+      requestAnimationFrame(() => restoreIndexScroll());
       return;
     }
     setView('detail');
     renderDetail(c);
-    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => scrollToDetailView());
+    });
   }
 
   function init() {
@@ -1081,6 +1721,10 @@
     document.body.addEventListener('click', (e) => {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
+      const card = t.closest('a.trackCard[href^="#"]');
+      if (card instanceof HTMLAnchorElement && card.hash.length > 1) {
+        state.indexScrollY = window.scrollY;
+      }
       const a = t.closest('a[href="#"]');
       if (!(a instanceof HTMLAnchorElement)) return;
       const inDetail = Boolean(a.closest('#viewDetail'));
@@ -1094,7 +1738,6 @@
     if (detailNav instanceof HTMLAnchorElement) {
       detailNav.addEventListener('click', (e) => {
         e.preventDefault();
-        window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
         history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
         onRoute();
       });

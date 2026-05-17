@@ -73,8 +73,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
       console.error('[f1-live]', error);
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      return res.status(500).json({ error: msg });
     }
-    const msg = error instanceof Error ? error.message : 'Unknown error';
-    return res.status(500).json({ error: msg });
+    return res.status(500).json({ error: 'Upstream request failed' });
   }
 }

@@ -977,8 +977,35 @@ body {
   grid-template-columns: 1.3fr 0.7fr;
   gap: 16px;
 }
-/* Constructors column fits content; drivers tower sets row height without stretching the side panel. */
-#live .grid {
+/* Live timing bento: equal-height panels; scroll when showing standings (not live). */
+.timingBento {
+  align-items: stretch;
+}
+.timingBento__panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.timingBento__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.timingBento--standings .timingBento__scroll {
+  --timing-visible-rows: 5;
+  --timing-row-size: 56px;
+  max-height: calc(
+    var(--timing-visible-rows) * var(--timing-row-size) + (var(--timing-visible-rows) - 1) * 16px
+  );
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 2px;
+}
+.timingBento--standings .timingBento__panel {
+  min-height: calc(88px + var(--timing-visible-rows) * var(--timing-row-size) + (var(--timing-visible-rows) - 1) * 16px);
+}
+#live .grid:not(.timingBento--standings) {
   align-items: start;
 }
 .grid--history {
@@ -2173,187 +2200,374 @@ body:not(.is-nerd) .towerWrap.tower--live .towerRow {
 }
 
 .nerdPitMount {
+  padding: 2px 0 4px;
+}
+.pitList {
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 8px 4px 12px;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
 }
-.pitRace__title {
-  font-family: var(--font-display);
-  font-size: 20px;
-  letter-spacing: 0.06em;
-  margin: 0 0 10px;
+.pitList__loading,
+.pitViz__loading {
+  padding: 8px 10px;
+  margin: 0;
 }
-.pitRace__sub {
-  font-size: 12px;
+.pitAcc {
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+}
+.pitAcc:last-child {
+  border-bottom: 0;
+}
+.pitAcc.is-open {
+  background: color-mix(in oklab, var(--f1-carbon) 78%, transparent);
+}
+.pitAcc__head {
+  display: grid;
+  grid-template-columns: 34px 1fr 14px;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  min-height: 26px;
+  padding: 3px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pitAcc__head:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.pitAcc__head:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-offset);
+}
+.pitAcc__round {
+  font-size: 10px;
+  letter-spacing: 0.04em;
   color: var(--muted2);
-  margin: -6px 0 12px;
+}
+.pitAcc__name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pitAcc__chev {
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid var(--muted2);
+  border-bottom: 1.5px solid var(--muted2);
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+  justify-self: end;
+}
+.pitAcc.is-open .pitAcc__chev {
+  transform: rotate(-135deg) translateY(1px);
+}
+.pitAcc__body {
+  padding: 0 8px 6px;
+}
+.pitViz {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pitViz__legend {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 2px 0 0;
+}
+.pitLegendChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 14px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid rgba(0, 0, 0, 0.28);
+}
+.pitViz__scroll {
+  max-height: min(320px, 42vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  padding-right: 2px;
+}
+.pitViz__foot {
+  display: flex;
+  justify-content: center;
+  padding: 2px 0 0;
+}
+.pitLanes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .pitLane {
   display: grid;
-  grid-template-columns: 44px 1fr;
-  gap: 8px 10px;
+  grid-template-columns: 28px 1fr;
+  gap: 4px;
   align-items: center;
-  margin-bottom: 6px;
+  min-height: 18px;
 }
-.pitLane__no {
+.pitLane__code {
   font-family: var(--font-display);
-  font-size: 18px;
-  color: var(--muted2);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
   text-align: right;
+  line-height: 1;
 }
 .pitLane__track {
   position: relative;
-  height: 22px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
   overflow: hidden;
 }
 .pitStint {
   position: absolute;
-  top: 2px;
-  bottom: 2px;
-  border-radius: 5px;
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  cursor: pointer;
+  top: 1px;
+  bottom: 1px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.32);
+  cursor: default;
   padding: 0;
-  min-width: 4px;
-  transition: filter 160ms ease, transform 160ms ease;
+  min-width: 3px;
+  transition:
+    filter 140ms ease,
+    box-shadow 140ms ease;
 }
-.pitStint:hover {
-  filter: brightness(1.12);
-  transform: scaleY(1.06);
+.pitStint:hover,
+.pitStint:focus-visible {
+  filter: brightness(1.14);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+  z-index: 1;
 }
 .pitStint:focus-visible {
   outline: none;
-  box-shadow: var(--ring-offset);
+}
+.pitStint--soft {
+  background: linear-gradient(180deg, #ff6b6b 0%, #e63946 100%);
+}
+.pitStint--medium {
+  background: linear-gradient(180deg, #ffc857 0%, #e9a319 100%);
+}
+.pitStint--hard {
+  background: linear-gradient(180deg, #f8f9fa 0%, #d1d5db 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.pitStint--inter {
+  background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+}
+.pitStint--wet {
+  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+}
+.pitStint--unknown {
+  background: linear-gradient(180deg, #9ca3af 0%, #6b7280 100%);
 }
 .pitAxis {
   display: flex;
   justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   color: var(--muted2);
-  margin-top: 4px;
-  padding-left: 54px;
+  padding-left: 32px;
+  opacity: 0.85;
 }
-
-.nerdH2h__controls {
+.pitTip {
+  position: fixed;
+  z-index: 120;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 16px;
-  align-items: flex-end;
-  padding: 4px 4px 16px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 14px;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in oklab, var(--f1-red) 24%, var(--border));
+  background: color-mix(in oklab, var(--f1-carbon) 92%, #000 8%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  font-size: 11px;
+  max-width: min(240px, 92vw);
 }
-.nerdField {
+.pitTip__code {
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+.pitTip__compound {
+  font-family: var(--font-condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+.pitTip__laps,
+.pitTip__dur {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.nerdSimMount {
+  padding: 2px 0 6px;
+}
+.nerdSimBento {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 160px;
+  gap: 12px;
 }
-.nerdField__k {
+.nerdSimBento__rounds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nerdSimChip {
+  font-family: var(--font-condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+  padding: 7px 11px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
+}
+.nerdSimChip:hover {
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--f1-red) 28%, var(--border));
+}
+.nerdSimChip.is-active {
+  background: color-mix(in oklab, var(--f1-red) 14%, transparent);
+  border-color: color-mix(in oklab, var(--f1-red) 42%, transparent);
+  color: var(--text);
+}
+.nerdSimChip:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-offset);
+}
+.nerdSimBento__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 8px;
+}
+.nerdSimCard {
+  display: grid;
+  grid-template-columns: 40px 1fr 52px;
+  gap: 6px 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: text;
+}
+.nerdSimCard__code {
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.06em;
+}
+.nerdSimCard__name {
+  font-size: 11px;
+  color: var(--muted2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.nerdSimCard__pos {
+  width: 100%;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 6px;
+  text-align: center;
+}
+.nerdSimCard__pos::placeholder {
+  color: var(--muted2);
+  opacity: 0.85;
+}
+.nerdSimCard__pos:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-offset);
+}
+.nerdSimBento__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.nerdSimStandings--compact {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.nerdSimStandings__head {
   font-family: var(--font-condensed);
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 11px;
   color: var(--muted2);
+  margin-bottom: 6px;
 }
-.nerdSelect {
-  font: inherit;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 12px;
-}
-.nerdH2h__out {
-  font-size: 13px;
-  line-height: 1.5;
-}
-.nerdH2h__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
-  margin-top: 8px;
-}
-.nerdH2h__card {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.03);
-}
-.nerdH2h__chart {
-  margin-top: 10px;
-  width: 100%;
-  height: 120px;
-}
-.nerdH2h__chart polyline {
-  fill: none;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.nerdSimMount {
-  overflow-x: auto;
-  padding-bottom: 8px;
-}
-.nerdSimTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-  min-width: 520px;
-}
-.nerdSimTable th,
-.nerdSimTable td {
-  border: 1px solid var(--border);
-  padding: 6px 8px;
-  text-align: center;
-}
-.nerdSimTable th:first-child,
-.nerdSimTable td:first-child {
-  text-align: left;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.nerdSimTable select {
-  width: 100%;
-  font: inherit;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 4px 6px;
-}
-.nerdSimActions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: 12px 0;
-}
-.nerdSimStandings {
-  margin-top: 18px;
-}
-.nerdSimStandings ol {
+.nerdSimStandings__list {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.nerdSimStandings li {
+.nerdSimStandings__list li {
   display: grid;
-  grid-template-columns: 32px 52px 1fr 72px 120px;
-  gap: 8px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
-  font-size: 13px;
+  grid-template-columns: 24px 44px 1fr 52px minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 12px;
 }
 .nerdSimStandings .mono {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--muted2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.panel--snap .panel__titleRow {
+  margin-bottom: 2px;
+}
+.panel--snap .bars,
+.panel--snap .editorial {
+  padding-bottom: 12px;
+}
+.panel--snap .small.muted {
+  padding: 0 14px 12px;
 }
 
 .nerdDialog {
@@ -2436,6 +2650,9 @@ body:not(.is-nerd) .towerWrap.tower--live .towerRow {
   }
   body.is-nerd .nerd-only {
     animation: none !important;
+  }
+  .pitAcc__chev {
+    transition: none !important;
   }
   body.is-mode-animating .page {
     transition: none !important;

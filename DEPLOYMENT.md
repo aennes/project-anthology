@@ -123,6 +123,19 @@ Vercel Analytics ve Speed Insights otomatik olarak aktif edilir.
 2. **Image optimization**: Cloudinary CDN kullanmayı düşünün
 3. **Caching**: Browser cache ve CDN cache ayarlarını kontrol edin
 
+### F1 data (season-tracker / tracks)
+
+**Storage:** committed JSON under `public/data/f1/` (not Supabase). The browser loads historical seasons from `/data/f1/…` immediately; `/api/f1-season` is used for stale-while-revalidate on the current season and as a fallback. Live timing uses `/api/f1-live` only.
+
+**Before deploy** (or after a race weekend), refresh snapshots locally and commit:
+
+```bash
+npm run sync:f1:seasons   # fast: standings + calendar + circuit rows (no per-round tree)
+npm run sync:f1           # full: includes every completed round JSON under rounds/
+```
+
+Commit `public/data/f1/` after either command. Browser caches (`localStorage` / `sessionStorage`) still apply on top for repeat visits.
+
 ## Rollback
 
 Vercel Dashboard > Deployments > Previous deployment > "..." > "Promote to Production"
