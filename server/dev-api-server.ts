@@ -106,6 +106,11 @@ const server = http.createServer(async (req, res) => {
       await mod.default(patchedReq as any, patchedRes as any);
       return;
     }
+    if (pathname === '/api/f1-db' || pathname === '/api/f1-db/') {
+      const mod = await import('../api/f1-db');
+      await mod.default(patchedReq as any, patchedRes as any);
+      return;
+    }
   } catch (err) {
     console.error('Dev API error:', err);
     if (!patchedRes.headersSent) {

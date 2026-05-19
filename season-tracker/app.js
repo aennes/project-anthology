@@ -66,7 +66,7 @@
   const SEASON_LOCAL_TTL_CURRENT_MS = 2 * 60 * 60 * 1000;
   const SEASON_LOCAL_TTL_HISTORICAL_MS = 7 * 24 * 60 * 60 * 1000;
   /** After a failed fetch with no stale payload, avoid hammering the proxy. */
-  const SEASON_NEGATIVE_CACHE_MS = 5 * 60 * 1000;
+  const SEASON_NEGATIVE_CACHE_MS = 90 * 1000;
 
   function seasonLocalStorageKey(sessionKey) {
     return `f1_season_local_${sessionKey}`;
@@ -1519,6 +1519,9 @@
 
   async function resolveActiveSeasonYear() {
     for (let y = SEASON_CURRENT; y >= SEASON_MIN; y -= 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const dbJson = await fetchF1DbJson(`${y}/driverStandings.json`);
+      if (dbJson && extractDriverStandings(dbJson).length > 0) return y;
       const staticUrl = ergastPathToStaticUrl(`${y}/driverStandings.json`);
       if (staticUrl) {
         // eslint-disable-next-line no-await-in-loop
@@ -2933,6 +2936,60 @@
     return Number.isFinite(y) ? y : null;
   }
 
+  function ergastPathToDbQuery(ergastPath) {
+    const p = String(ergastPath || '')
+      .replace(/^\//, '')
+      .trim();
+    if (!p) return null;
+    const calendar = p.match(/^(\d{4})\.json$/);
+    if (calendar) return { year: Number(calendar[1]), resource: 'calendar' };
+    const standings = p.match(/^(\d{4})\/(driverStandings|constructorStandings)\.json$/);
+    if (standings) return { year: Number(standings[1]), resource: standings[2] };
+    const resultsFull = p.match(/^(\d{4})\/(\d+)\/results\.json$/);
+    if (resultsFull) return { year: Number(resultsFull[1]), round: Number(resultsFull[2]), suffix: 'results' };
+    const resultsLimit = p.match(/^(\d{4})\/(\d+)\/results\/(\d+)\.json$/);
+    if (resultsLimit) {
+      return {
+        year: Number(resultsLimit[1]),
+        round: Number(resultsLimit[2]),
+        suffix: `results-${resultsLimit[3]}`,
+      };
+    }
+    const qualifyingFull = p.match(/^(\d{4})\/(\d+)\/qualifying\.json$/);
+    if (qualifyingFull) {
+      return { year: Number(qualifyingFull[1]), round: Number(qualifyingFull[2]), suffix: 'qualifying' };
+    }
+    const qualifyingLimit = p.match(/^(\d{4})\/(\d+)\/qualifying\/(\d+)\.json$/);
+    if (qualifyingLimit) {
+      return {
+        year: Number(qualifyingLimit[1]),
+        round: Number(qualifyingLimit[2]),
+        suffix: `qualifying-${qualifyingLimit[3]}`,
+      };
+    }
+    return null;
+  }
+
+  async function fetchF1DbJson(ergastPath) {
+    const q = ergastPathToDbQuery(ergastPath);
+    if (!q) return null;
+    const sp = new URLSearchParams({ year: String(q.year) });
+    if (q.resource) sp.set('resource', q.resource);
+    if (q.round != null) sp.set('round', String(q.round));
+    if (q.suffix) sp.set('suffix', q.suffix);
+    try {
+      const r = await fetch(`/api/f1-db?${sp.toString()}`, { headers: { Accept: 'application/json' } });
+      if (r.status === 404 || r.status === 503) return null;
+      if (!r.ok) return null;
+      const json = await r.json();
+      if (json && typeof json === 'object' && 'error' in json && !json.MRData) return null;
+      if (!hasUsableMrData(json)) return null;
+      return json;
+    } catch {
+      return null;
+    }
+  }
+
   function ergastPathToStaticUrl(ergastPath) {
     const p = String(ergastPath || '')
       .replace(/^\//, '')
@@ -3018,10 +3075,17 @@
   }
 
   async function fetchErgastJson(path, cacheKeyForRevalidate) {
-    const staticUrl = ergastPathToStaticUrl(path);
     const year = parseYearFromErgastPath(path);
     const historical = year != null && year < SEASON_CURRENT;
 
+    const dbJson = await fetchF1DbJson(path);
+    if (dbJson) {
+      if (historical) return dbJson;
+      if (cacheKeyForRevalidate) revalidateErgastInBackground(path, cacheKeyForRevalidate);
+      return dbJson;
+    }
+
+    const staticUrl = ergastPathToStaticUrl(path);
     if (staticUrl) {
       const staticJson = await fetchF1StaticJson(staticUrl);
       if (staticJson) {

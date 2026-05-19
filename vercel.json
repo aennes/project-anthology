@@ -9,6 +9,9 @@
     "api/f1-season.ts": {
       "maxDuration": 10
     },
+    "api/f1-db.ts": {
+      "maxDuration": 10
+    },
     "api/**/*.ts": {
       "maxDuration": 10
     }
