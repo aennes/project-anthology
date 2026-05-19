@@ -20,8 +20,6 @@
   const RACE_HISTORY_NEGATIVE_MS = 5 * 60 * 1000;
   /** Gap between starting each year fetch (ms) to avoid proxy bursts. */
   const RACE_HISTORY_STAGGER_MS = 120;
-  const WIKI_COVER_MISS_PREFIX = 'tracks_wiki_cover_miss:';
-
   const prefersReducedMotion =
     window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
 
@@ -70,11 +68,11 @@
     Netherlands: 'NLD',
   };
 
-  const SAFE_IMAGE_HOSTS = new Set(['upload.wikimedia.org']);
-
-  const WIKI_GAP_MS = 400;
-  let wikiChain = Promise.resolve();
-  let wikiNextAt = 0;
+  const CC = window.AnthologyCircuitCovers;
+  if (!CC) {
+    console.error('AnthologyCircuitCovers missing — load /circuit-covers.js before tracks/app.js');
+    return;
+  }
 
   /** @param {Partial<Circuit> & Pick<Circuit, 'circuitId'|'name'|'country'|'flag_emoji'|'first_f1_race_year'|'lap_length_km'|'total_laps_typical'|'iconic_moment'>} partial */
   function seedCircuit(partial) {
@@ -925,241 +923,8 @@
     return fetchErgastApiJson(path);
   }
 
-  function normalizeCircuitBasename(raw) {
-    return String(raw || '')
-      .trim()
-      .toLowerCase()
-      .replace(/&/g, 'and')
-      .replace(/[^a-z0-9_-]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .replace(/-/g, '_');
-  }
-
-  function buildCircuitBasenames(c) {
-    const out = [];
-    const seen = new Set();
-    const push = (stem) => {
-      const n = normalizeCircuitBasename(stem);
-      if (!n || seen.has(n)) return;
-      seen.add(n);
-      out.push(n);
-    };
-    const id = c?.circuitId ? String(c.circuitId).trim().toLowerCase() : '';
-    if (id) {
-      push(id);
-      const aliases = CIRCUIT_ASSET_ALIASES[id];
-      if (aliases) for (const a of aliases) push(a);
-    }
-    push(String(c.name || '').replace(/\s+/g, '_'));
-    return out;
-  }
-
   function countryCode(c) {
     return COUNTRY_CODES[c.country] || String(c.country || '').slice(0, 3).toUpperCase();
-  }
-
-  function isImageSrcAllowed(raw) {
-    let s = String(raw ?? '').trim();
-    if (!s) return false;
-    if (s.startsWith('//')) s = `https:${s}`;
-    const lower = s.toLowerCase();
-    if (lower.startsWith('javascript:') || lower.startsWith('vbscript:')) return false;
-    if (lower.startsWith('data:') || lower.startsWith('blob:')) return false;
-    if (s.startsWith('/')) {
-      if (s.includes('..') || s.includes('\\') || s.includes('\0')) return false;
-      return s.startsWith('/circuits/');
-    }
-    if (s.startsWith('../')) {
-      if (s.includes('\0') || s.includes('..\\')) return false;
-      if (/\.\.\/\.\./.test(s)) return false;
-      return s.startsWith('../circuits/');
-    }
-    if (!lower.startsWith('https://')) return false;
-    try {
-      return SAFE_IMAGE_HOSTS.has(new URL(s).hostname.toLowerCase());
-    } catch {
-      return false;
-    }
-  }
-
-  function dedupePreserveOrder(items) {
-    const seen = new Set();
-    const out = [];
-    for (const x of items) {
-      const t = String(x ?? '').trim();
-      if (!t || seen.has(t)) continue;
-      seen.add(t);
-      out.push(t);
-    }
-    return out;
-  }
-
-  function setImageWithFallbacks(img, candidates, opts) {
-    const options = opts || {};
-    if (typeof img.__safeImgSupersede === 'function') img.__safeImgSupersede();
-
-    const shouldApply = typeof options.shouldApply === 'function' ? options.shouldApply : () => true;
-    const urls = dedupePreserveOrder(candidates).filter(isImageSrcAllowed);
-
-    if (options.alt !== undefined) img.alt = String(options.alt);
-    if (options.referrerPolicy) img.referrerPolicy = options.referrerPolicy;
-    if (options.loading) img.loading = options.loading;
-    if (options.decoding) img.decoding = options.decoding;
-
-    return new Promise((resolve) => {
-      let settled = false;
-      const finish = (ok) => {
-        if (settled) return;
-        settled = true;
-        if (img.__safeImgSupersede === supersedeSelf) img.__safeImgSupersede = null;
-        resolve(ok);
-      };
-      const supersedeSelf = () => finish(false);
-      img.__safeImgSupersede = supersedeSelf;
-
-      if (urls.length === 0) {
-        if (shouldApply()) options.onShowPlaceholder?.();
-        finish(false);
-        return;
-      }
-
-      let idx = 0;
-      let loadSerial = 0;
-
-      const tryNext = () => {
-        if (settled) return;
-        if (idx >= urls.length) {
-          if (shouldApply()) {
-            img.removeAttribute('src');
-            options.onShowPlaceholder?.();
-          }
-          finish(false);
-          return;
-        }
-        const url = urls[idx];
-        idx += 1;
-        const serial = (loadSerial += 1);
-
-        const cleanup = () => {
-          img.removeEventListener('load', onLoad);
-          img.removeEventListener('error', onErr);
-        };
-
-        const onLoad = () => {
-          if (settled) return;
-          if (serial !== loadSerial) return;
-          cleanup();
-          if (shouldApply()) {
-            img.src = url;
-            options.onSuccess?.();
-          }
-          finish(true);
-        };
-
-        const onErr = () => {
-          if (settled) return;
-          if (serial !== loadSerial) return;
-          cleanup();
-          tryNext();
-        };
-
-        img.addEventListener('load', onLoad);
-        img.addEventListener('error', onErr);
-        img.src = url;
-      };
-
-      tryNext();
-    });
-  }
-
-  function wikiThumbFromQueryJson(j) {
-    const pages = j?.query?.pages || {};
-    const first = pages[Object.keys(pages)[0]];
-    const src = first?.thumbnail?.source || '';
-    if (!src || !isImageSrcAllowed(src)) return '';
-    return src;
-  }
-
-  function wikiCoverMissKey(title) {
-    return `${WIKI_COVER_MISS_PREFIX}${title.toLowerCase()}`;
-  }
-
-  function isWikiCoverMiss(title) {
-    try {
-      return sessionStorage.getItem(wikiCoverMissKey(title)) === '1';
-    } catch {
-      return false;
-    }
-  }
-
-  function markWikiCoverMiss(title) {
-    try {
-      sessionStorage.setItem(wikiCoverMissKey(title), '1');
-    } catch {
-      // ignore quota / private mode
-    }
-  }
-
-  function enqueueWiki(task) {
-    const run = wikiChain.then(async () => {
-      const wait = Math.max(0, wikiNextAt - Date.now());
-      if (wait) await new Promise((r) => window.setTimeout(r, wait));
-      const result = await task();
-      wikiNextAt = Date.now() + WIKI_GAP_MS;
-      return result;
-    });
-    wikiChain = run.catch(() => {});
-    return run;
-  }
-
-  async function loadCircuitCoverFromWiki(c) {
-    return enqueueWiki(async () => {
-      const title = `${String(c.name || '').trim()} Formula 1`;
-      if (!title || title === 'Formula 1') return '';
-      if (isWikiCoverMiss(title)) return '';
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 4500);
-      try {
-        const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=1200&titles=${encodeURIComponent(title)}`;
-        const r = await fetch(url, { signal: controller.signal });
-        if (!r.ok) {
-          markWikiCoverMiss(title);
-          return '';
-        }
-        const j = await r.json();
-        const thumb = wikiThumbFromQueryJson(j);
-        if (!thumb) markWikiCoverMiss(title);
-        return thumb;
-      } catch {
-        markWikiCoverMiss(title);
-        return '';
-      } finally {
-        window.clearTimeout(timer);
-      }
-    });
-  }
-
-  function circuitCoverCandidates(c) {
-    const urls = [];
-    for (const b of buildCircuitBasenames(c)) {
-      for (const root of ['/circuits/', '../circuits/']) {
-        for (const ext of ['webp', 'jpg', 'png', 'svg']) {
-          urls.push(`${root}${b}.${ext}`);
-        }
-      }
-    }
-    return urls;
-  }
-
-  function circuitSvgCandidates(c) {
-    const urls = [];
-    for (const b of buildCircuitBasenames(c)) {
-      for (const root of ['/circuits/', '../circuits/']) {
-        urls.push(`${root}${b}.svg`);
-      }
-    }
-    return urls;
   }
 
   function renderOvertakingDots(n) {
@@ -1183,9 +948,9 @@
     empty.hidden = true;
     grid.innerHTML = list
       .map((c, i) => {
-        const accent = i % 9 === 0 ? ' trackCard--accent' : '';
+        const featured = i % 7 === 0 ? ' trackCard--featured' : '';
         return `
-<a class="trackCard${accent}" href="#${escapeHtml(c.hash)}" data-hash="${escapeHtml(c.hash)}">
+<a class="trackCard${featured}" href="#${escapeHtml(c.hash)}" data-hash="${escapeHtml(c.hash)}">
   <div class="trackCard__media">
     <img class="trackCard__cover" alt="" loading="lazy" decoding="async" />
     <div class="trackCard__fallback" hidden aria-hidden="true">
@@ -1238,57 +1003,24 @@
     );
   }
 
-  async function attachCircuitCover(card, img, fallbackEl, c) {
-    const local = circuitCoverCandidates(c);
-    const ok = await setImageWithFallbacks(img, local, {
+  async function attachCircuitCover(card, img, fallbackEl, c, loading = 'lazy') {
+    await CC.attachCircuitCover({
+      host: card,
+      img,
+      fallbackEl,
+      ctx: { circuitId: c.circuitId, name: c.name, circuit_svg: `${c.circuitId}.svg` },
+      wikiTitle: c.name,
       alt: c.name,
-      loading: 'lazy',
-      decoding: 'async',
-      referrerPolicy: 'no-referrer',
-      onSuccess: () => {
-        if (/\.svg(?:$|\?)/i.test(img.src)) img.classList.add('is-map');
-        img.classList.add('is-loaded');
-        card.classList.remove('is-fallback');
-        if (fallbackEl instanceof HTMLElement) fallbackEl.hidden = true;
-      },
-      onShowPlaceholder: () => showCoverFallback(card, fallbackEl),
+      loading,
     });
-    if (ok) return;
-    const wiki = await loadCircuitCoverFromWiki(c);
-    if (wiki) {
-      const wikiOk = await setImageWithFallbacks(img, [wiki], {
-        alt: c.name,
-        loading: 'lazy',
-        decoding: 'async',
-        referrerPolicy: 'no-referrer',
-        onSuccess: () => {
-          img.classList.add('is-loaded');
-          card.classList.remove('is-fallback');
-          if (fallbackEl instanceof HTMLElement) fallbackEl.hidden = true;
-        },
-        onShowPlaceholder: () => showCoverFallback(card, fallbackEl),
-      });
-      if (wikiOk) return;
-    }
-    showCoverFallback(card, fallbackEl);
-  }
-
-  function showCoverFallback(card, fallbackEl) {
-    card.classList.add('is-fallback');
-    if (fallbackEl instanceof HTMLElement) fallbackEl.hidden = false;
   }
 
   async function attachCircuitSvg(img, c) {
-    const ok = await setImageWithFallbacks(img, circuitSvgCandidates(c), {
-      alt: '',
-      loading: 'lazy',
-      decoding: 'async',
-      referrerPolicy: 'no-referrer',
-      onSuccess: () => {
-        img.hidden = false;
-      },
+    await CC.attachCircuitSvgOverlay(img, {
+      circuitId: c.circuitId,
+      name: c.name,
+      circuit_svg: `${c.circuitId}.svg`,
     });
-    if (!ok) img.remove();
   }
 
   function setView(mode) {
@@ -1330,7 +1062,7 @@
       .join('');
 
     art.innerHTML = `
-<section class="detailHero io-section" aria-label="${escapeHtml(c.name)} hero" data-io>
+<section class="detailHero io-section cine-letterbox" aria-label="${escapeHtml(c.name)} hero" data-io>
   <div class="detailHero__media">
     <img id="detailHeroCover" class="detailHero__cover" alt="" loading="eager" decoding="async" />
     <div class="detailHero__fallback" hidden aria-hidden="true">
@@ -1347,7 +1079,7 @@
     </div>
     <h1 class="detailHero__title">${escapeHtml(c.name)}</h1>
     <p class="detailHero__sub">${escapeHtml(c.city)} · ${escapeHtml(c.country)} · F1 since ${escapeHtml(String(c.first_f1_race_year))}</p>
-    <div class="detailHero__tags">${tags}</div>
+    <div class="detailHero__tags cine-hscroll">${tags}</div>
   </div>
 </section>
 
@@ -1426,10 +1158,11 @@
     const fallback = art.querySelector('.detailHero__fallback');
     const svg = art.querySelector('.detailHero__svg');
     if (hero instanceof HTMLElement && cover instanceof HTMLImageElement) {
-      void attachCircuitCover(hero, cover, fallback, c);
+      void attachCircuitCover(hero, cover, fallback, c, 'eager');
     }
     if (svg instanceof HTMLImageElement) void attachCircuitSvg(svg, c);
     setupSectionIo(art);
+    window.AnthologyCinematic?.refresh?.();
 
     const tbody = $('#histBody');
     if (tbody) {
@@ -1485,20 +1218,35 @@
       row.innerHTML = `<td class="histYear">${y}</td><td colspan="4"><span class="histShimmer" aria-hidden="true"></span></td>`;
     });
 
-    await Promise.all(
-      years.map(async (y) => {
-        const row = tbody.querySelector(`tr[data-year="${y}"]`);
-        if (!(row instanceof HTMLTableRowElement)) return;
-        try {
-          const data = await loadYearRow(c.circuitId, y);
-          row.className = data?.absent ? 'histRow' : data?.winner ? 'histRow histRow--winner' : 'histRow';
-          row.innerHTML = formatHistoryRow(y, data);
-        } catch {
-          row.className = 'histRow';
-          row.innerHTML = `<td class="histYear">${y}</td><td colspan="4" class="cellErr">Could not load</td>`;
+    const concurrency = 2;
+    let nextYearIndex = 0;
+
+    async function loadOneYear(y) {
+      const row = tbody.querySelector(`tr[data-year="${y}"]`);
+      if (!(row instanceof HTMLTableRowElement)) return;
+      try {
+        const data = await loadYearRow(c.circuitId, y);
+        row.className = data?.absent ? 'histRow' : data?.winner ? 'histRow histRow--winner' : 'histRow';
+        row.innerHTML = formatHistoryRow(y, data);
+      } catch {
+        row.className = 'histRow';
+        row.innerHTML = `<td class="histYear">${y}</td><td colspan="4" class="cellErr">Could not load</td>`;
+      }
+    }
+
+    async function worker() {
+      while (nextYearIndex < years.length) {
+        const slot = nextYearIndex;
+        nextYearIndex += 1;
+        const y = years[slot];
+        if (slot > 0) {
+          await new Promise((r) => window.setTimeout(r, RACE_HISTORY_STAGGER_MS));
         }
-      }),
-    );
+        await loadOneYear(y);
+      }
+    }
+
+    await Promise.all(Array.from({ length: Math.min(concurrency, years.length) }, () => worker()));
   }
 
   async function loadYearRow(circuitId, year) {
@@ -1677,10 +1425,14 @@
   }
 
   function scrollToDetailView() {
-    const el = $('#viewDetail') || document.querySelector('.detailHero');
+    const el = document.querySelector('#viewDetail .detailHero');
     if (!(el instanceof HTMLElement)) return;
-    const top = el.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top: Math.max(0, top - 4), behavior: scrollBehavior() });
+    const navOffset =
+      Number.parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue('--anthology-nav-h'),
+      ) || 76;
+    const top = el.getBoundingClientRect().top + window.scrollY - navOffset;
+    window.scrollTo({ top: Math.max(0, top), behavior: scrollBehavior() });
   }
 
   function restoreIndexScroll() {

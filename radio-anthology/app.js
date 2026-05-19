@@ -16,6 +16,7 @@
    * @property {string[]} tags
    * @property {string} [audio_url]
    * @property {string} [related_story_id]
+   * @property {string} circuitId
    * @property {string} [circuit_svg]
    * @property {string} [pull_secondary]
    */
@@ -36,7 +37,7 @@
       significance:
         'Vettel passed Webber anyway, detonating trust inside the garage and becoming shorthand for broken team orders in the modern era.',
       tags: ['team-orders', 'red-bull', '2010s', 'championship'],
-      circuit_svg: 'bahrain.svg',
+      circuitId: 'sepang',
     },
     {
       id: 'webber-unbelievable-china-2013',
@@ -52,6 +53,7 @@
       significance:
         'The line captured the feeling of a driver who believed the machinery and strategy were fighting him as much as the field.',
       tags: ['strategy', 'red-bull', '2010s', 'frustration'],
+      circuitId: 'shanghai',
       circuit_svg: 'shanghai.svg',
     },
     {
@@ -68,6 +70,7 @@
       significance:
         'The exchange framed how much a champion is willing to risk when a crown is one corner away — and how calm the cockpit must sound even when the car is not.',
       tags: ['brazil', 'red-bull', '2010s', 'championship', 'pressure'],
+      circuitId: 'interlagos',
       circuit_svg: 'interlagos.svg',
     },
     {
@@ -84,6 +87,7 @@
       significance:
         'It became the meme-friendly distillation of Kimi’s persona: minimal words, maximum autonomy, and a refusal to dramatise the job.',
       tags: ['lotus', '2010s', 'comedy', 'cool'],
+      circuitId: 'buddh',
       pull_secondary: 'Yeah, yeah, yeah, yeah — I’m okay.',
     },
     {
@@ -101,7 +105,7 @@
         'The delivery turned into a cultural fingerprint for the sport on the internet — proof that tone matters as much as words in how fans remember a moment.',
       tags: ['interview', 'meme', '2010s', 'weather'],
       related_story_id: 'hamilton-silverstone',
-      circuit_svg: 'catalunya.svg',
+      circuitId: 'hockenheimring',
     },
     {
       id: 'sainz-smooth-operator-australia-2024',
@@ -117,6 +121,7 @@
       significance:
         'A rare radio snapshot where the story off the track (recovery) and the story on it (racecraft) lined up in one sentence.',
       tags: ['ferrari', '2024', 'comeback', 'celebration'],
+      circuitId: 'albert_park',
       circuit_svg: 'albert_park.svg',
     },
     {
@@ -133,6 +138,7 @@
       significance:
         'It distilled a painful era into one viral phrase — frustration so pure it became dark comedy for anyone who lived through McLaren-Honda.',
       tags: ['mclaren', '2010s', 'frustration', 'meme', 'honda'],
+      circuitId: 'hungaroring',
       circuit_svg: 'hungaroring.svg',
     },
     {
@@ -149,6 +155,7 @@
       significance:
         'The shout became the soundtrack to Norris’s first F1 rostrum — youthful hunger meeting a team that finally believed in the result.',
       tags: ['mclaren', '2021now', 'pressure', 'celebration'],
+      circuitId: 'red_bull_ring',
       circuit_svg: 'red_bull_ring.svg',
     },
     {
@@ -165,6 +172,7 @@
       significance:
         'Peak Ricciardo wit — turning another team’s misery into a punchline without ever raising his voice in the cockpit.',
       tags: ['renault', '2010s', 'comedy', 'sarcasm'],
+      circuitId: 'suzuka',
       circuit_svg: 'suzuka.svg',
     },
     {
@@ -181,6 +189,7 @@
       significance:
         'It showed how early Max could weaponise understatement — comedy as pressure release on a weekend that rarely offers peace.',
       tags: ['red-bull', '2010s', 'comedy', 'qualifying'],
+      circuitId: 'baku',
       circuit_svg: 'baku.svg',
     },
     {
@@ -198,6 +207,7 @@
         'A rare moment where radio joy matched fairytale results — Brawn’s miracle year finding its voice on the most romantic lap in the sport.',
       tags: ['2000s', 'comedy', 'qualifying', 'championship'],
       related_story_id: 'brawn-2009',
+      circuitId: 'monaco',
       circuit_svg: 'monaco.svg',
     },
     {
@@ -214,6 +224,7 @@
       significance:
         'Fans embraced the honesty — a star driver owning a error without deflection, in a sport that usually speaks in engineering euphemisms.',
       tags: ['ferrari', '2010s', 'pressure', 'meme'],
+      circuitId: 'monza',
       circuit_svg: 'monza.svg',
     },
     {
@@ -230,6 +241,7 @@
       significance:
         'The line marked the split second between violence and clarity — radio as lifeline, not theatre, on a day the sport will never forget.',
       tags: ['2021now', 'safety', 'pressure'],
+      circuitId: 'bahrain',
       circuit_svg: 'bahrain.svg',
     },
     {
@@ -246,20 +258,49 @@
       significance:
         'Proof that Red Bull’s radio culture runs on banter even in history-making drives — youth, rain, and laughter in one package.',
       tags: ['red-bull', '2010s', 'comedy', 'brazil', 'rain'],
+      circuitId: 'interlagos',
       circuit_svg: 'interlagos.svg',
     },
   ];
 
-  const CIRCUIT_TEXTURES = [
-    'monaco.svg',
-    'silverstone.svg',
-    'spa.svg',
-    'suzuka.svg',
-    'imola.svg',
-    'interlagos.svg',
-    'catalunya.svg',
-    'bahrain.svg',
-  ];
+  /** Display names for Wikimedia pageimages search (`{name} Formula 1`). */
+  const RADIO_CIRCUIT_WIKI = {
+    sepang: 'Sepang International Circuit',
+    shanghai: 'Shanghai International Circuit',
+    interlagos: 'Autódromo José Carlos Pace',
+    buddh: 'Buddh International Circuit',
+    hockenheimring: 'Hockenheimring',
+    albert_park: 'Albert Park Circuit',
+    hungaroring: 'Hungaroring',
+    red_bull_ring: 'Red Bull Ring',
+    suzuka: 'Suzuka International Racing Course',
+    baku: 'Baku City Circuit',
+    monaco: 'Circuit de Monaco',
+    monza: 'Autodromo Nazionale Monza',
+    bahrain: 'Bahrain International Circuit',
+  };
+
+  const CIRCUIT_FLAG_EMOJI = {
+    sepang: '🇲🇾',
+    shanghai: '🇨🇳',
+    interlagos: '🇧🇷',
+    buddh: '🇮🇳',
+    hockenheimring: '🇩🇪',
+    albert_park: '🇦🇺',
+    hungaroring: '🇭🇺',
+    red_bull_ring: '🇦🇹',
+    suzuka: '🇯🇵',
+    baku: '🇦🇿',
+    monaco: '🇲🇨',
+    monza: '🇮🇹',
+    bahrain: '🇧🇭',
+  };
+
+  const CC = window.AnthologyCircuitCovers;
+  if (!CC) {
+    console.error('AnthologyCircuitCovers missing — load /circuit-covers.js before radio-anthology/app.js');
+    return;
+  }
 
   const TEAM_HEX = {
     red_bull: '#3671C6',
@@ -292,14 +333,23 @@
   }
 
   /** @param {RadioEntry} entry */
-  function circuitTextureUrl(entry) {
-    if (entry.circuit_svg) return `/circuits/${entry.circuit_svg}`;
-    let h = 0;
-    const id = String(entry.id || '');
-    for (let i = 0; i < id.length; i++) {
-      h = (h + id.charCodeAt(i) * (i + 1)) % 10007;
-    }
-    return `/circuits/${CIRCUIT_TEXTURES[h % CIRCUIT_TEXTURES.length]}`;
+  function radioCoverCtx(entry) {
+    return {
+      circuitId: entry.circuitId,
+      circuit_svg: entry.circuit_svg,
+    };
+  }
+
+  /** @param {RadioEntry} entry */
+  function radioCircuitWikiName(entry) {
+    const id = String(entry.circuitId || '').trim().toLowerCase();
+    return RADIO_CIRCUIT_WIKI[id] || entry.gp_name || id;
+  }
+
+  /** @param {RadioEntry} entry */
+  function circuitFlagEmoji(entry) {
+    const id = String(entry.circuitId || '').trim().toLowerCase();
+    return CIRCUIT_FLAG_EMOJI[id] || '';
   }
 
   function teamColor(constructorId) {
@@ -327,13 +377,13 @@
     tag: 'all',
     driver: 'all',
     era: 'all',
+    coverObserver: /** @type {IntersectionObserver | null} */ (null),
   };
 
   const el = {
     viewIndex: $('#viewIndex'),
     viewDetail: $('#viewDetail'),
     detailArticle: $('#detailArticle'),
-    detailBack: /** @type {HTMLAnchorElement} */ ($('#detailBack')),
     topbarMoments: /** @type {HTMLAnchorElement} */ ($('#topbarMoments')),
     filterTag: /** @type {HTMLSelectElement} */ ($('#filterTag')),
     filterDriver: /** @type {HTMLSelectElement} */ ($('#filterDriver')),
@@ -382,6 +432,43 @@
     });
   }
 
+  function ensureCoverObserver() {
+    if (state.coverObserver) return;
+    state.coverObserver = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          const card = e.target;
+          if (!(card instanceof HTMLElement)) continue;
+          if (card.dataset.coverReady === '1') continue;
+          card.dataset.coverReady = '1';
+          state.coverObserver?.unobserve(card);
+          const id = card.getAttribute('data-id') || '';
+          const entry = byId.get(String(id).toLowerCase());
+          if (!entry) continue;
+          const img = card.querySelector('img.radioCard__photo');
+          const fallback = card.querySelector('.radioCard__coverFlag');
+          const circuit = card.querySelector('img.radioCard__circuit');
+          if (img instanceof HTMLImageElement) void attachRadioCardCover(card, img, fallback, entry);
+          if (circuit instanceof HTMLImageElement) void CC.attachCircuitSvgOverlay(circuit, radioCoverCtx(entry));
+        }
+      },
+      { rootMargin: '120px 0px', threshold: 0.01 },
+    );
+  }
+
+  async function attachRadioCardCover(card, img, fallbackEl, entry) {
+    await CC.attachCircuitCover({
+      host: card,
+      img,
+      fallbackEl,
+      ctx: radioCoverCtx(entry),
+      wikiTitle: radioCircuitWikiName(entry),
+      alt: '',
+      loading: 'lazy',
+    });
+  }
+
   function renderCards() {
     const list = filtered();
     el.filterCount.textContent =
@@ -399,24 +486,29 @@
     const frag = document.createDocumentFragment();
     list.forEach((entry, idx) => {
       const col = teamColor(entry.constructorId);
-      const cover = circuitTextureUrl(entry);
+      const flag = circuitFlagEmoji(entry);
       const chips = entry.tags
         .slice(0, 5)
         .map((t) => `<span class="chip">${escapeHtml(t)}</span>`)
         .join('');
       const rec = String(idx + 1).padStart(2, '0');
       const slug = archivalSlug(entry.id);
+      const flagBlock = flag
+        ? `<div class="radioCard__coverFlag" hidden aria-hidden="true"><span>${escapeHtml(flag)}</span></div>`
+        : '';
 
       const a = document.createElement('a');
-      a.className = 'radioCard';
+      a.className = 'radioCard cine-hover-lift';
       a.href = `#${encodeURIComponent(entry.id)}`;
       a.setAttribute('data-id', entry.id);
+      a.dataset.coverReady = '0';
       a.setAttribute('aria-label', `${entry.quote} — ${entry.driver}, ${entry.gp_name} ${entry.year}`);
       a.style.setProperty('--team', col);
-      a.style.setProperty('--cover-img', `url("${cover}")`);
-
       a.innerHTML = `
         <div class="radioCard__cover" aria-hidden="true">
+          <img class="radioCard__photo" alt="" loading="lazy" decoding="async" />
+          <img class="radioCard__circuit" alt="" loading="lazy" decoding="async" hidden />
+          ${flagBlock}
           <div class="radioCard__coverTint"></div>
           <div class="radioCard__vignette"></div>
           <div class="radioCard__scan"></div>
@@ -444,6 +536,10 @@
       frag.appendChild(a);
     });
     el.cardGrid.replaceChildren(frag);
+    ensureCoverObserver();
+    $$('.radioCard[data-id]', el.cardGrid).forEach((card) => {
+      if (card instanceof HTMLElement) state.coverObserver?.observe(card);
+    });
   }
 
   /** @param {'index'|'detail'} mode */
@@ -453,6 +549,7 @@
     if (el.viewDetail) el.viewDetail.hidden = !isDetail;
     if (el.topbarMoments) el.topbarMoments.hidden = !isDetail;
     document.body.classList.toggle('is-detail', isDetail);
+    document.body.classList.toggle('is-index', !isDetail);
   }
 
   /** @param {RadioEntry} entry */
@@ -461,10 +558,9 @@
     if (!art) return;
 
     const col = teamColor(entry.constructorId);
-    const cover = circuitTextureUrl(entry);
+    const flag = circuitFlagEmoji(entry);
     document.title = `${entry.quote} • Radio Anthology`;
     art.style.setProperty('--team', col);
-    art.style.setProperty('--cover-img', `url("${cover}")`);
     document.body.style.setProperty('--team', col);
 
     const storyHref = entry.related_story_id
@@ -503,7 +599,11 @@
 <section class="detailHero" aria-labelledby="detailQuote">
   <div class="detailHero__media" aria-hidden="true">
     <div class="detailHero__bg"></div>
-    <img class="detailHero__circuit" src="${escapeHtml(cover)}" alt="" width="400" height="400" decoding="async" />
+    <img class="detailHero__cover" alt="" loading="eager" decoding="async" />
+    <div class="detailHero__fallback" hidden aria-hidden="true">
+      <span class="detailHero__fallbackFlag">${flag ? escapeHtml(flag) : ''}</span>
+    </div>
+    <img class="detailHero__circuit" alt="" loading="lazy" decoding="async" hidden />
     <div class="detailHero__veil"></div>
   </div>
   <div class="detailHero__nav">
@@ -523,7 +623,7 @@
 
 <div class="detailSpread">
   <div class="detailSpread__grid">
-    <aside class="detailAside panel panel--glass">
+    <aside class="detailAside panel panel--glass cine-glass cine-sticky-aside">
       <span class="detailAside__seq font-mono">Sequence 01</span>
       <h2 class="detailAside__title">On the radio</h2>
       <div class="detailAside__rule" aria-hidden="true"></div>
@@ -560,11 +660,24 @@
       ${audio}
     </div>
   </div>
-</div>
+</div>`;
 
-<p class="detailNavRow detailNavRow--inline">
-  <a class="detailNav" href="#">← All moments</a>
-</p>`;
+    const hero = art.querySelector('.detailHero');
+    const coverImg = art.querySelector('img.detailHero__cover');
+    const fallback = art.querySelector('.detailHero__fallback');
+    const circuit = art.querySelector('img.detailHero__circuit');
+    if (hero instanceof HTMLElement && coverImg instanceof HTMLImageElement) {
+      void CC.attachCircuitCover({
+        host: hero,
+        img: coverImg,
+        fallbackEl: fallback,
+        ctx: radioCoverCtx(entry),
+        wikiTitle: radioCircuitWikiName(entry),
+        alt: entry.gp_name,
+        loading: 'eager',
+      });
+    }
+    if (circuit instanceof HTMLImageElement) void CC.attachCircuitSvgOverlay(circuit, radioCoverCtx(entry));
   }
 
   function parseHash() {
@@ -601,6 +714,7 @@
     }
     setView('detail');
     renderDetail(entry);
+    window.AnthologyCinematic?.refresh?.();
     scrollTop();
   }
 
@@ -630,10 +744,7 @@
       if (!(t instanceof HTMLElement)) return;
       const back = t.closest('a[href="#"]');
       if (!(back instanceof HTMLAnchorElement)) return;
-      const inDetail =
-        Boolean(back.closest('#viewDetail')) ||
-        back.id === 'topbarMoments' ||
-        back.id === 'detailBack';
+      const inDetail = back.id === 'topbarMoments';
       if (!inDetail) return;
       e.preventDefault();
       clearHash();

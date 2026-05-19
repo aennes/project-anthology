@@ -202,7 +202,7 @@ const Shell: React.FC = () => {
 
 const RoutedPageShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <div className="relative min-h-screen bg-f1-black text-paper selection:bg-f1-red selection:text-white overflow-x-hidden">
+    <div className="relative min-h-screen bg-f1-black text-paper selection:bg-f1-red selection:text-white overflow-x-hidden cine-route-shell">
       <NavBar />
       {children}
     </div>

@@ -1,0 +1,388 @@
+/**
+ * Project Anthology — shared cinematic design system
+ * Used by season-tracker, radio-anthology, tracks (+ optional React routes).
+ * Color tokens: inherit --f1-black, --f1-red, --paper, --f1-dark, --f1-carbon from page CSS.
+ */
+
+:root {
+  --cine-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --cine-ease-out: cubic-bezier(0.2, 1, 0.2, 1);
+  --cine-gap: 18px;
+  --cine-letterbox: clamp(28px, 5.5vh, 72px);
+  --cine-grain-opacity: 0.34;
+}
+
+/* —— Film grain (letterboxed hero only — not full page) —— */
+.cine-hero-grain,
+.hero__grain,
+.raHero__grain,
+.atlasHero__grain {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: var(--cine-grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cine-hero-grain,
+  .hero__grain,
+  .raHero__grain,
+  .atlasHero__grain {
+    opacity: 0.22;
+  }
+}
+
+/* —— Letterboxing (2.35:1 theatrical hero) —— */
+.cine-letterbox {
+  position: relative;
+  isolation: isolate;
+}
+.cine-letterbox::before,
+.cine-letterbox::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--cine-letterbox);
+  background: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.92) 70%, transparent 100%);
+  pointer-events: none;
+  z-index: 6;
+}
+.cine-letterbox::before {
+  top: 0;
+}
+.cine-letterbox::after {
+  bottom: 0;
+  transform: scaleY(-1);
+}
+
+/* —— Vignette (letterboxed heroes only) —— */
+.cine-letterbox.cine-vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    transparent 35%,
+    rgba(0, 0, 0, 0.45) 72%,
+    rgba(0, 0, 0, 0.82) 100%
+  );
+}
+
+/* —— Chromatic aberration (letterboxed heroes only) —— */
+.cine-letterbox.cine-chromatic {
+  position: relative;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cine-letterbox.cine-chromatic::before,
+  .cine-letterbox.cine-chromatic::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    mix-blend-mode: screen;
+    opacity: 0.22;
+  }
+  .cine-letterbox.cine-chromatic::before {
+    box-shadow:
+      inset 12px 0 48px -8px rgba(255, 24, 1, 0.28),
+      inset -12px 0 48px -8px rgba(80, 140, 255, 0.14);
+  }
+  .cine-letterbox.cine-chromatic::after {
+    box-shadow:
+      inset 0 12px 36px -12px rgba(255, 24, 1, 0.1),
+      inset 0 -12px 36px -12px rgba(60, 120, 255, 0.08);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cine-letterbox.cine-chromatic::before,
+  .cine-letterbox.cine-chromatic::after {
+    display: none;
+  }
+}
+
+/* —— Duotone (hero media only — not cards) —— */
+.cine-duotone,
+.cine-duotone img,
+.cine-duotone .detailHero__cover {
+  filter: grayscale(0.35) contrast(1.08) sepia(0.12);
+}
+.cine-duotone::after,
+.cine-duotone .cine-duotone__wash {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--f1-red) 42%, transparent) 0%,
+    transparent 48%,
+    color-mix(in oklab, var(--f1-black) 75%, transparent) 100%
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+  z-index: 2;
+}
+
+/* —— Typography —— */
+.cine-display {
+  font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
+  font-size: clamp(3.5rem, 11vw, 8.5rem);
+  letter-spacing: 0.04em;
+  line-height: 0.9;
+  color: var(--paper, #f4f1ea);
+  text-shadow: 0 8px 48px rgba(0, 0, 0, 0.55);
+}
+.cine-leader {
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: clamp(0.75rem, 1.6vw, 0.95rem);
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted2, rgba(244, 241, 234, 0.48));
+}
+.cine-mono-stat {
+  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+.cine-editorial-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding-bottom: 14px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid var(--f1-red, #ff1801);
+}
+.cine-editorial-head__title {
+  margin: 0;
+  font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
+  font-size: clamp(2.25rem, 6vw, 3.75rem);
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+.cine-editorial-head__rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent);
+  align-self: center;
+}
+.cine-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 28px 0 18px;
+  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted2, rgba(244, 241, 234, 0.48));
+}
+.cine-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 24, 1, 0.45), transparent);
+}
+
+/* —— Bento grids —— */
+.cine-bento {
+  display: grid;
+  gap: var(--cine-gap);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: stretch;
+}
+.cine-bento > * {
+  min-width: 0;
+}
+.cine-bento__span-4 {
+  grid-column: span 4;
+}
+.cine-bento__span-5 {
+  grid-column: span 5;
+}
+.cine-bento__span-6 {
+  grid-column: span 6;
+}
+.cine-bento__span-7 {
+  grid-column: span 7;
+}
+.cine-bento__span-8 {
+  grid-column: span 8;
+}
+.cine-bento__row-2 {
+  grid-row: span 2;
+}
+@media (max-width: 900px) {
+  .cine-bento {
+    grid-template-columns: 1fr;
+  }
+  .cine-bento > * {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+}
+
+/* —— Parallax layers —— */
+[data-cine-parallax] {
+  position: relative;
+  overflow: hidden;
+}
+[data-cine-depth] {
+  will-change: transform;
+  transition: transform 0.12s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-cine-depth] {
+    transform: none !important;
+    transition: none;
+  }
+}
+
+/* —— Scroll reveals (unified; pages may keep .io-section) —— */
+.cine-reveal,
+.io-section {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 520ms var(--cine-ease-out),
+    transform 620ms var(--cine-ease-out);
+}
+.cine-reveal.is-in,
+.io-section.io-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cine-reveal,
+  .io-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* —— Horizontal scroll rail —— */
+.cine-hscroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 8px 4px 20px;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 16px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--f1-red) 55%, #333) var(--f1-black);
+}
+.cine-hscroll > * {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+.cine-hscroll:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--f1-black), 0 0 0 4px var(--f1-red);
+  border-radius: var(--radius-lg, 1rem);
+}
+
+/* —— Glass panels —— */
+.cine-glass {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 18px 60px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-xl, 1.25rem);
+  transition:
+    border-color 200ms var(--cine-ease),
+    box-shadow 200ms var(--cine-ease),
+    transform 200ms var(--cine-ease);
+}
+.cine-glass:hover {
+  border-color: color-mix(in oklab, var(--f1-red) 32%, rgba(255, 255, 255, 0.12));
+}
+
+/* —— Sticky aside (scrollytelling) —— */
+.cine-sticky-aside {
+  align-self: start;
+}
+@media (min-width: 900px) {
+  .cine-sticky-aside {
+    position: sticky;
+    top: calc(var(--anthology-nav-h, 4.75rem) + 20px);
+  }
+}
+
+/* —— Microinteractions —— */
+.cine-hover-lift {
+  transition:
+    transform 200ms var(--cine-ease),
+    border-color 200ms var(--cine-ease),
+    box-shadow 200ms var(--cine-ease);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cine-hover-lift:hover {
+    transform: translateY(-3px) scale(1.01);
+  }
+}
+.cine-hover-lift:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--f1-black), 0 0 0 4px var(--f1-red);
+}
+
+/* —— Hero cinemagraph (gradient pulse only) —— */
+.cine-hero-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(255, 24, 1, 0.16) 0%, transparent 62%),
+    radial-gradient(circle at 22% 28%, rgba(255, 255, 255, 0.06) 0%, transparent 42%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cine-hero-glow {
+    animation: cineHeroGlow 10s ease-in-out infinite;
+  }
+}
+@keyframes cineHeroGlow {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cine-hero-glow {
+    animation: none;
+  }
+}
+
+/* —— React route shells (timeline / news) —— */
+.cine-route-shell {
+  position: relative;
+  min-height: 100vh;
+}
+.cine-route-shell .cine-route-hero {
+  padding-top: 2rem;
+  padding-bottom: 2.5rem;
+  margin-bottom: 2rem;
+}
+.cine-route-shell .cine-route-hero h1 {
+  font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
+}
+
+.cine-route-shell .news-page__header,
+.cine-route-shell .timeline-page__hero-inner {
+  font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
+}

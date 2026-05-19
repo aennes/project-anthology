@@ -1295,12 +1295,7 @@
       btn.setAttribute('role', 'tab');
       btn.dataset.year = String(year);
       btn.textContent = String(year);
-      if (year === SEASON_CURRENT) {
-        btn.classList.add('is-active');
-        btn.setAttribute('aria-selected', 'true');
-      } else {
-        btn.setAttribute('aria-selected', 'false');
-      }
+      btn.setAttribute('aria-selected', 'false');
       host.appendChild(btn);
     }
   }
@@ -1313,7 +1308,7 @@
     syncTimingBentoMode();
     bindUI();
     setupSectionIo();
-    void loadF1StaticManifest();
+    await loadF1StaticManifest();
     const tabYears = [];
     for (let i = 0; i < 5; i += 1) {
       const y = SEASON_CURRENT - i;
@@ -1325,6 +1320,7 @@
     syncActiveSeasonTab(activeYear);
     await warmSeason(activeYear);
     await renderSeason(activeYear);
+    await renderHistorical(activeYear);
     void decideLiveAndStart();
     void refreshIdleInsight();
     setupSnapshotLazyLoad();
@@ -1522,6 +1518,14 @@
   }
 
   async function resolveActiveSeasonYear() {
+    for (let y = SEASON_CURRENT; y >= SEASON_MIN; y -= 1) {
+      const staticUrl = ergastPathToStaticUrl(`${y}/driverStandings.json`);
+      if (staticUrl) {
+        // eslint-disable-next-line no-await-in-loop
+        const staticJson = await fetchF1StaticJson(staticUrl);
+        if (staticJson && extractDriverStandings(staticJson).length > 0) return y;
+      }
+    }
     for (let y = SEASON_CURRENT; y >= SEASON_MIN; y -= 1) {
       const key = seasonCacheKey(y, 'driverStandings');
       const cached = readCachedSeasonJson(key);

@@ -10,7 +10,9 @@
     <!-- Typography: self-hosted under /fonts/st/ (see scripts/copy-season-tracker-fonts.mjs + npm run fonts:season-tracker). -->
     <link rel="preload" href="/fonts/st/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/st/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/data/f1/index.json" as="fetch" crossorigin />
     <link rel="stylesheet" href="/nav-shell.css" />
+    <link rel="stylesheet" href="/cinematic.css" />
     <link rel="stylesheet" href="/season-tracker/styles.css" />
   </head>
   <body class="has-anthology-nav">
@@ -40,9 +42,11 @@
     </header>
 
     <main id="main" class="page" role="main">
-      <section class="hero io-section" aria-label="Season overview" data-io>
-        <div class="hero__bg" aria-hidden="true">
+      <section class="hero io-section cine-letterbox cine-chromatic cine-vignette" aria-label="Season overview" data-io>
+        <div class="hero__bg cine-hero-glow" data-cine-parallax aria-hidden="true">
           <span class="hero__grain" aria-hidden="true"></span>
+          <span class="hero__parallax hero__parallax--mid" data-cine-depth="0.22" aria-hidden="true"></span>
+          <span class="hero__parallax hero__parallax--front" data-cine-depth="0.38" aria-hidden="true"></span>
         </div>
         <div class="hero__chrome">
           <div class="modeToggle modeToggle--hero" role="group" aria-label="Display mode">
@@ -55,6 +59,9 @@
             <div class="hero__meta">
               <div class="tag" id="tagSeason">Season</div>
               <div class="tag tag--muted" id="tagRounds">—</div>
+            </div>
+            <div class="heroSeasonTabs">
+              <div class="tabs tabs--hero" id="seasonTablist" role="tablist" aria-label="Years"></div>
             </div>
             <p class="hero__headlineSmall hero__pulseLabel" id="heroPulseLabel">Championship leader</p>
             <h1 class="hero__headline">
@@ -114,8 +121,8 @@
         </div>
         <div class="liveBanner" id="liveDataBanner" role="status" aria-live="polite" hidden></div>
 
-        <div class="grid timingBento" id="liveTimingGrid">
-          <div class="panel panel--glass towerWrap timingBento__panel" id="liveTowerPanel">
+        <div class="grid timingBento cine-bento" id="liveTimingGrid">
+          <div class="panel panel--glass towerWrap timingBento__panel cine-bento__span-7 cine-bento__row-2 cine-glass cine-hover-lift" id="liveTowerPanel">
             <div class="panel__titleRow">
               <div class="panel__title" id="towerTitle">Drivers</div>
               <div class="panel__hint" id="towerHint">Standings format (not live).</div>
@@ -129,7 +136,7 @@
             </div>
           </div>
 
-          <div class="panel panel--glass timingBento__panel" id="constructorsPanel">
+          <div class="panel panel--glass timingBento__panel cine-bento__span-5 cine-glass cine-hover-lift" id="constructorsPanel">
             <div class="panel__titleRow">
               <div class="panel__title">Constructors</div>
               <div class="panel__hint">Click a constructor to set accent.</div>
@@ -149,22 +156,19 @@
           </div>
         </div>
 
-        <div class="rail" id="calendarRail" tabindex="0" aria-label="Calendar rail"></div>
+        <div class="rail cine-hscroll" id="calendarRail" tabindex="0" aria-label="Calendar rail"></div>
       </section>
 
       <section class="section io-section seasonSwitcher" id="history" aria-label="Historical standings" data-io>
         <div class="section__head">
           <h2 class="section__title">Season Switcher</h2>
-          <div class="section__tools">
-            <div class="tabs" id="seasonTablist" role="tablist" aria-label="Years"></div>
-          </div>
         </div>
 
         <div class="grid grid--history">
           <div class="panel panel--glass">
             <div class="panel__titleRow">
               <div class="panel__title" id="histTitle">Final Driver Standings</div>
-              <div class="panel__hint" id="histHint">Choose a year tab above — grids load on demand and stay cached for this session.</div>
+              <div class="panel__hint" id="histHint">Choose a season year in the hero — grids load on demand and stay cached for this session.</div>
             </div>
             <ol class="tower tower--static" id="historyDrivers"></ol>
           </div>
@@ -220,7 +224,7 @@
           </div>
         </div>
 
-        <div class="grid grid--snap">
+        <div class="grid grid--snap cine-bento">
           <div class="panel panel--glass panel--snap">
             <div class="panel__titleRow">
               <div class="panel__title">Tyre strategy</div>
@@ -287,6 +291,7 @@
     </div>
 
     <script src="/nav-shell.js" defer></script>
+    <script src="/cinematic.js" defer></script>
     <script src="/season-tracker/app.js" defer></script>
   </body>
 </html>

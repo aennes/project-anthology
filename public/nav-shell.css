@@ -263,10 +263,11 @@ body.has-anthology-nav {
   position: sticky;
   top: var(--anthology-nav-h);
   z-index: 50;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(10, 10, 10, 0.95);
+  background: rgba(10, 10, 10, 0.88);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 .page-subbar__inner {

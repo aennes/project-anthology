@@ -1,8 +1,18 @@
 # QA Pre-Launch Report — Project Anthology
 
-**Date:** 2026-05-17  
+**Date:** 2026-05-17 (performance re-audit **2026-05-19** — see [PERFORMANCE_AUDIT.md](./PERFORMANCE_AUDIT.md))  
 **Environment:** Windows, Node 22.x, `npm run dev` (Vite `:3000`, dev API `:3001`)  
 **Auditor:** Automated checks + HTTP probes + code review (browser manual steps below)
+
+### 2026-05-19 performance pass / fail (summary)
+
+| Check | Result |
+|-------|--------|
+| `node --check` (+ `circuit-covers.js`) | **PASS** |
+| `npm run test:run` | **PASS** (44/44) |
+| `npm run build:check` | **PASS** |
+| Init fetch / cache / live polling audit | **PASS** (see PERFORMANCE_AUDIT.md) |
+| High-impact fixes applied | **7 files** (uncommitted) |
 
 ---
 

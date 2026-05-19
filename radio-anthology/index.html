@@ -16,12 +16,12 @@
     -->
     <link rel="preload" href="/fonts/st/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/st/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/circuit-covers.js" as="script" />
     <link rel="stylesheet" href="/nav-shell.css" />
+    <link rel="stylesheet" href="/cinematic.css" />
     <link rel="stylesheet" href="/radio-anthology/styles.css" />
   </head>
-  <body class="has-anthology-nav">
-    <div class="site-grain" aria-hidden="true"></div>
-
+  <body class="has-anthology-nav is-index">
     <a class="skip" href="#main">Skip to content</a>
 
     <div id="anthology-nav-root"></div>
@@ -29,31 +29,40 @@
     <header class="page-subbar" role="banner">
       <div class="page-subbar__inner">
         <div class="brand">
-          <div class="brand__kicker">Formula 1</div>
-          <div class="brand__title">Radio Anthology</div>
+          <p class="brand__index font-mono">Formula 1 · Radio Anthology</p>
+          <div class="brand__stack">
+            <div class="brand__kicker">Formula 1</div>
+            <div class="brand__title">Radio Anthology</div>
+          </div>
         </div>
-        <a class="topbar__moments" id="topbarMoments" href="#" hidden>All moments</a>
+        <a class="topbar__moments" id="topbarMoments" href="#" hidden aria-label="Back to all moments">← All moments</a>
       </div>
     </header>
 
     <main id="main" class="page" role="main" tabindex="-1">
       <div id="viewIndex" class="raIndex">
-        <section class="raHero" aria-labelledby="heroTitle">
-          <div class="raHero__pulse" aria-hidden="true"></div>
-          <div class="raHero__grain" aria-hidden="true"></div>
+        <section class="raHero raHero--cine" aria-labelledby="heroTitle">
+          <div class="raHero__bg" data-cine-parallax aria-hidden="true">
+            <div class="raHero__pulse cine-hero-glow">
+              <span class="raHero__parallax" data-cine-depth="0.28" aria-hidden="true"></span>
+            </div>
+            <div class="raHero__duotone" aria-hidden="true"></div>
+          </div>
           <div class="raHero__circuit" aria-hidden="true"></div>
+          <div class="raHero__vignette" aria-hidden="true"></div>
+          <div class="raHero__grain" aria-hidden="true"></div>
+          <div class="raHero__chromatic" aria-hidden="true"></div>
           <div class="raHero__inner">
             <div class="raHero__pretitle">
               <span class="raHero__rule" aria-hidden="true"></span>
               <p class="raHero__eyebrow font-mono">Team radio &amp; pit wall</p>
               <span class="raHero__rule" aria-hidden="true"></span>
             </div>
-            <h1 id="heroTitle" class="raHero__title">Radio Anthology</h1>
-            <p class="raHero__sub">
-              Curated moments where the helmet comes off in audio — team orders, dry wit, pressure, and the human
-              voice inside the telemetry.
-            </p>
-            <p class="raHero__deck font-mono">Beyond the microphone — the narrative in a sentence.</p>
+            <h1 id="heroTitle" class="raHero__title">
+              <span class="raHero__titleWord raHero__titleWord--radio">Radio</span>
+              <span class="raHero__titleWord raHero__titleWord--main">Anthology</span>
+            </h1>
+            <p class="raHero__deck font-mono">Iconic team radio from the pit wall and the helmet.</p>
           </div>
           <div class="raHero__scroll" aria-hidden="true">
             <span class="raHero__scrollLine"></span>
@@ -61,7 +70,7 @@
           </div>
         </section>
 
-        <section class="filters panel panel--glass" aria-label="Filter archive">
+        <section class="filters panel panel--glass cine-glass" aria-label="Filter archive">
           <div class="filters__row">
             <div class="field">
               <label class="field__label" for="filterTag">Tag</label>
@@ -85,17 +94,15 @@
         </section>
 
         <section class="gridSection" aria-label="Radio moments">
-          <div id="cardGrid" class="masonry" aria-live="polite"></div>
+          <div id="cardGrid" class="raGrid" aria-live="polite"></div>
           <p id="emptyState" class="empty" hidden>No clips match these filters.</p>
         </section>
       </div>
 
       <div id="viewDetail" class="raDetail" hidden>
         <article id="detailArticle" class="detailArticle"></article>
-        <p class="detailNavRow">
-          <a class="detailNav" id="detailBack" href="#">← All moments</a>
-        </p>
       </div>
+
     </main>
 
     <footer class="ra-footer" role="contentinfo">
@@ -107,6 +114,8 @@
     </footer>
 
     <script src="/nav-shell.js" defer></script>
+    <script src="/cinematic.js" defer></script>
+    <script src="/circuit-covers.js" defer></script>
     <script src="/radio-anthology/app.js" defer></script>
   </body>
 </html>

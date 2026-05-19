@@ -17,12 +17,13 @@
     -->
     <link rel="preload" href="/fonts/st/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/st/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/circuit-covers.js" as="script" />
+    <link rel="preload" href="/data/f1/index.json" as="fetch" crossorigin />
     <link rel="stylesheet" href="/nav-shell.css" />
+    <link rel="stylesheet" href="/cinematic.css" />
     <link rel="stylesheet" href="/tracks/styles.css" />
   </head>
   <body class="has-anthology-nav">
-    <div class="site-grain" aria-hidden="true"></div>
-
     <a class="skip" href="#main">Skip to content</a>
 
     <div id="anthology-nav-root"></div>
@@ -38,8 +39,11 @@
 
     <main id="main" class="page" role="main" tabindex="-1">
       <div id="viewIndex" class="tracksIndex">
-        <section class="atlasHero" aria-labelledby="atlasHeroTitle">
-          <div class="atlasHero__pulse" aria-hidden="true"></div>
+        <section class="atlasHero cine-letterbox cine-chromatic cine-vignette" aria-labelledby="atlasHeroTitle">
+          <div class="atlasHero__grain" aria-hidden="true"></div>
+          <div class="atlasHero__pulse cine-hero-glow" data-cine-parallax aria-hidden="true">
+            <span class="atlasHero__parallax" data-cine-depth="0.24" aria-hidden="true"></span>
+          </div>
           <div class="atlasHero__inner">
             <h1 class="atlasHero__title" id="atlasHeroTitle">Circuit Atlas</h1>
             <p class="atlasHero__sub">Every track. Every story. 2021 onward.</p>
@@ -51,7 +55,7 @@
         </section>
 
         <section class="atlasGridSection io-section" aria-label="Circuit cards" data-io>
-          <div class="tracksMasonry" id="tracksGrid"></div>
+          <div class="tracksGrid" id="tracksGrid"></div>
           <p class="tracksEmpty" id="tracksEmpty" hidden>No circuits to show.</p>
         </section>
       </div>
@@ -63,6 +67,8 @@
     </main>
 
     <script src="/nav-shell.js" defer></script>
+    <script src="/cinematic.js" defer></script>
+    <script src="/circuit-covers.js" defer></script>
     <script src="/tracks/app.js" defer></script>
   </body>
 </html>

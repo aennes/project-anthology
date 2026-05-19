@@ -139,39 +139,6 @@ body.is-detail {
     var(--f1-black);
 }
 
-.site-grain {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-  opacity: 0.045;
-  overflow: hidden;
-  max-width: 100vw;
-}
-.site-grain::before {
-  content: "";
-  position: absolute;
-  inset: -200%;
-  width: 400%;
-  height: 400%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation: grain 8s steps(10) infinite;
-}
-@keyframes grain {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  25% {
-    transform: translate(-2%, -3%);
-  }
-  50% {
-    transform: translate(3%, 1%);
-  }
-  75% {
-    transform: translate(-1%, 4%);
-  }
-}
 ::selection {
   background: var(--f1-red);
   color: #fff;
@@ -254,6 +221,19 @@ body.is-detail {
   font-size: 26px;
   letter-spacing: 0.04em;
 }
+.brand__index {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted2);
+}
+body.is-index .brand__stack {
+  display: none;
+}
+body.is-detail .brand__index {
+  display: none;
+}
 .topbar__moments {
   margin-left: auto;
   font-family: var(--font-condensed);
@@ -277,10 +257,15 @@ body.is-detail {
 
 .page {
   position: relative;
-  z-index: 10;
+  z-index: 1;
   padding: 0 0 48px;
   max-width: none;
   margin: 0;
+}
+
+/* Index: full-bleed hero under global nav only; subbar kept for detail back link */
+body.is-index .page-subbar {
+  display: none;
 }
 
 .raIndex > :not(.raHero) {
@@ -328,16 +313,25 @@ body.is-detail {
   -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
-/* Full-viewport index hero (tracks / season-tracker parity) */
+/* Index hero — fills viewport below fixed anthology nav */
 .raHero {
   position: relative;
-  min-height: 100vh;
-  min-height: 100dvh;
+  z-index: 1;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: clamp(72px, 12vh, 108px) 24px clamp(96px, 14vh, 132px);
+  padding: clamp(28px, 5vh, 56px) 24px clamp(72px, 12vh, 108px);
+  overflow: hidden;
+}
+body.is-index .raHero {
+  min-height: max(28rem, calc(100dvh - var(--anthology-nav-h, 4.75rem)));
+}
+.raHero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   overflow: hidden;
 }
 .raHero__pulse {
@@ -347,7 +341,68 @@ body.is-detail {
     radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.06) 0%, transparent 40%),
     radial-gradient(ellipse 80% 55% at 50% 42%, rgba(255, 24, 1, 0.18) 0%, transparent 62%),
     radial-gradient(900px 480px at 50% 100%, rgba(255, 24, 1, 0.1) 0%, transparent 72%);
+  filter: grayscale(0.38) contrast(1.1) sepia(0.14);
   pointer-events: none;
+}
+.raHero__duotone {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--f1-red) 44%, transparent) 0%,
+    transparent 48%,
+    color-mix(in oklab, var(--f1-black) 78%, transparent) 100%
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.52;
+}
+.raHero__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    transparent 35%,
+    rgba(0, 0, 0, 0.45) 72%,
+    rgba(0, 0, 0, 0.82) 100%
+  );
+}
+.raHero__chromatic {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .raHero__chromatic {
+    opacity: 0.2;
+    box-shadow:
+      inset 12px 0 48px -8px rgba(255, 24, 1, 0.28),
+      inset -12px 0 48px -8px rgba(80, 140, 255, 0.14),
+      inset 0 12px 36px -12px rgba(255, 24, 1, 0.1),
+      inset 0 -12px 36px -12px rgba(60, 120, 255, 0.08);
+  }
+}
+.raHero--cine::before,
+.raHero--cine::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: clamp(24px, 4.5vh, 56px);
+  background: #000;
+  pointer-events: none;
+  z-index: 7;
+}
+.raHero--cine::before {
+  top: 0;
+}
+.raHero--cine::after {
+  bottom: 0;
 }
 @media (prefers-reduced-motion: no-preference) {
   .raHero__pulse {
@@ -365,18 +420,11 @@ body.is-detail {
     transform: scale(1.04);
   }
 }
-.raHero__grain {
-  position: absolute;
-  inset: 0;
-  opacity: 0.32;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
-  pointer-events: none;
-}
 .raHero__circuit {
   position: absolute;
   right: -8%;
   top: 18%;
+  z-index: 1;
   width: min(52vw, 420px);
   height: min(52vw, 420px);
   background: url("/circuits/monaco.svg") center / contain no-repeat;
@@ -384,9 +432,12 @@ body.is-detail {
   filter: grayscale(1);
   pointer-events: none;
 }
+.raHero__grain {
+  z-index: 3;
+}
 .raHero__inner {
   position: relative;
-  z-index: 2;
+  z-index: 5;
   text-align: center;
   max-width: 52rem;
 }
@@ -411,35 +462,62 @@ body.is-detail {
   margin: 0;
 }
 .raHero__title {
-  font-family: var(--font-display);
-  font-size: clamp(4.5rem, 13vw, 9.5rem);
-  letter-spacing: 0.04em;
-  line-height: 0.9;
-  margin: 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.02em;
+  margin: 0 0 18px;
+  line-height: 0.88;
   color: var(--paper);
-  text-shadow: 0 8px 48px rgba(0, 0, 0, 0.65);
 }
-.raHero__sub {
-  margin: 0 auto;
-  max-width: 48ch;
+.raHero__titleWord {
+  display: block;
+}
+.raHero__titleWord--radio {
   font-family: var(--font-condensed);
-  font-size: clamp(1.1rem, 2.4vw, 1.45rem);
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-size: clamp(1.35rem, 3.8vw, 2.35rem);
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
   text-transform: uppercase;
   color: var(--muted);
-  line-height: 1.45;
+}
+.raHero__titleWord--main {
+  font-family: var(--font-display);
+  font-size: clamp(4.75rem, 14vw, 10.5rem);
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 8px 48px rgba(0, 0, 0, 0.65),
+    0 0 60px rgba(255, 24, 1, 0.12);
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.is-index .raHero__titleWord {
+    opacity: 0;
+    transform: translateY(18px);
+    animation: raHeroTitleIn 820ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  body.is-index .raHero__titleWord--main {
+    animation-delay: 90ms;
+  }
+}
+@keyframes raHeroTitleIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .raHero__deck {
-  margin: 22px auto 0;
-  font-size: 10px;
-  letter-spacing: 0.22em;
+  margin: 0 auto;
+  max-width: 42ch;
+  font-size: 11px;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
   color: rgba(156, 163, 175, 0.95);
 }
 .raHero__scroll {
   position: absolute;
-  bottom: 32px;
+  z-index: 5;
+  bottom: clamp(40px, 8vh, 56px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -630,26 +708,30 @@ body.is-detail {
   margin-top: 22px;
 }
 
-.masonry {
-  column-count: 3;
-  column-gap: 20px;
+.raGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
 }
-@media (max-width: 1024px) {
-  .masonry {
-    column-count: 2;
+@media (max-width: 900px) {
+  .raGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
   }
 }
 @media (max-width: 560px) {
-  .masonry {
-    column-count: 1;
+  .raGrid {
+    grid-template-columns: 1fr;
   }
 }
 
 /* Archive-card echo: cover image layer + editorial type + hover scanlines + bottom red rail */
 a.radioCard {
-  display: block;
-  break-inside: avoid;
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
   content-visibility: auto;
   contain-intrinsic-size: auto 320px;
   border-radius: var(--radius-lg);
@@ -673,7 +755,6 @@ a.radioCard {
 a.radioCard:hover {
   border-color: rgba(255, 24, 1, 0.35);
   box-shadow: 0 20px 64px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 24, 1, 0.15);
-  transform: translateY(-3px);
 }
 a.radioCard:focus-visible {
   outline: none;
@@ -681,16 +762,71 @@ a.radioCard:focus-visible {
 }
 .radioCard__cover {
   position: relative;
-  min-height: 168px;
+  flex: 0 0 auto;
+  height: 200px;
+  min-height: 200px;
+  overflow: hidden;
   background-color: #0a0a0a;
   background-image:
     linear-gradient(145deg, rgba(10, 10, 10, 0.25) 0%, transparent 55%),
     linear-gradient(to top, var(--f1-black) 0%, transparent 42%),
-    radial-gradient(ellipse 120% 80% at 50% 100%, color-mix(in oklab, var(--team, var(--f1-red)) 35%, transparent), transparent 70%),
-    var(--cover-img, none);
-  background-size: auto, auto, auto, cover;
-  background-position: center, center, center, center 40%;
+    radial-gradient(ellipse 120% 80% at 50% 100%, color-mix(in oklab, var(--team, var(--f1-red)) 35%, transparent), transparent 70%);
+  background-size: auto, auto, auto;
+  background-position: center, center, center;
   background-repeat: no-repeat;
+}
+.radioCard__photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.radioCard__cover .radioCard__photo {
+  object-fit: cover;
+  object-position: center 40%;
+}
+.radioCard__photo.is-loaded {
+  opacity: 1;
+}
+.radioCard__circuit {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 1;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  opacity: 0.32;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+a.radioCard.has-photo .radioCard__circuit {
+  opacity: 0.1;
+}
+.radioCard__coverFlag {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5rem;
+  line-height: 1;
+  opacity: 0.22;
+  pointer-events: none;
+}
+a.radioCard.is-cover-fallback .radioCard__photo:not(.is-loaded) {
+  opacity: 0;
+}
+.radioCard__coverTint,
+.radioCard__vignette,
+.radioCard__scan {
+  z-index: 1;
 }
 .radioCard__coverTint {
   position: absolute;
@@ -777,6 +913,9 @@ a.radioCard:hover .radioCard__scan {
 .radioCard__spread {
   position: relative;
   z-index: 2;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   padding: 16px 16px 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -874,8 +1013,14 @@ body.is-detail .page {
   max-width: none;
   padding: 0;
 }
+body.is-detail .page-subbar .brand__title {
+  font-size: 22px;
+}
 .raDetail {
   width: 100%;
+}
+body.is-detail .detailHero {
+  min-height: min(72vh, 72dvh);
 }
 .detailArticle {
   display: block;
@@ -891,18 +1036,53 @@ body.is-detail .page {
 .detailHero__media {
   position: absolute;
   inset: 0;
+  overflow: hidden;
 }
 .detailHero__bg {
   position: absolute;
   inset: 0;
+  z-index: 0;
+  transform-origin: center center;
   background-image:
     linear-gradient(145deg, rgba(10, 10, 10, 0.2) 0%, transparent 50%),
     linear-gradient(to top, var(--f1-black) 0%, transparent 45%),
-    radial-gradient(ellipse 120% 90% at 50% 110%, color-mix(in oklab, var(--team, var(--f1-red)) 42%, transparent), transparent 65%),
-    var(--cover-img, none);
-  background-size: auto, auto, auto, cover;
+    radial-gradient(ellipse 120% 90% at 50% 110%, color-mix(in oklab, var(--team, var(--f1-red)) 42%, transparent), transparent 65%);
+  background-size: auto, auto, auto;
   background-position: center;
   background-repeat: no-repeat;
+}
+.detailHero__cover {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+.detailHero__cover.is-loaded {
+  opacity: 1;
+}
+.detailHero__fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 40%, rgba(255, 24, 1, 0.14) 0%, transparent 70%),
+    var(--f1-black);
+}
+.detailHero__fallbackFlag {
+  font-size: clamp(3rem, 10vw, 6rem);
+  line-height: 1;
+  opacity: 0.35;
+}
+.detailHero.has-photo .detailHero__fallback {
+  display: none;
 }
 @media (prefers-reduced-motion: no-preference) {
   .detailHero__bg {
@@ -923,10 +1103,15 @@ body.is-detail .page {
   right: 5%;
   width: min(38vw, 280px);
   height: auto;
-  opacity: 0.12;
+  object-fit: contain;
+  opacity: 0.14;
   filter: grayscale(1) contrast(1.1);
   pointer-events: none;
   z-index: 1;
+  transition: opacity 0.4s ease;
+}
+.detailHero.has-photo .detailHero__circuit {
+  opacity: 0.07;
 }
 .detailHero__veil {
   position: absolute;
@@ -1228,7 +1413,9 @@ body.is-detail .page {
   padding: 0 24px;
 }
 .detailNavRow--inline {
-  margin-top: 8px;
+  margin: 0 0 12px;
+  padding: 0 24px;
+  text-align: left;
 }
 .detailNav {
   font-family: var(--font-condensed);
@@ -1333,7 +1520,10 @@ body.is-detail .page {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .site-grain::before,
+  body.is-index .raHero__titleWord {
+    opacity: 1;
+    transform: none;
+  }
   .raHero__pulse,
   .raHero__scrollLine {
     animation: none !important;
@@ -1347,4 +1537,37 @@ body.is-detail .page {
   a.radioCard:hover .radioCard__scan {
     opacity: 0.12;
   }
+}
+
+.raHero__parallax {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 50% at 30% 60%,
+    color-mix(in oklab, var(--f1-red) 22%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+.radioCard__context {
+  flex: 1 1 auto;
+}
+.detailPull {
+  position: relative;
+  padding: 28px 0 28px 24px;
+}
+.detailPull::before {
+  content: "“";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--font-display);
+  font-size: 5rem;
+  line-height: 1;
+  color: color-mix(in oklab, var(--f1-red) 35%, transparent);
+  opacity: 0.45;
+  pointer-events: none;
+}
+.filters.cine-glass {
+  border-radius: var(--radius-xl);
 }
