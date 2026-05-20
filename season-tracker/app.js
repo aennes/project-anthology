@@ -30,6 +30,52 @@
     const msg = err instanceof Error ? err.message : String(err ?? '');
     console.error(`[season-tracker] ${scope}`, msg, detail ?? '');
   }
+
+  function isDebugEnabled() {
+    if (IS_DEV) return true;
+    try {
+      const g = typeof globalThis !== 'undefined' ? globalThis : null;
+      if (g && (g.VITE_DEBUG === true || g.__VITE_DEBUG === true)) return true;
+      const p = g && g.process && g.process.env ? g.process.env : null;
+      if (p && typeof p.NODE_ENV === 'string' && p.NODE_ENV !== 'production') return true;
+    } catch {
+      // ignore
+    }
+    return false;
+  }
+
+  function debugLog(scope, detail) {
+    if (!isDebugEnabled()) return;
+    try {
+      console.debug(`[season-tracker] ${scope}`, detail ?? '');
+    } catch {
+      // ignore
+    }
+  }
+
+  function firstResolvedMatching(promises, predicate) {
+    let done = false;
+    let remaining = promises.length;
+    return new Promise((resolve) => {
+      if (!remaining) return resolve(null);
+      promises.forEach((p) => {
+        Promise.resolve(p)
+          .then((v) => {
+            remaining -= 1;
+            if (!done && predicate(v)) {
+              done = true;
+              resolve(v);
+              return;
+            }
+            if (!done && remaining <= 0) resolve(null);
+          })
+          .catch(() => {
+            remaining -= 1;
+            if (!done && remaining <= 0) resolve(null);
+          });
+      });
+    });
+  }
   /** Simple ↔ Nerd display mode (persisted). */
   const MODE_STORAGE_KEY = 'f1_tracker_mode';
 
@@ -55,6 +101,10 @@
   const LIVE_POLL_FAILURE_BACKOFF_MAX_MS = 30000;
   /** Per-request abort timeout for `/api/f1-live` (ms). */
   const LIVE_FETCH_TIMEOUT_MS = 10000;
+  /** Keep first-paint Ergast flows snappy; DB must not block UI. */
+  const F1_DB_TIMEOUT_INITIAL_MS = 800;
+  /** Slightly looser timeout for non-critical/background DB checks. */
+  const F1_DB_TIMEOUT_NONCRITICAL_MS = 1200;
   /** After this many consecutive all-endpoint failures, pause polling for LIVE_CIRCUIT_PAUSE_MS. */
   const LIVE_CIRCUIT_FAIL_THRESHOLD = 5;
   /** Cool-down when live API is persistently failing (ms). */
@@ -1520,14 +1570,11 @@
   async function resolveActiveSeasonYear() {
     for (let y = SEASON_CURRENT; y >= SEASON_MIN; y -= 1) {
       // eslint-disable-next-line no-await-in-loop
-      const dbJson = await fetchF1DbJson(`${y}/driverStandings.json`);
-      if (dbJson && extractDriverStandings(dbJson).length > 0) return y;
       const staticUrl = ergastPathToStaticUrl(`${y}/driverStandings.json`);
-      if (staticUrl) {
-        // eslint-disable-next-line no-await-in-loop
-        const staticJson = await fetchF1StaticJson(staticUrl);
-        if (staticJson && extractDriverStandings(staticJson).length > 0) return y;
-      }
+      const dbPromise = fetchF1DbJson(`${y}/driverStandings.json`, { timeoutMs: F1_DB_TIMEOUT_NONCRITICAL_MS });
+      const staticPromise = staticUrl ? fetchF1StaticJson(staticUrl) : Promise.resolve(null);
+      const winner = await firstResolvedMatching([staticPromise, dbPromise], (v) => v && extractDriverStandings(v).length > 0);
+      if (winner) return y;
     }
     for (let y = SEASON_CURRENT; y >= SEASON_MIN; y -= 1) {
       const key = seasonCacheKey(y, 'driverStandings');
@@ -2970,23 +3017,38 @@
     return null;
   }
 
-  async function fetchF1DbJson(ergastPath) {
+  async function fetchF1DbJson(ergastPath, opts = {}) {
     const q = ergastPathToDbQuery(ergastPath);
     if (!q) return null;
+    const timeoutMs =
+      typeof opts.timeoutMs === 'number' && Number.isFinite(opts.timeoutMs) ? Math.max(0, opts.timeoutMs) : F1_DB_TIMEOUT_INITIAL_MS;
     const sp = new URLSearchParams({ year: String(q.year) });
     if (q.resource) sp.set('resource', q.resource);
     if (q.round != null) sp.set('round', String(q.round));
     if (q.suffix) sp.set('suffix', q.suffix);
+    const controller = new AbortController();
+    let timer = null;
     try {
-      const r = await fetch(`/api/f1-db?${sp.toString()}`, { headers: { Accept: 'application/json' } });
+      timer = window.setTimeout(() => controller.abort(), timeoutMs);
+      const r = await fetch(`/api/f1-db?${sp.toString()}`, {
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      });
       if (r.status === 404 || r.status === 503) return null;
       if (!r.ok) return null;
       const json = await r.json();
       if (json && typeof json === 'object' && 'error' in json && !json.MRData) return null;
       if (!hasUsableMrData(json)) return null;
       return json;
-    } catch {
+    } catch (err) {
+      const name = err && typeof err === 'object' ? err.name : '';
+      if (name === 'AbortError') {
+        debugLog('fetchF1DbJson:timeout', { ergastPath, timeoutMs });
+        return null;
+      }
       return null;
+    } finally {
+      if (timer != null) window.clearTimeout(timer);
     }
   }
 
@@ -3078,20 +3140,24 @@
     const year = parseYearFromErgastPath(path);
     const historical = year != null && year < SEASON_CURRENT;
 
-    const dbJson = await fetchF1DbJson(path);
-    if (dbJson) {
-      if (historical) return dbJson;
-      if (cacheKeyForRevalidate) revalidateErgastInBackground(path, cacheKeyForRevalidate);
-      return dbJson;
-    }
-
     const staticUrl = ergastPathToStaticUrl(path);
     if (staticUrl) {
-      const staticJson = await fetchF1StaticJson(staticUrl);
-      if (staticJson) {
-        if (historical) return staticJson;
+      const dbPromise = fetchF1DbJson(path, { timeoutMs: F1_DB_TIMEOUT_INITIAL_MS });
+      const staticPromise = fetchF1StaticJson(staticUrl);
+
+      // Race DB + static; do not let slow DB stall first paint.
+      const winner = await firstResolvedMatching([staticPromise, dbPromise], (v) => hasUsableMrData(v));
+      if (winner) {
+        if (historical) return winner;
         if (cacheKeyForRevalidate) revalidateErgastInBackground(path, cacheKeyForRevalidate);
-        return staticJson;
+        return winner;
+      }
+    } else {
+      const dbJson = await fetchF1DbJson(path, { timeoutMs: F1_DB_TIMEOUT_INITIAL_MS });
+      if (dbJson) {
+        if (historical) return dbJson;
+        if (cacheKeyForRevalidate) revalidateErgastInBackground(path, cacheKeyForRevalidate);
+        return dbJson;
       }
     }
 
