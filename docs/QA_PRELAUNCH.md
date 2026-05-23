@@ -99,7 +99,7 @@
 | Simple ↔ Nerd toggle | **PASS** | `#modeSimple` / `#modeNerd`, `is-mode-animating` |
 | Standings from static JSON | **PASS** | `/data/f1/{year}/*.json`, manifest `/data/f1/index.json` |
 | Calendar | **PASS** | Ergast-shaped `calendar.json` per year |
-| Nerd panels (pit accordion, sim) | **PASS** | `#nerdPitMount`, `#nerdSimMount`, lazy init |
+| Nerd panels (pit accordion) | **PASS** | `#nerdPitMount`, lazy init |
 | Live path guarded | **PASS** | `decideLiveAndStart()` gates on OpenF1 sessions + `isSessionLive`; no poll when offline |
 
 ### Circuit Atlas (`/tracks`)

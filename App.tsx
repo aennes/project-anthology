@@ -19,6 +19,7 @@ const ArchiveSection = lazy(() => import('./components/ArchiveSection'));
 const StoryModal = lazy(() => import('./components/StoryModal'));
 const Timeline = lazy(() => import('./components/Timeline'));
 const News = lazy(() => import('./components/News'));
+const About = lazy(() => import('./components/About'));
 
 const routePageSuspenseFallback = (
   <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center bg-f1-black px-6 pt-28 pb-20">
@@ -252,6 +253,24 @@ const NewsShell: React.FC = () => {
   );
 };
 
+const AboutShell: React.FC = () => {
+  useMetadata({
+    title: `About — ${metadata.name}`,
+    description: 'What Project Anthology is — a cinematic, narrative-first F1 fan archive',
+    type: 'website',
+  });
+
+  return (
+    <RoutedPageShell>
+      <Suspense fallback={routePageSuspenseFallback}>
+        <ErrorBoundary>
+          <About />
+        </ErrorBoundary>
+      </Suspense>
+    </RoutedPageShell>
+  );
+};
+
 const App: React.FC = () => {
   useEffect(() => {
     // Kick off a fresh /api/news fetch in the background on first load
@@ -265,6 +284,7 @@ const App: React.FC = () => {
       <Route path="/story/:id" element={<Shell />} />
       <Route path="/timeline" element={<TimelineShell />} />
       <Route path="/news" element={<NewsShell />} />
+      <Route path="/about" element={<AboutShell />} />
     </Routes>
   );
 };

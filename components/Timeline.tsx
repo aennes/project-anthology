@@ -44,11 +44,15 @@ const Timeline: React.FC<TimelineProps> = ({ onStorySelect, onClose }) => {
       >
         <span className="cine-hero-glow" aria-hidden="true" />
         <span className="cine-hero-grain" aria-hidden="true" />
-        <div className="timeline-page__hero-inner">
+        <div className="timeline-page__hero-inner cine-route-hero">
+          <p className="timeline-page__eyebrow">Anthology · Stories</p>
           <h1 id="timeline-hero-title">Chronological Timeline</h1>
-          <p>The narrative history of Formula 1</p>
+          <p className="timeline-page__deck">The narrative history of Formula 1</p>
+          <p className="timeline-page__detail">Scroll the decades · Open any story</p>
         </div>
       </header>
+
+      <div className="timeline-page__fade" aria-hidden="true" />
 
       <div className="timeline-page__body" ref={containerRef}>
         <aside className="timeline-page__spine" aria-label="Decades">

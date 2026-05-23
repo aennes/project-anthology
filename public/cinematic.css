@@ -382,7 +382,7 @@
   font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
 }
 
-.cine-route-shell .news-page__header,
+.cine-route-shell .news-page__hero-inner,
 .cine-route-shell .timeline-page__hero-inner {
   font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
 }

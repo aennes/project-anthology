@@ -16,10 +16,9 @@
    * @property {string[]} tags
    * @property {string} [audio_url]
    * @property {string} [related_story_id]
-   * @property {string} circuitId
-   * @property {string} [circuit_svg]
-   * @property {string} [pull_secondary]
    */
+
+  /** @typedef {{ cover?: string, coverAlt?: string, coverCredit?: object, gallery?: Array<{src:string,alt?:string,layout?:string,credit?:object}> }} RadioImageMeta */
 
   /** @type {RadioEntry[]} */
   const RADIO_ARCHIVE = [
@@ -37,7 +36,6 @@
       significance:
         'Vettel passed Webber anyway, detonating trust inside the garage and becoming shorthand for broken team orders in the modern era.',
       tags: ['team-orders', 'red-bull', '2010s', 'championship'],
-      circuitId: 'sepang',
     },
     {
       id: 'webber-unbelievable-china-2013',
@@ -53,8 +51,6 @@
       significance:
         'The line captured the feeling of a driver who believed the machinery and strategy were fighting him as much as the field.',
       tags: ['strategy', 'red-bull', '2010s', 'frustration'],
-      circuitId: 'shanghai',
-      circuit_svg: 'shanghai.svg',
     },
     {
       id: 'vettel-brazil-2012-retire-debate',
@@ -70,8 +66,6 @@
       significance:
         'The exchange framed how much a champion is willing to risk when a crown is one corner away — and how calm the cockpit must sound even when the car is not.',
       tags: ['brazil', 'red-bull', '2010s', 'championship', 'pressure'],
-      circuitId: 'interlagos',
-      circuit_svg: 'interlagos.svg',
     },
     {
       id: 'raikkonen-leave-me-alone-india-2012',
@@ -87,7 +81,6 @@
       significance:
         'It became the meme-friendly distillation of Kimi’s persona: minimal words, maximum autonomy, and a refusal to dramatise the job.',
       tags: ['lotus', '2010s', 'comedy', 'cool'],
-      circuitId: 'buddh',
       pull_secondary: 'Yeah, yeah, yeah, yeah — I’m okay.',
     },
     {
@@ -105,7 +98,6 @@
         'The delivery turned into a cultural fingerprint for the sport on the internet — proof that tone matters as much as words in how fans remember a moment.',
       tags: ['interview', 'meme', '2010s', 'weather'],
       related_story_id: 'hamilton-silverstone',
-      circuitId: 'hockenheimring',
     },
     {
       id: 'sainz-smooth-operator-australia-2024',
@@ -121,8 +113,6 @@
       significance:
         'A rare radio snapshot where the story off the track (recovery) and the story on it (racecraft) lined up in one sentence.',
       tags: ['ferrari', '2024', 'comeback', 'celebration'],
-      circuitId: 'albert_park',
-      circuit_svg: 'albert_park.svg',
     },
     {
       id: 'alonso-gp2-engine-hungary-2015',
@@ -138,8 +128,6 @@
       significance:
         'It distilled a painful era into one viral phrase — frustration so pure it became dark comedy for anyone who lived through McLaren-Honda.',
       tags: ['mclaren', '2010s', 'frustration', 'meme', 'honda'],
-      circuitId: 'hungaroring',
-      circuit_svg: 'hungaroring.svg',
     },
     {
       id: 'norris-last-lap-austria-2020',
@@ -155,8 +143,6 @@
       significance:
         'The shout became the soundtrack to Norris’s first F1 rostrum — youthful hunger meeting a team that finally believed in the result.',
       tags: ['mclaren', '2021now', 'pressure', 'celebration'],
-      circuitId: 'red_bull_ring',
-      circuit_svg: 'red_bull_ring.svg',
     },
     {
       id: 'ricciardo-honda-looks-great-japan-2019',
@@ -172,8 +158,6 @@
       significance:
         'Peak Ricciardo wit — turning another team’s misery into a punchline without ever raising his voice in the cockpit.',
       tags: ['renault', '2010s', 'comedy', 'sarcasm'],
-      circuitId: 'suzuka',
-      circuit_svg: 'suzuka.svg',
     },
     {
       id: 'verstappen-simply-lovely-baku-2018',
@@ -189,8 +173,6 @@
       significance:
         'It showed how early Max could weaponise understatement — comedy as pressure release on a weekend that rarely offers peace.',
       tags: ['red-bull', '2010s', 'comedy', 'qualifying'],
-      circuitId: 'baku',
-      circuit_svg: 'baku.svg',
     },
     {
       id: 'button-is-it-a-bird-monaco-2009',
@@ -207,8 +189,6 @@
         'A rare moment where radio joy matched fairytale results — Brawn’s miracle year finding its voice on the most romantic lap in the sport.',
       tags: ['2000s', 'comedy', 'qualifying', 'championship'],
       related_story_id: 'brawn-2009',
-      circuitId: 'monaco',
-      circuit_svg: 'monaco.svg',
     },
     {
       id: 'leclerc-i-am-stupid-monza-2019',
@@ -224,8 +204,6 @@
       significance:
         'Fans embraced the honesty — a star driver owning a error without deflection, in a sport that usually speaks in engineering euphemisms.',
       tags: ['ferrari', '2010s', 'pressure', 'meme'],
-      circuitId: 'monza',
-      circuit_svg: 'monza.svg',
     },
     {
       id: 'grosjean-no-push-bahrain-2020',
@@ -241,8 +219,6 @@
       significance:
         'The line marked the split second between violence and clarity — radio as lifeline, not theatre, on a day the sport will never forget.',
       tags: ['2021now', 'safety', 'pressure'],
-      circuitId: 'bahrain',
-      circuit_svg: 'bahrain.svg',
     },
     {
       id: 'verstappen-mate-celebration-brazil-2016',
@@ -258,49 +234,8 @@
       significance:
         'Proof that Red Bull’s radio culture runs on banter even in history-making drives — youth, rain, and laughter in one package.',
       tags: ['red-bull', '2010s', 'comedy', 'brazil', 'rain'],
-      circuitId: 'interlagos',
-      circuit_svg: 'interlagos.svg',
     },
   ];
-
-  /** Display names for Wikimedia pageimages search (`{name} Formula 1`). */
-  const RADIO_CIRCUIT_WIKI = {
-    sepang: 'Sepang International Circuit',
-    shanghai: 'Shanghai International Circuit',
-    interlagos: 'Autódromo José Carlos Pace',
-    buddh: 'Buddh International Circuit',
-    hockenheimring: 'Hockenheimring',
-    albert_park: 'Albert Park Circuit',
-    hungaroring: 'Hungaroring',
-    red_bull_ring: 'Red Bull Ring',
-    suzuka: 'Suzuka International Racing Course',
-    baku: 'Baku City Circuit',
-    monaco: 'Circuit de Monaco',
-    monza: 'Autodromo Nazionale Monza',
-    bahrain: 'Bahrain International Circuit',
-  };
-
-  const CIRCUIT_FLAG_EMOJI = {
-    sepang: '🇲🇾',
-    shanghai: '🇨🇳',
-    interlagos: '🇧🇷',
-    buddh: '🇮🇳',
-    hockenheimring: '🇩🇪',
-    albert_park: '🇦🇺',
-    hungaroring: '🇭🇺',
-    red_bull_ring: '🇦🇹',
-    suzuka: '🇯🇵',
-    baku: '🇦🇿',
-    monaco: '🇲🇨',
-    monza: '🇮🇹',
-    bahrain: '🇧🇭',
-  };
-
-  const CC = window.AnthologyCircuitCovers;
-  if (!CC) {
-    console.error('AnthologyCircuitCovers missing — load /circuit-covers.js before radio-anthology/app.js');
-    return;
-  }
 
   const TEAM_HEX = {
     red_bull: '#3671C6',
@@ -319,6 +254,9 @@
 
   const byId = new Map(RADIO_ARCHIVE.map((e) => [e.id.toLowerCase(), e]));
 
+  /** @type {Record<string, RadioImageMeta>} */
+  let imageManifest = {};
+
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
@@ -333,23 +271,100 @@
   }
 
   /** @param {RadioEntry} entry */
-  function radioCoverCtx(entry) {
-    return {
-      circuitId: entry.circuitId,
-      circuit_svg: entry.circuit_svg,
+  function defaultCoverAlt(entry) {
+    return `${entry.driver}, ${entry.gp_name} ${entry.year}`;
+  }
+
+  /** @param {RadioEntry} entry */
+  function imagesForEntry(entry) {
+    return imageManifest[entry.id] || imageManifest[entry.id.toLowerCase()] || null;
+  }
+
+  /** @param {RadioEntry} entry */
+  function coverSpec(entry) {
+    const meta = imagesForEntry(entry);
+    if (meta?.cover) {
+      return {
+        src: meta.cover,
+        alt: meta.coverAlt || defaultCoverAlt(entry),
+        credit: meta.coverCredit,
+      };
+    }
+    return null;
+  }
+
+  /** @param {object} [credit] */
+  function formatCredit(credit) {
+    if (!credit || typeof credit !== 'object') return '';
+    if (credit.note) return escapeHtml(credit.note);
+    const parts = [];
+    if (credit.author) parts.push(escapeHtml(credit.author));
+    if (credit.license) parts.push(escapeHtml(credit.license));
+    const body = parts.join(' · ');
+    if (credit.page) {
+      return `${body} · <a href="${escapeHtml(credit.page)}" rel="license noopener noreferrer" target="_blank">Source</a>`;
+    }
+    return body;
+  }
+
+  /**
+   * @param {HTMLElement} host
+   * @param {HTMLImageElement} img
+   * @param {HTMLElement | null} placeholder
+   * @param {RadioEntry} entry
+   * @param {'lazy'|'eager'} loading
+   */
+  function applyCover(host, img, placeholder, entry, loading = 'lazy') {
+    const spec = coverSpec(entry);
+    if (!spec?.src) {
+      host.classList.add('is-cover-fallback');
+      if (placeholder) placeholder.hidden = false;
+      return;
+    }
+    img.alt = spec.alt;
+    img.loading = loading;
+    img.decoding = loading === 'eager' ? 'sync' : 'async';
+    const onOk = () => {
+      img.classList.add('is-loaded');
+      host.classList.add('has-photo');
+      if (placeholder) placeholder.hidden = true;
     };
+    const onFail = () => {
+      host.classList.add('is-cover-fallback');
+      img.classList.remove('is-loaded');
+      if (placeholder) placeholder.hidden = false;
+    };
+    img.addEventListener('load', onOk, { once: true });
+    img.addEventListener('error', onFail, { once: true });
+    if (img.src !== spec.src) img.src = spec.src;
+    else if (img.complete && img.naturalWidth > 0) onOk();
   }
 
   /** @param {RadioEntry} entry */
-  function radioCircuitWikiName(entry) {
-    const id = String(entry.circuitId || '').trim().toLowerCase();
-    return RADIO_CIRCUIT_WIKI[id] || entry.gp_name || id;
-  }
+  function renderGallery(entry) {
+    const meta = imagesForEntry(entry);
+    const items = meta?.gallery || [];
+    if (!items.length) return '';
 
-  /** @param {RadioEntry} entry */
-  function circuitFlagEmoji(entry) {
-    const id = String(entry.circuitId || '').trim().toLowerCase();
-    return CIRCUIT_FLAG_EMOJI[id] || '';
+    const cells = items
+      .map((item) => {
+        const layout = item.layout || 'landscape';
+        const credit = formatCredit(item.credit);
+        const creditBlock = credit
+          ? `<figcaption class="detailGallery__credit font-mono">${credit}</figcaption>`
+          : '';
+        return `<figure class="detailGallery__item detailGallery__item--${escapeHtml(layout)}">
+          <img src="${escapeHtml(item.src)}" alt="${escapeHtml(item.alt || defaultCoverAlt(entry))}" loading="lazy" decoding="async" />
+          ${creditBlock}
+        </figure>`;
+      })
+      .join('');
+
+    return `<section class="detailGallery" aria-labelledby="galleryTitle">
+      <div class="detailDivider" aria-hidden="true"><span>03</span></div>
+      <h2 class="detailSection__title" id="galleryTitle">Gallery</h2>
+      <div class="detailGallery__grid">${cells}</div>
+    </section>`;
   }
 
   function teamColor(constructorId) {
@@ -365,18 +380,7 @@
       .slice(0, 18);
   }
 
-  /** @param {number} year */
-  function eraOfYear(year) {
-    if (year >= 2000 && year <= 2009) return '2000s';
-    if (year >= 2010 && year <= 2019) return '2010s';
-    if (year >= 2021) return '2021now';
-    return 'other';
-  }
-
   const state = {
-    tag: 'all',
-    driver: 'all',
-    era: 'all',
     coverObserver: /** @type {IntersectionObserver | null} */ (null),
   };
 
@@ -385,52 +389,9 @@
     viewDetail: $('#viewDetail'),
     detailArticle: $('#detailArticle'),
     topbarMoments: /** @type {HTMLAnchorElement} */ ($('#topbarMoments')),
-    filterTag: /** @type {HTMLSelectElement} */ ($('#filterTag')),
-    filterDriver: /** @type {HTMLSelectElement} */ ($('#filterDriver')),
-    eraButtons: $$('.seg__btn[data-era]'),
-    filterCount: $('#filterCount'),
     cardGrid: $('#cardGrid'),
-    emptyState: $('#emptyState'),
+    archiveCount: $('#archiveCount'),
   };
-
-  function allTags() {
-    const set = new Set();
-    RADIO_ARCHIVE.forEach((e) => e.tags.forEach((t) => set.add(t)));
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }
-
-  function allDrivers() {
-    const set = new Set();
-    RADIO_ARCHIVE.forEach((e) => set.add(e.driver));
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }
-
-  function filtered() {
-    return RADIO_ARCHIVE.filter((e) => {
-      if (state.tag !== 'all' && !e.tags.includes(state.tag)) return false;
-      if (state.driver !== 'all' && e.driver !== state.driver) return false;
-      if (state.era !== 'all' && eraOfYear(e.year) !== state.era) return false;
-      return true;
-    });
-  }
-
-  function fillSelects() {
-    el.filterTag.innerHTML =
-      `<option value="all">All tags</option>` +
-      allTags().map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
-    el.filterDriver.innerHTML =
-      `<option value="all">All drivers</option>` +
-      allDrivers().map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
-  }
-
-  function setEraButtons() {
-    el.eraButtons.forEach((btn) => {
-      const era = btn.getAttribute('data-era');
-      const on = era === state.era;
-      btn.classList.toggle('is-on', on);
-      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-  }
 
   function ensureCoverObserver() {
     if (state.coverObserver) return;
@@ -447,55 +408,29 @@
           const entry = byId.get(String(id).toLowerCase());
           if (!entry) continue;
           const img = card.querySelector('img.radioCard__photo');
-          const fallback = card.querySelector('.radioCard__coverFlag');
-          const circuit = card.querySelector('img.radioCard__circuit');
-          if (img instanceof HTMLImageElement) void attachRadioCardCover(card, img, fallback, entry);
-          if (circuit instanceof HTMLImageElement) void CC.attachCircuitSvgOverlay(circuit, radioCoverCtx(entry));
+          const placeholder = card.querySelector('.radioCard__placeholder');
+          if (img instanceof HTMLImageElement) applyCover(card, img, placeholder, entry, 'lazy');
         }
       },
       { rootMargin: '120px 0px', threshold: 0.01 },
     );
   }
 
-  async function attachRadioCardCover(card, img, fallbackEl, entry) {
-    await CC.attachCircuitCover({
-      host: card,
-      img,
-      fallbackEl,
-      ctx: radioCoverCtx(entry),
-      wikiTitle: radioCircuitWikiName(entry),
-      alt: '',
-      loading: 'lazy',
-    });
-  }
-
   function renderCards() {
-    const list = filtered();
-    el.filterCount.textContent =
-      list.length === RADIO_ARCHIVE.length
-        ? `Showing all ${RADIO_ARCHIVE.length} moments`
-        : `Showing ${list.length} of ${RADIO_ARCHIVE.length} moments`;
-
-    if (list.length === 0) {
-      el.cardGrid.replaceChildren();
-      el.emptyState.hidden = false;
-      return;
+    const list = RADIO_ARCHIVE;
+    if (el.archiveCount) {
+      el.archiveCount.textContent = `${list.length} moments in the archive`;
     }
-    el.emptyState.hidden = true;
 
     const frag = document.createDocumentFragment();
     list.forEach((entry, idx) => {
       const col = teamColor(entry.constructorId);
-      const flag = circuitFlagEmoji(entry);
       const chips = entry.tags
         .slice(0, 5)
         .map((t) => `<span class="chip">${escapeHtml(t)}</span>`)
         .join('');
       const rec = String(idx + 1).padStart(2, '0');
       const slug = archivalSlug(entry.id);
-      const flagBlock = flag
-        ? `<div class="radioCard__coverFlag" hidden aria-hidden="true"><span>${escapeHtml(flag)}</span></div>`
-        : '';
 
       const a = document.createElement('a');
       a.className = 'radioCard cine-hover-lift';
@@ -506,9 +441,8 @@
       a.style.setProperty('--team', col);
       a.innerHTML = `
         <div class="radioCard__cover" aria-hidden="true">
-          <img class="radioCard__photo" alt="" loading="lazy" decoding="async" />
-          <img class="radioCard__circuit" alt="" loading="lazy" decoding="async" hidden />
-          ${flagBlock}
+          <img class="radioCard__photo" alt="" width="640" height="400" />
+          <div class="radioCard__placeholder" aria-hidden="true"></div>
           <div class="radioCard__coverTint"></div>
           <div class="radioCard__vignette"></div>
           <div class="radioCard__scan"></div>
@@ -558,7 +492,6 @@
     if (!art) return;
 
     const col = teamColor(entry.constructorId);
-    const flag = circuitFlagEmoji(entry);
     document.title = `${entry.quote} • Radio Anthology`;
     art.style.setProperty('--team', col);
     document.body.style.setProperty('--team', col);
@@ -582,6 +515,9 @@
       : '';
 
     const tagChips = entry.tags.map((t) => `<span class="chip">${escapeHtml(t)}</span>`).join('');
+    const galleryBlock = renderGallery(entry);
+    const cover = coverSpec(entry);
+    const coverCredit = formatCredit(cover?.credit);
 
     const audio = entry.audio_url
       ? `<div class="audioShell">
@@ -599,11 +535,8 @@
 <section class="detailHero" aria-labelledby="detailQuote">
   <div class="detailHero__media" aria-hidden="true">
     <div class="detailHero__bg"></div>
-    <img class="detailHero__cover" alt="" loading="eager" decoding="async" />
-    <div class="detailHero__fallback" hidden aria-hidden="true">
-      <span class="detailHero__fallbackFlag">${flag ? escapeHtml(flag) : ''}</span>
-    </div>
-    <img class="detailHero__circuit" alt="" loading="lazy" decoding="async" hidden />
+    <img class="detailHero__cover" alt="" width="1920" height="1080" />
+    <div class="detailHero__placeholder" aria-hidden="true"></div>
     <div class="detailHero__veil"></div>
   </div>
   <div class="detailHero__nav">
@@ -618,6 +551,7 @@
     <h1 class="detailHero__gp">${escapeHtml(entry.gp_name)}</h1>
     <p class="detailHero__lead"><strong>${escapeHtml(entry.driver)}</strong> · ${escapeHtml(entry.team)}</p>
     <p class="detailMega" id="detailQuote">“${escapeHtml(entry.quote)}”</p>
+    ${coverCredit ? `<p class="detailHero__credit font-mono">${coverCredit}</p>` : ''}
   </div>
 </section>
 
@@ -656,6 +590,7 @@
         <p class="detailProse">${escapeHtml(entry.significance)}</p>
       </section>
 
+      ${galleryBlock}
       ${storyBlock}
       ${audio}
     </div>
@@ -664,20 +599,10 @@
 
     const hero = art.querySelector('.detailHero');
     const coverImg = art.querySelector('img.detailHero__cover');
-    const fallback = art.querySelector('.detailHero__fallback');
-    const circuit = art.querySelector('img.detailHero__circuit');
+    const placeholder = art.querySelector('.detailHero__placeholder');
     if (hero instanceof HTMLElement && coverImg instanceof HTMLImageElement) {
-      void CC.attachCircuitCover({
-        host: hero,
-        img: coverImg,
-        fallbackEl: fallback,
-        ctx: radioCoverCtx(entry),
-        wikiTitle: radioCircuitWikiName(entry),
-        alt: entry.gp_name,
-        loading: 'eager',
-      });
+      applyCover(hero, coverImg, placeholder, entry, 'eager');
     }
-    if (circuit instanceof HTMLImageElement) void CC.attachCircuitSvgOverlay(circuit, radioCoverCtx(entry));
   }
 
   function parseHash() {
@@ -719,24 +644,6 @@
   }
 
   function wireEvents() {
-    el.filterTag.addEventListener('change', () => {
-      state.tag = el.filterTag.value;
-      renderCards();
-    });
-    el.filterDriver.addEventListener('change', () => {
-      state.driver = el.filterDriver.value;
-      renderCards();
-    });
-    el.eraButtons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const era = btn.getAttribute('data-era');
-        if (!era) return;
-        state.era = era;
-        setEraButtons();
-        renderCards();
-      });
-    });
-
     window.addEventListener('hashchange', onRoute);
 
     document.body.addEventListener('click', (e) => {
@@ -750,13 +657,21 @@
       clearHash();
       onRoute();
     });
-
-    /* ESC: nav-shell closes drawer first, then clears hash detail (see /nav-shell.js). */
   }
 
-  function init() {
-    fillSelects();
-    setEraButtons();
+  async function loadImageManifest() {
+    try {
+      const r = await fetch('/data/radio-images.json', { cache: 'default' });
+      if (!r.ok) return;
+      const j = await r.json();
+      imageManifest = j?.episodes && typeof j.episodes === 'object' ? j.episodes : {};
+    } catch {
+      imageManifest = {};
+    }
+  }
+
+  async function init() {
+    await loadImageManifest();
     renderCards();
     wireEvents();
     onRoute();

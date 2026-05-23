@@ -17,13 +17,27 @@ function f1DbCacheControl(year: number, ok: boolean): string {
 }
 
 function getSupabase(): SupabaseClient | null {
-  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const url =
+    process.env.SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
     process.env.VITE_SUPABASE_ANON_KEY ||
-    process.env.SUPABASE_ANON_KEY;
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+/** jsonb is usually an object; imports/manual inserts may store a JSON string instead. */
+function parsePayloadField(raw: unknown): unknown {
+  if (typeof raw !== 'string') return raw;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return raw;
+  }
 }
 
 function hasUsableMrData(json: unknown): json is { MRData: Record<string, unknown> } {
@@ -83,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Database read failed' });
       }
 
-      const payload = data?.payload;
+      const payload = parsePayloadField(data?.payload);
       if (!hasUsableMrData(payload)) {
         res.setHeader('Cache-Control', f1DbCacheControl(year, false));
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -116,7 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Database read failed' });
     }
 
-    const payload = data?.payload;
+    const payload = parsePayloadField(data?.payload);
     if (!hasUsableMrData(payload)) {
       res.setHeader('Cache-Control', f1DbCacheControl(year, false));
       res.setHeader('Content-Type', 'application/json; charset=utf-8');

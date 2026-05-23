@@ -38,7 +38,7 @@
 | `localStorage` anahtarı | `f1_tracker_mode` → `'simple'` \| `'nerd'` |
 | FOUC önleme | `season-tracker/index.html` içinde inline script: Nerd ise `body.is-nerd` |
 | CSS | `body.is-nerd`, `.nerd-only`, `body.is-mode-animating` geçişleri |
-| Nerd panelleri | Pit stop görselleştirici (`#nerdPitMount`), Head-to-head (`#nerdH2h`), Şampiyona simülatörü (`#nerdSimMount`), stint modal (`#stintModal`) |
+| Nerd panelleri | Pit stop görselleştirici (`#nerdPitMount`), Head-to-head (`#nerdH2h`), stint modal (`#stintModal`) |
 | Lazy init | `ensureNerdPanels()` — ilk Nerd aktivasyonunda bir kez kablolanır |
 
 Simple modda canlı kulede takım adı, pit/DRS/sektör detayları ve bazı timing alanları gizlenir; Nerd modda tam gösterim.

@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "attributionNote": "Photography hosted locally from Wikimedia Commons where credited. Re-run npm run images:circuit-images to refresh.",
+  "circuits": {
+    "monaco": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/monaco/01.webp",
+          "alt": "Circuit de Monaco is a street circuit laid out on the city streets of Monte Carlo and La Condamine around the harbour of the principality of Monaco . It is home to the Formula One Monaco Grand Prix , Formula E Monaco ePrix , and the Historic Grand Prix of Monaco . Image taken on April 1, 2018, by a Planet Labs SkySat satellite.",
+          "layout": "full",
+          "credit": {
+            "author": "Planet Labs, Inc.",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_de_Monaco%2C_April_1%2C_2018_SkySat.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/monaco/02.webp",
+          "alt": "Circuit de Monaco is a street circuit laid out on the city streets of Monte Carlo and La Condamine around the harbour of the principality of Monaco . It is home to the Formula One Monaco Grand Prix , Formula E Monaco ePrix , and the Historic Grand Prix of Monaco . Image taken on April 1, 2018, by a Planet Labs SkySat satellite.",
+          "layout": "landscape",
+          "credit": {
+            "author": "Planet Labs, Inc.",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_de_Monaco%2C_April_1%2C_2018_SkySat_(cropped).jpg"
+          }
+        }
+      ],
+      "cover": "/circuits/monaco.webp"
+    },
+    "spa": {
+      "gallery": [],
+      "cover": "/circuits/spa.webp"
+    },
+    "monza": {
+      "gallery": [],
+      "cover": "/circuits/monza.webp"
+    },
+    "silverstone": {
+      "gallery": [],
+      "cover": "/circuits/silverstone.webp"
+    },
+    "suzuka": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/suzuka/01.webp",
+          "alt": "Track map as of 2005 for use with Suzuka Circuit .",
+          "layout": "full",
+          "credit": {
+            "author": "Will Pittenger",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Suzuka_circuit_map--2005.svg"
+          }
+        }
+      ],
+      "cover": "/circuits/suzuka.webp"
+    },
+    "interlagos": {
+      "gallery": [],
+      "cover": "/circuits/interlagos.webp"
+    },
+    "bahrain": {
+      "gallery": [],
+      "cover": "/circuits/bahrain.webp"
+    },
+    "jeddah": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/jeddah/01.webp",
+          "alt": "First version of the Jeddah Street Circuit, without pit lane.",
+          "layout": "full",
+          "credit": {
+            "author": "GabrielStella",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Jeddah_Street_Circuit_2021.svg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/jeddah/02.webp",
+          "alt": "Jeddah Corniche Circuit Logo",
+          "layout": "landscape",
+          "credit": {
+            "author": "w:Jeddah Corniche Circuit",
+            "license": "Public domain",
+            "page": "https://commons.wikimedia.org/wiki/File:Jeddah_Corniche_Circuit_Logo.svg"
+          }
+        }
+      ]
+    },
+    "albert_park": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/albert_park/01.webp",
+          "alt": "Albert Park Circuit (2021-present)",
+          "layout": "full",
+          "credit": {
+            "author": "AEPA Racing",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Albert_Park_Circuit_2021.svg"
+          }
+        }
+      ]
+    },
+    "americas": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/americas/01.webp",
+          "alt": "The Observation Tower from turn 3 on race day at Circuit of the Americas in Austin, Texas. This 250 foot (77 meter) high landmark was designed by Miro Rivera Architects. The flared out red pipes become the roof for an amphitheater.",
+          "layout": "full",
+          "credit": {
+            "author": "Earl McGehee",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Tower_at_Circuit_of_the_Americas.jpg"
+          }
+        }
+      ]
+    },
+    "baku": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/baku/01.webp",
+          "alt": "A map of the Formula One motor circuit in Baku as it was used for the 2016 European Grand Prix and the 2017, 2018, 2019, and 2021 Azerbaijani Grands Prix. This map is valid for races which use this layout and corner numbering scheme, please upload a new file for races which use different layouts or corner numbering schemes rather than replacing this file. As this is a free-hand map drawn by an enthusiast rather than a professional cartographer's work it may contain some errors, although checking it against other maps it appears accurate enough for most purposes. The track is shown in black with a grey outline, while the pit lane is shown in blue. A scale showing the length of one kilometre (with increments of 100 metres) is given, to allow viewers to contextualise and understand what they are looking at. Corner numbers and other important text is given an off-white background to avoid transparency issues rendering it illegible on certain devices. A line with a chequered flag pattern crossing the track and pit lane shows the location of the start/finish line also known as the control or timing line; while the location of pole position is indicated by a white line, crossing only the track, marked with a large mauve arrow, which indicates the direction of travel. The salmon arrow marked \"N\" shows the direction of north.",
+          "layout": "full",
+          "credit": {
+            "author": "HumanBodyPiloter5",
+            "license": "CC0",
+            "page": "https://commons.wikimedia.org/wiki/File:Baku_Formula_One_circuit_map.svg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/baku/02.webp",
+          "alt": "For use with Baku City Circuit.",
+          "layout": "landscape",
+          "credit": {
+            "author": "ごひょううべこ",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:2023_F1_CourseLayout_Azerbaijan.svg"
+          }
+        }
+      ]
+    },
+    "catalunya": {
+      "gallery": []
+    },
+    "hungaroring": {
+      "gallery": []
+    },
+    "imola": {
+      "gallery": []
+    },
+    "istanbul": {
+      "gallery": []
+    },
+    "losail": {
+      "gallery": []
+    },
+    "madring": {
+      "gallery": []
+    },
+    "marina_bay": {
+      "gallery": []
+    },
+    "miami": {
+      "gallery": []
+    },
+    "portimao": {
+      "gallery": []
+    },
+    "red_bull_ring": {
+      "gallery": []
+    },
+    "ricard": {
+      "gallery": []
+    },
+    "rodriguez": {
+      "gallery": []
+    },
+    "shanghai": {
+      "gallery": []
+    },
+    "sochi": {
+      "gallery": []
+    },
+    "vegas": {
+      "gallery": [],
+      "cover": "/circuits/vegas.webp"
+    },
+    "villeneuve": {
+      "gallery": []
+    },
+    "yas_marina": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/yas_marina/01.webp",
+          "alt": "The Yas Marina Circuit , the venue for the Abu Dhabi Grand Prix , situated on Yas Island , about 30 minutes from the UAE capital of Abu Dhabi . Image taken on October 12, 2018, by a Planet Labs SkySat satellite.",
+          "layout": "full",
+          "credit": {
+            "author": "Planet Labs, Inc.",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Yas_Marina_Circuit%2C_October_12%2C_2018_SkySat_(cropped).jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/yas_marina/02.webp",
+          "alt": "Layout of the Yas Marina Circuit",
+          "layout": "landscape",
+          "credit": {
+            "author": "Anthony Alessio Tralongo",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Yas_Marina_Circuit.png"
+          }
+        }
+      ],
+      "cover": "/circuits/yas_marina.webp"
+    },
+    "zandvoort": {
+      "gallery": []
+    }
+  }
+}

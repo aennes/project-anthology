@@ -2,10 +2,30 @@
  * Local dev server for /api routes (news, health, f1-live, f1-season).
  * Used when running "npm run dev" so that fetch('/api/...') works without Vercel.
  */
+import fs from 'fs/promises';
 import http from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { URL } from 'url';
+import { loadEnv } from 'vite';
 
 const PORT = 3001;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.join(__dirname, '..');
+
+/** Match Vite / scripts: read `.env` + `.env.local` into `process.env` for API handlers (not loaded by tsx by default). */
+function mergeViteEnvIntoProcess() {
+  const merged = loadEnv('development', repoRoot, '');
+  for (const [key, value] of Object.entries(merged)) {
+    if (process.env[key] === undefined && typeof value === 'string') {
+      process.env[key] = value;
+    }
+  }
+}
+
+mergeViteEnvIntoProcess();
+/** Cursor debug session NDJSON sink (workspace root). */
+const AGENT_DEBUG_LOG = path.join(__dirname, '..', 'debug-7d6645.log');
 
 // Ensure req has .query for Vercel handler compatibility (Node's IncomingMessage has no .query)
 function patchReq(req: http.IncomingMessage): http.IncomingMessage & { query: Record<string, string> } {
@@ -58,7 +78,7 @@ const server = http.createServer(async (req, res) => {
 
   // CORS for local dev
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (method === 'OPTIONS') {
@@ -109,6 +129,31 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/f1-db' || pathname === '/api/f1-db/') {
       const mod = await import('../api/f1-db');
       await mod.default(patchedReq as any, patchedRes as any);
+      return;
+    }
+    if (pathname === '/api/debug-agent-log' || pathname === '/api/debug-agent-log/') {
+      if (method !== 'POST') {
+        patchedRes.status(405);
+        patchedRes.end('Method Not Allowed');
+        return;
+      }
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) {
+        chunks.push(chunk as Buffer);
+      }
+      const raw = Buffer.concat(chunks).toString('utf8');
+      let line = raw.trim();
+      try {
+        const obj = JSON.parse(raw) as Record<string, unknown>;
+        line = JSON.stringify(obj);
+      } catch {
+        patchedRes.status(400);
+        patchedRes.json({ error: 'invalid_json' });
+        return;
+      }
+      await fs.appendFile(AGENT_DEBUG_LOG, `${line}\n`, 'utf8');
+      patchedRes.status(204);
+      patchedRes.end();
       return;
     }
   } catch (err) {

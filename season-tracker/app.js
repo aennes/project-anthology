@@ -5,7 +5,6 @@
   const SEASON_CURRENT = Math.max(SEASON_MIN, new Date().getFullYear());
   /** Bump when cache key shape changes so sessionStorage does not mix incompatible payloads. */
   const CACHE_VERSION = 'v4';
-  const F1_STATIC_MANIFEST_URL = '/data/f1/index.json';
   /**
    * Ergast / historical cache keys (sessionStorage + localStorage via `f1_season_local_${key}`):
    * | Key pattern | Example | Payload |
@@ -52,6 +51,40 @@
       // ignore
     }
   }
+
+  // #region agent log
+  /**
+   * Debug NDJSON ingest (session 7d6645). Do not log secrets or PII.
+   * @param {{ runId?: string, hypothesisId: string, location: string, message: string, data?: Record<string, unknown> }} p
+   */
+  function agentDbg(p) {
+    try {
+      const payload = {
+        sessionId: '7d6645',
+        runId: p.runId || 'run1',
+        hypothesisId: p.hypothesisId,
+        location: p.location,
+        message: p.message,
+        data: p.data || {},
+        timestamp: Date.now(),
+      };
+      const body = JSON.stringify(payload);
+      void fetch('http://127.0.0.1:7800/ingest/678c5e3b-f768-4d42-81aa-27cca18ff56b', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7d6645' },
+        body,
+      }).catch(() => {});
+      void fetch('/api/debug-agent-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      }).catch(() => {});
+    } catch {
+      // ignore
+    }
+  }
+
+  // #endregion
 
   function firstResolvedMatching(promises, predicate) {
     let done = false;
@@ -243,6 +276,12 @@
     statWins: $('#statWins'),
     statGap: $('#statGap'),
     top3Cards: $('#top3Cards'),
+    heroTeamGrid: $('#heroTeamGrid'),
+    snapHeadline: $('#snapHeadline'),
+    snapDek: $('#snapDek'),
+    snapStats: $('#snapStats'),
+    tyreStack: $('#tyreStack'),
+    tyreLegend: $('#tyreLegend'),
     tyreBars: $('#tyreBars'),
     tyreNote: $('#tyreNote'),
     winsBars: $('#winsBars'),
@@ -263,7 +302,6 @@
     modeSimple: $('#modeSimple'),
     modeNerd: $('#modeNerd'),
     nerdPitMount: $('#nerdPitMount'),
-    nerdSimMount: $('#nerdSimMount'),
     stintModal: $('#stintModal'),
     stintModalTitle: $('#stintModalTitle'),
     stintModalBody: $('#stintModalBody'),
@@ -271,11 +309,26 @@
   };
 
   /** Team palette (approx + readable). */
+  /** 2026 grid fallback when constructor standings are incomplete. */
+  const HERO_GRID_TEAM_NAMES = [
+    'McLaren',
+    'Ferrari',
+    'Red Bull',
+    'Mercedes',
+    'Williams',
+    'Racing Bulls',
+    'Alpine',
+    'Haas',
+    'Kick Sauber',
+    'Aston Martin',
+  ];
+
   const TEAM_COLORS = {
     'Red Bull': '#3671C6',
     Ferrari: '#F91536',
     Mercedes: '#00D2BE',
     McLaren: '#FF8000',
+    'Aston Martin': '#229971',
     AstonMartin: '#229971',
     Aston: '#229971',
     Alpine: '#FF87BC',
@@ -380,6 +433,9 @@
     heroCountdownTimer: null,
     racePhase: 'upcoming',
     livePollTimer: null,
+    accentUserPicked: false,
+    accentTeamKey: '',
+    accentColor: '',
     livePollBackoffMs: LIVE_POLL_BASE_MS,
     liveConsecutiveFailures: 0,
     liveCircuitPausedUntil: 0,
@@ -423,22 +479,14 @@
     nerdPanelsReady: false,
     /** Pit strategy visualizer rendered at least once. */
     pitVizRendered: false,
-    /** OpenF1 session_key for expanded pit accordion race (string). */
+    /** OpenF1 session_key for expanded pit strategy race (string). */
     pitExpandedSessionKey: null,
     /** Cached stint payloads per session_key for re-render (show all). */
     pitRaceCache: new Map(),
     /** Session keys with “show all drivers” enabled. */
     pitShowAllSessions: new Set(),
-    /** Championship sim: active remaining round tab. */
-    simActiveRound: null,
-    simDebounceTimer: 0,
     /** Coalesces live timing DOM paints to one frame per poll. */
     liveDomRaf: 0,
-    /**
-     * Championship sim: predicted finishing positions. `driverId` → `round` → `1..20` or `null` (use default rank).
-     * @type {Record<string, Record<number, number | null>>}
-     */
-    simPred: {},
   };
 
   // ---------------------------
@@ -695,14 +743,6 @@
     return urls;
   }
 
-  const F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
-
-  function pointsForRacePosition(pos) {
-    const p = Number(pos);
-    if (!Number.isFinite(p) || p < 1) return 0;
-    return F1_POINTS[p - 1] ?? 0;
-  }
-
   const PIT_TOP_DRIVERS = 10;
 
   function compoundPitClass(c) {
@@ -864,7 +904,6 @@
   async function ensureNerdPanels() {
     if (state.nerdPanelsReady) return;
     state.nerdPanelsReady = true;
-    renderChampionshipSim();
     if (!state.pitVizRendered) {
       state.pitVizRendered = true;
       void renderPitStrategyViz();
@@ -875,187 +914,49 @@
     el.liveTimingGrid?.classList.toggle('timingBento--standings', !state.live);
   }
 
-  const SIM_DEBOUNCE_MS = 140;
-
   function abbrevRaceName(name) {
     const s = String(name || '').trim();
     if (s.length <= 14) return s;
     return s.replace(/\s+Grand Prix$/i, ' GP').replace(/^FORMULA 1\s+/i, '');
   }
 
-  function scheduleSimRecalc(drivers, remaining) {
-    window.clearTimeout(state.simDebounceTimer);
-    state.simDebounceTimer = window.setTimeout(() => computeSimStandings(drivers, remaining), SIM_DEBOUNCE_MS);
-  }
-
-  function renderChampionshipSim() {
-    const root = el.nerdSimMount;
-    if (!root) return;
-    if (root._nerdSimInput) root.removeEventListener('input', root._nerdSimInput);
-    if (root._nerdSimClick) root.removeEventListener('click', root._nerdSimClick);
-    if (state.year !== SEASON_CURRENT || !state.standings || !state.calendar.length) {
-      root.innerHTML = '<p class="small muted">Simulator uses the current season calendar and standings. Switch to the current year tab.</p>';
-      return;
-    }
-    const now = new Date();
-    const remaining = state.calendar.filter((r) => !isRaceDone(r, now));
-    const drivers = extractDriverStandings(state.standings).slice(0, 12);
-    if (remaining.length === 0) {
-      root.innerHTML = '<p class="small muted">No remaining races on the calendar.</p>';
-      return;
-    }
-    if (!state.simPred || typeof state.simPred !== 'object') state.simPred = {};
-
-    const activeRound =
-      remaining.some((r) => r.round === state.simActiveRound) ? state.simActiveRound : remaining[0].round;
-    state.simActiveRound = activeRound;
-
-    const driverCards = drivers
-      .map((d) => {
-        state.simPred[d.driverId] = state.simPred[d.driverId] || {};
-        const cur = state.simPred[d.driverId][activeRound];
-        const def = Math.min(20, Math.max(1, d.position || 10));
-        const val = cur == null ? '' : String(cur);
-        const name = `${d.givenName} ${d.familyName}`.trim();
-        return `
-          <label class="nerdSimCard">
-            <span class="nerdSimCard__code">${escapeHtml(d.code)}</span>
-            <span class="nerdSimCard__name" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
-            <input
-              type="number"
-              class="nerdSimCard__pos"
-              min="1"
-              max="20"
-              step="1"
-              placeholder="${def}"
-              value="${escapeHtml(val)}"
-              data-sim="${escapeHtml(d.driverId)}"
-              data-round="${activeRound}"
-              aria-label="Predicted finish ${escapeHtml(d.code)} round ${activeRound}"
-            />
-          </label>`;
-      })
-      .join('');
-
-    const roundChips = remaining
-      .map((r) => {
-        const on = r.round === activeRound;
-        return `<button type="button" class="nerdSimChip${on ? ' is-active' : ''}" data-sim-round="${r.round}" role="tab" aria-selected="${on ? 'true' : 'false'}" title="${escapeHtml(r.raceName)}">R${r.round}</button>`;
-      })
-      .join('');
-
-    root.innerHTML = `
-      <div class="nerdSimBento" data-sim-remaining="${remaining.length}">
-        <div class="nerdSimBento__rounds" role="tablist" aria-label="Remaining rounds">${roundChips}</div>
-        <div class="nerdSimBento__grid" id="simDriverGrid">${driverCards}</div>
-        <div class="nerdSimBento__actions">
-          <button type="button" class="pill pill--ghost pill--compact" id="simReset">Reset all</button>
-        </div>
-        <div class="nerdSimStandings nerdSimStandings--compact" id="simStandingsOut"></div>
-      </div>
-    `;
-
-    const onInput = (e) => {
-      const t = e.target;
-      if (!(t instanceof HTMLInputElement) || !t.dataset.sim) return;
-      const did = t.dataset.sim;
-      const rd = Number(t.dataset.round);
-      const raw = t.value.trim();
-      let v = null;
-      if (raw !== '') {
-        const n = Number(raw);
-        if (!Number.isFinite(n) || n < 1 || n > 20) return;
-        v = Math.round(n);
-        t.value = String(v);
-      }
-      state.simPred[did] = state.simPred[did] || {};
-      state.simPred[did][rd] = v;
-      scheduleSimRecalc(drivers, remaining);
-    };
-    const onClick = (e) => {
-      const t = e.target;
-      if (!(t instanceof HTMLElement)) return;
-      const roundBtn = t.closest('[data-sim-round]');
-      if (roundBtn instanceof HTMLElement && roundBtn.dataset.simRound) {
-        state.simActiveRound = Number(roundBtn.dataset.simRound);
-        renderChampionshipSim();
-        return;
-      }
-      if (t.id === 'simReset') {
-        drivers.forEach((d) => {
-          state.simPred[d.driverId] = {};
-        });
-        renderChampionshipSim();
-      }
-    };
-    if (root._nerdSimInput) root.removeEventListener('input', root._nerdSimInput);
-    root._nerdSimInput = onInput;
-    root._nerdSimClick = onClick;
-    root.addEventListener('input', onInput);
-    root.addEventListener('click', onClick);
-    computeSimStandings(drivers, remaining);
-  }
-
-  function computeSimStandings(drivers, remaining) {
-    const host = document.getElementById('simStandingsOut');
-    if (!host || !drivers.length) return;
-    const nRem = remaining.length;
-    const leaderActual = drivers.reduce((best, d) => (d.points > best.points ? d : best), drivers[0]);
-    const leaderPts = leaderActual.points;
-
-    const rows = drivers.map((d) => {
-      let pts = d.points;
-      for (const r of remaining) {
-        const override = state.simPred[d.driverId]?.[r.round];
-        const def = Math.min(20, Math.max(1, d.position || 10));
-        const pos = override == null ? def : override;
-        pts += pointsForRacePosition(pos);
-      }
-      return { ...d, simPts: pts };
-    });
-    rows.sort((a, b) => b.simPts - a.simPts);
-
-    const list = rows
-      .map((d, idx) => {
-        const maxReach = d.points + nRem * 25;
-        let math;
-        if (d.driverId === leaderActual.driverId) {
-          math = 'Title leader (actual pts)';
-        } else if (maxReach > leaderPts) {
-          math = 'In contention (broadcast bound)';
-        } else {
-          math = 'Out of contention (bound)';
-        }
-        return `<li>
-          <span>${idx + 1}</span>
-          <span class="mono">${escapeHtml(d.code)}</span>
-          <span>${escapeHtml(`${d.givenName} ${d.familyName}`.trim())}</span>
-          <span class="mono">${d.simPts}</span>
-          <span class="mono">${escapeHtml(math)}</span>
-        </li>`;
-      })
-      .join('');
-    host.innerHTML = `<div class="nerdSimStandings__head">Projected</div><ol class="nerdSimStandings__list">${list}</ol>`;
-  }
-
-  function collapsePitAccordion(exceptArticle) {
+  function collapsePitPanel(keepSessionKey) {
     const root = el.nerdPitMount;
     if (!root) return;
-    root.querySelectorAll('.pitAcc').forEach((acc) => {
-      if (exceptArticle && acc === exceptArticle) return;
-      const sk = acc instanceof HTMLElement ? acc.dataset.sessionKey : null;
-      if (sk) state.pitShowAllSessions.delete(sk);
-      const head = acc.querySelector('.pitAcc__head');
-      const body = acc.querySelector('.pitAcc__body');
-      if (head instanceof HTMLButtonElement) head.setAttribute('aria-expanded', 'false');
-      acc.classList.remove('is-open');
-      if (body instanceof HTMLElement) {
-        body.hidden = true;
-        body.replaceChildren();
-      }
+    const panel = root.querySelector('.pitPanel');
+    const body = root.querySelector('.pitPanel__body');
+    const keep = keepSessionKey != null ? String(keepSessionKey) : null;
+    root.querySelectorAll('.pitRaceChip').forEach((chip) => {
+      if (!(chip instanceof HTMLElement)) return;
+      const sk = chip.dataset.sessionKey;
+      const active = keep != null && sk === keep;
+      chip.classList.toggle('is-active', active);
+      if (chip instanceof HTMLButtonElement) chip.setAttribute('aria-expanded', active ? 'true' : 'false');
+      if (!active && sk) state.pitShowAllSessions.delete(sk);
     });
-    if (!exceptArticle) state.pitExpandedSessionKey = null;
+    if (keep == null) {
+      state.pitExpandedSessionKey = null;
+      if (panel instanceof HTMLElement) panel.hidden = true;
+      if (body instanceof HTMLElement) body.replaceChildren();
+    }
     hidePitTip();
+  }
+
+  function bindPitRailKeys(rail) {
+    if (!(rail instanceof HTMLElement) || rail._pitKeys) return;
+    rail._pitKeys = true;
+    rail.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      const first = rail.querySelector('.pitRaceChip');
+      const gap = 10;
+      const rect = first instanceof HTMLElement ? first.getBoundingClientRect() : null;
+      const stride = rect ? rect.width + gap : 120;
+      rail.scrollBy({
+        left: stride * (e.key === 'ArrowRight' ? 1 : -1),
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      });
+    });
   }
 
   function buildPitCodeMap(driversJson) {
@@ -1203,20 +1104,29 @@
     body.appendChild(viz);
   }
 
-  async function expandPitRace(article, sessionKey) {
-    const body = article.querySelector('.pitAcc__body');
-    const head = article.querySelector('.pitAcc__head');
-    if (!(body instanceof HTMLElement) || !(head instanceof HTMLButtonElement)) return;
+  async function expandPitRace(chip, sessionKey, raceMeta) {
+    const root = el.nerdPitMount;
+    const panel = root?.querySelector('.pitPanel');
+    const body = root?.querySelector('.pitPanel__body');
+    const titleEl = root?.querySelector('.pitPanel__title');
+    if (!(chip instanceof HTMLElement) || !(body instanceof HTMLElement) || !(panel instanceof HTMLElement)) return;
     const sk = String(sessionKey);
-    if (state.pitExpandedSessionKey === sk && article.classList.contains('is-open')) {
-      collapsePitAccordion(null);
+    if (state.pitExpandedSessionKey === sk && !panel.hidden) {
+      collapsePitPanel(null);
       return;
     }
-    collapsePitAccordion(article);
+    collapsePitPanel(sk);
     state.pitExpandedSessionKey = sk;
-    article.classList.add('is-open');
-    head.setAttribute('aria-expanded', 'true');
-    body.hidden = false;
+    chip.classList.add('is-active');
+    if (chip instanceof HTMLButtonElement) chip.setAttribute('aria-expanded', 'true');
+    if (titleEl instanceof HTMLElement && raceMeta) {
+      const short =
+        raceMeta.shortName ||
+        (raceMeta.raceName ? abbrevRaceName(raceMeta.raceName) : '');
+      const round = raceMeta.round != null ? `R${raceMeta.round}` : '';
+      titleEl.textContent = [round, short].filter(Boolean).join(' · ');
+    }
+    panel.hidden = false;
     body.innerHTML = '<p class="pitViz__loading small muted">Loading…</p>';
 
     let pack = state.pitRaceCache.get(sk);
@@ -1251,19 +1161,21 @@
     if (showBtn instanceof HTMLElement && showBtn.dataset.pitShowAll) {
       const sk = showBtn.dataset.pitShowAll;
       const pack = state.pitRaceCache.get(sk);
-      const article = showBtn.closest('.pitAcc');
-      const body = article?.querySelector('.pitAcc__body');
+      const panel = showBtn.closest('.pitPanel');
+      const body = panel?.querySelector('.pitPanel__body');
       if (pack && body instanceof HTMLElement) {
         state.pitShowAllSessions.add(sk);
         renderPitRaceLanes(body, sk, pack);
       }
       return;
     }
-    const head = t.closest('.pitAcc__head');
-    if (!(head instanceof HTMLButtonElement)) return;
-    const article = head.closest('.pitAcc');
-    if (!(article instanceof HTMLElement) || !article.dataset.sessionKey) return;
-    void expandPitRace(article, article.dataset.sessionKey);
+    const chip = t.closest('.pitRaceChip');
+    if (!(chip instanceof HTMLButtonElement) || !chip.dataset.sessionKey) return;
+    void expandPitRace(chip, chip.dataset.sessionKey, {
+      round: chip.dataset.round,
+      raceName: chip.dataset.raceName,
+      shortName: chip.querySelector('.pitRaceChip__name')?.textContent?.trim() || '',
+    });
   }
 
   async function renderPitStrategyViz() {
@@ -1290,35 +1202,57 @@
     const sortedRaces = [...done].sort((a, b) => String(a.date).localeCompare(String(b.date)));
     const n = Math.min(sortedSess.length, sortedRaces.length);
 
-    const list = document.createElement('div');
-    list.className = 'pitList';
-    list.setAttribute('role', 'list');
+    const wrap = document.createElement('div');
+    wrap.className = 'pitStrategy';
+
+    const rail = document.createElement('div');
+    rail.className = 'pitRail rail cine-hscroll';
+    rail.tabIndex = 0;
+    rail.setAttribute('role', 'tablist');
+    rail.setAttribute('aria-label', 'Completed races — pit strategy');
+
+    const panel = document.createElement('div');
+    panel.className = 'pitPanel';
+    panel.hidden = true;
+    panel.innerHTML = `
+      <div class="pitPanel__head">
+        <span class="pitPanel__title"></span>
+      </div>
+      <div class="pitPanel__body"></div>
+    `;
+
     for (let i = 0; i < n; i += 1) {
       const race = sortedRaces[i];
       const sk = sortedSess[i]?.session_key;
       if (sk == null) continue;
-      const article = document.createElement('article');
-      article.className = 'pitAcc';
-      article.dataset.sessionKey = String(sk);
-      article.dataset.round = String(race.round);
-      article.setAttribute('role', 'listitem');
       const shortName = abbrevRaceName(race.raceName);
-      article.innerHTML = `
-        <button type="button" class="pitAcc__head" aria-expanded="false">
-          <span class="pitAcc__round mono">R${escapeHtml(String(race.round))}</span>
-          <span class="pitAcc__name">${escapeHtml(shortName)}</span>
-          <span class="pitAcc__chev" aria-hidden="true"></span>
-        </button>
-        <div class="pitAcc__body" hidden></div>
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'pitRaceChip';
+      chip.dataset.sessionKey = String(sk);
+      chip.dataset.round = String(race.round);
+      chip.dataset.raceName = race.raceName;
+      chip.setAttribute('role', 'tab');
+      chip.setAttribute('aria-expanded', 'false');
+      chip.setAttribute('aria-label', `Round ${race.round} ${race.raceName} pit strategy`);
+      chip.innerHTML = `
+        <span class="pitRaceChip__accent" aria-hidden="true"></span>
+        <span class="pitRaceChip__round mono">R${escapeHtml(String(race.round).padStart(2, '0'))}</span>
+        <span class="pitRaceChip__name">${escapeHtml(shortName)}</span>
       `;
-      list.appendChild(article);
+      rail.appendChild(chip);
     }
-    root.replaceChildren(list);
 
-    if (!list.children.length) {
+    wrap.appendChild(rail);
+    wrap.appendChild(panel);
+    root.replaceChildren(wrap);
+
+    if (!rail.children.length) {
       root.innerHTML = '<p class="small muted">No paired OpenF1 race sessions found.</p>';
       return;
     }
+
+    bindPitRailKeys(rail);
 
     if (!root._pitClick) {
       root._pitClick = onPitMountClick;
@@ -1351,6 +1285,15 @@
   }
 
   async function init() {
+    // #region agent log
+    const initT0 = performance.now();
+    agentDbg({
+      hypothesisId: 'H2',
+      location: 'season-tracker/app.js:init',
+      message: 'init_start',
+      data: {},
+    });
+    // #endregion
     buildSeasonTabs();
     state.uiMode = readStoredUiMode();
     document.body.classList.toggle('is-nerd', state.uiMode === 'nerd');
@@ -1358,18 +1301,41 @@
     syncTimingBentoMode();
     bindUI();
     setupSectionIo();
-    await loadF1StaticManifest();
+    // #region agent log
+    agentDbg({
+      hypothesisId: 'H2',
+      location: 'season-tracker/app.js:init',
+      message: 'after_setup',
+      data: { elapsedMs: Math.round(performance.now() - initT0) },
+    });
+    // #endregion
     const tabYears = [];
     for (let i = 0; i < 5; i += 1) {
       const y = SEASON_CURRENT - i;
       if (y >= SEASON_MIN) tabYears.push(y);
     }
     const activeYear = await resolveActiveSeasonYear();
+    // #region agent log
+    agentDbg({
+      hypothesisId: 'H3',
+      location: 'season-tracker/app.js:init',
+      message: 'after_resolve_active_year',
+      data: { activeYear, elapsedMs: Math.round(performance.now() - initT0) },
+    });
+    // #endregion
     state.activeSeason = activeYear;
     state.year = activeYear;
     syncActiveSeasonTab(activeYear);
     await warmSeason(activeYear);
     await renderSeason(activeYear);
+    // #region agent log
+    agentDbg({
+      hypothesisId: 'H7',
+      location: 'season-tracker/app.js:init',
+      message: 'after_render_season',
+      data: { elapsedMs: Math.round(performance.now() - initT0) },
+    });
+    // #endregion
     await renderHistorical(activeYear);
     void decideLiveAndStart();
     void refreshIdleInsight();
@@ -1526,7 +1492,6 @@
         await warmSeason(year);
         await renderHistorical(year);
         void refreshIdleInsight();
-        if (state.uiMode === 'nerd') renderChampionshipSim();
       });
     });
 
@@ -1568,12 +1533,29 @@
   }
 
   async function resolveActiveSeasonYear() {
+    // #region agent log
+    const rasT0 = performance.now();
+    // #endregion
     for (let y = SEASON_CURRENT; y >= SEASON_MIN; y -= 1) {
       // eslint-disable-next-line no-await-in-loop
+      const iterStart = performance.now();
       const staticUrl = ergastPathToStaticUrl(`${y}/driverStandings.json`);
       const dbPromise = fetchF1DbJson(`${y}/driverStandings.json`, { timeoutMs: F1_DB_TIMEOUT_NONCRITICAL_MS });
       const staticPromise = staticUrl ? fetchF1StaticJson(staticUrl) : Promise.resolve(null);
       const winner = await firstResolvedMatching([staticPromise, dbPromise], (v) => v && extractDriverStandings(v).length > 0);
+      // #region agent log
+      agentDbg({
+        hypothesisId: 'H3',
+        location: 'season-tracker/app.js:resolveActiveSeasonYear',
+        message: 'year_probe_done',
+        data: {
+          year: y,
+          iterMs: Math.round(performance.now() - iterStart),
+          found: !!(winner && extractDriverStandings(winner).length > 0),
+          totalElapsedMs: Math.round(performance.now() - rasT0),
+        },
+      });
+      // #endregion
       if (winner) return y;
     }
     for (let y = SEASON_CURRENT; y >= SEASON_MIN; y -= 1) {
@@ -1705,13 +1687,21 @@
       `;
       const slot = card.querySelector('[data-avatar-slot]');
       if (slot) slot.replaceWith(makeAvatarEl(d.code, fullName));
-      card.addEventListener('click', () => setAccent(teamColor));
+      const teamKey = teamAccentKey(d.constructorName);
+      card.dataset.teamKey = teamKey;
+      card.addEventListener('click', () => setAccent(teamColor, { teamKey }));
       el.top3Cards.appendChild(card);
     });
 
+    renderHeroTeamGrid(constructorStandings);
     bindTilt();
     // default accent to leader team color (but allow user override later)
-    if (leader?.constructorName) setAccent(getTeamColor(leader.constructorName), { soft: true });
+    if (leader?.constructorName) {
+      setAccent(getTeamColor(leader.constructorName), {
+        soft: true,
+        teamKey: teamAccentKey(leader.constructorName),
+      });
+    }
 
     const racePhase = getSeasonRacePhase(calendar);
     state.nextRace = racePhase.race;
@@ -1734,12 +1724,73 @@
     el.statGap?.classList.remove('is-loading');
   }
 
+  function teamAccentKey(name) {
+    return String(name || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function pickHeroGridTeams(constructorStandings) {
+    const out = [];
+    const seen = new Set();
+    const sorted = (constructorStandings || []).slice().sort((a, b) => Number(a.position) - Number(b.position));
+    for (const c of sorted) {
+      const key = teamAccentKey(c.constructorName);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ constructorName: c.constructorName, constructorId: c.constructorId || '' });
+      if (out.length >= 10) return out;
+    }
+    for (const name of HERO_GRID_TEAM_NAMES) {
+      if (out.length >= 10) break;
+      const key = teamAccentKey(name);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ constructorName: name, constructorId: '' });
+    }
+    return out;
+  }
+
+  function renderHeroTeamGrid(constructorStandings) {
+    const grid = el.heroTeamGrid;
+    if (!(grid instanceof HTMLElement)) return;
+    grid.innerHTML = '';
+    const teams = pickHeroGridTeams(constructorStandings);
+    teams.forEach((t) => {
+      const color = getTeamColor(t.constructorName);
+      const teamKey = teamAccentKey(t.constructorName);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'heroTeamTile';
+      btn.role = 'listitem';
+      btn.dataset.teamKey = teamKey;
+      btn.dataset.accentColor = color;
+      btn.style.setProperty('--tile-accent', color);
+      btn.setAttribute('aria-label', t.constructorName);
+      btn.setAttribute('aria-pressed', 'false');
+      btn.innerHTML = `<span class="logoMini heroTeamTile__logo" aria-hidden="true"><span></span></span>`;
+      btn.addEventListener('click', () => setAccent(color, { teamKey }));
+      grid.appendChild(btn);
+      const logoSlot = btn.querySelector('.logoMini');
+      void loadTeamLogoInto(
+        logoSlot,
+        wikiTitleForTeam(t.constructorName),
+        t.constructorName,
+        t.constructorId,
+      );
+    });
+    syncAccentActiveState();
+  }
+
   function renderHistory(driverStandings, constructorStandings, year) {
     el.historyDrivers.innerHTML = '';
     el.historyConstructors.innerHTML = '';
     const champ = driverStandings[0];
     const champTeamColor = champ ? getTeamColor(champ.constructorName) : getComputedStyle(document.documentElement).getPropertyValue('--accent');
-    if (champ) setAccent(champTeamColor, { soft: true });
+    if (champ) {
+      setAccent(champTeamColor, { soft: true, teamKey: teamAccentKey(champ.constructorName) });
+    }
 
     driverStandings.forEach((d) => {
       el.historyDrivers.appendChild(makeTowerRowStatic(d, year));
@@ -2587,9 +2638,7 @@
   async function loadSnapshot() {
     if (state.snapshotLoaded) return;
     state.snapshotLoaded = true;
-    el.tyreNote.textContent = 'Loading…';
-    el.winsNote.textContent = 'Loading…';
-    el.closestNote.textContent = 'Loading…';
+    setSnapshotLoading();
 
     // best-effort strategy:
     // - find completed races from Ergast calendar
@@ -2601,19 +2650,193 @@
     const now = new Date();
     const done = calendar.filter((r) => isRaceDone(r, now));
 
-    await Promise.all([buildWinsAndClosest(done), buildTyreUsage(yr)]);
+    const [winsPack, tyreSummary] = await Promise.all([buildWinsAndClosest(done), buildTyreUsage(yr)]);
+    renderSnapshotNarrative({
+      year: yr,
+      doneCount: done.length,
+      totalRounds: calendar.length,
+      tyreSummary,
+      closest: winsPack?.closest ?? null,
+      winLeader: winsPack?.topWinner ?? null,
+    });
+  }
+
+  function setSnapshotLoading() {
+    if (el.snapHeadline) el.snapHeadline.textContent = 'Reading the season…';
+    if (el.snapDek) el.snapDek.textContent = 'Pulling wins, margins, and stint compounds from completed rounds.';
+    if (el.snapStats) {
+      el.snapStats.hidden = true;
+      el.snapStats.innerHTML = '';
+    }
+    if (el.tyreStack) el.tyreStack.innerHTML = '';
+    if (el.tyreLegend) {
+      el.tyreLegend.hidden = true;
+      el.tyreLegend.innerHTML = '';
+    }
+    if (el.tyreBars) el.tyreBars.innerHTML = '';
+    if (el.tyreNote) el.tyreNote.textContent = 'Loading tyre mix…';
+    if (el.winsBars) el.winsBars.innerHTML = '';
+    if (el.winsNote) el.winsNote.textContent = 'Loading team wins…';
+    if (el.closestCard) el.closestCard.innerHTML = '';
+    if (el.closestNote) el.closestNote.textContent = '';
+  }
+
+  const TYRE_COMPOUND_ORDER = ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET'];
+
+  function snapshotLeaderContext() {
+    const drivers = state.standings ? extractDriverStandings(state.standings) : [];
+    return { leader: drivers[0] || null, second: drivers[1] || null };
+  }
+
+  function compoundDisplayName(key) {
+    const k = String(key || '').toUpperCase();
+    if (k === 'SOFT') return 'Soft';
+    if (k === 'MEDIUM') return 'Medium';
+    if (k === 'HARD') return 'Hard';
+    if (k === 'INTERMEDIATE') return 'Intermediate';
+    if (k === 'WET') return 'Wet';
+    return k ? k.charAt(0) + k.slice(1).toLowerCase() : '—';
+  }
+
+  function compoundShort(key) {
+    const k = String(key || '').toUpperCase();
+    if (k === 'SOFT') return 'S';
+    if (k === 'MEDIUM') return 'M';
+    if (k === 'HARD') return 'H';
+    if (k === 'INTERMEDIATE') return 'I';
+    if (k === 'WET') return 'W';
+    return '?';
+  }
+
+  function compoundBarClass(key) {
+    const k = String(key || '').toUpperCase();
+    if (k === 'SOFT') return 'barRow--soft';
+    if (k === 'MEDIUM') return 'barRow--medium';
+    if (k === 'HARD') return 'barRow--hard';
+    if (k === 'INTERMEDIATE') return 'barRow--inter';
+    if (k === 'WET') return 'barRow--wet';
+    return '';
+  }
+
+  function summarizeTyreCounts(counts) {
+    const entries = TYRE_COMPOUND_ORDER.map((k) => [k, counts.get(k) || 0]).filter(([, v]) => v > 0);
+    const total = entries.reduce((s, [, v]) => s + v, 0);
+    if (total === 0) return null;
+    const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+    const [dominant, dominantCount] = sorted[0];
+    return {
+      total,
+      entries,
+      dominant,
+      dominantPct: Math.round((dominantCount / total) * 100),
+      sessionCount: counts.get('__sessions') || 0,
+    };
+  }
+
+  function formatMarginHuman(sec) {
+    if (sec == null || !Number.isFinite(sec)) return '—';
+    if (sec < 1) return `${(sec * 1000).toFixed(0)} ms`;
+    if (sec < 10) return `${sec.toFixed(3)} s`;
+    return `${sec.toFixed(1)} s`;
+  }
+
+  function renderSnapshotNarrative(ctx) {
+    const { year, doneCount, totalRounds, tyreSummary, closest, winLeader } = ctx;
+    const { leader, second } = snapshotLeaderContext();
+    const leaderName = leader ? `${leader.givenName} ${leader.familyName}` : null;
+    const gapPts =
+      leader && second && Number.isFinite(Number(leader.points)) && Number.isFinite(Number(second.points))
+        ? Number(leader.points) - Number(second.points)
+        : null;
+
+    if (el.snapHeadline) {
+      if (doneCount === 0) {
+        el.snapHeadline.textContent = `${year} — lights out soon`;
+      } else if (leaderName) {
+        el.snapHeadline.textContent =
+          doneCount === 1
+            ? `One round in — ${leaderName} heads the table`
+            : `${doneCount} rounds in — ${leaderName} leads the championship`;
+      } else {
+        el.snapHeadline.textContent =
+          doneCount === 1 ? 'First round in the books' : `${doneCount} of ${totalRounds || '?'} rounds complete`;
+      }
+    }
+
+    const dekParts = [];
+    if (leaderName && gapPts != null && gapPts > 0) {
+      dekParts.push(
+        `${leaderName} holds a ${gapPts}-point cushion${second ? ` over ${second.givenName} ${second.familyName}` : ''}.`,
+      );
+    } else if (leaderName) {
+      dekParts.push(`${leaderName} tops the standings after ${doneCount} completed race${doneCount === 1 ? '' : 's'}.`);
+    } else if (doneCount > 0) {
+      dekParts.push(`${doneCount} race${doneCount === 1 ? '' : 's'} finished — standings still syncing.`);
+    } else {
+      dekParts.push('Wins, margins, and tyre choices will appear here as the season unfolds.');
+    }
+
+    if (winLeader?.name && winLeader.count > 0) {
+      dekParts.push(
+        `${winLeader.name} have taken ${winLeader.count} win${winLeader.count === 1 ? '' : 's'} so far — the competitive spread below.`,
+      );
+    }
+
+    if (tyreSummary?.dominant) {
+      const name = compoundDisplayName(tyreSummary.dominant);
+      dekParts.push(
+        `On tyres, ${name.toLowerCase()}s carried ${tyreSummary.dominantPct}% of recorded race stints${tyreSummary.sessionCount ? ` across ${tyreSummary.sessionCount} OpenF1 sessions` : ''}.`,
+      );
+    } else if (doneCount > 0) {
+      dekParts.push('Tyre stint data is still loading or unavailable for this season slice.');
+    }
+
+    if (closest?.margin != null && closest.margin < 2) {
+      dekParts.push(
+        `The closest finish so far was ${formatMarginHuman(closest.margin)} at ${closest.raceName} — a nail-biter.`,
+      );
+    }
+
+    if (el.snapDek) el.snapDek.textContent = dekParts.join(' ');
+
+    if (el.snapStats) {
+      const pills = [];
+      if (totalRounds > 0) {
+        pills.push({ k: 'Rounds', v: `${doneCount}/${totalRounds}` });
+      } else if (doneCount > 0) {
+        pills.push({ k: 'Rounds', v: String(doneCount) });
+      }
+      if (leaderName) {
+        pills.push({ k: 'Leader', v: leader.code || leaderName.split(' ').pop() || leaderName });
+      }
+      if (gapPts != null && gapPts > 0) pills.push({ k: 'Gap', v: `+${gapPts} pts` });
+      if (tyreSummary?.total) pills.push({ k: 'Stints', v: String(tyreSummary.total) });
+      if (pills.length === 0) {
+        el.snapStats.hidden = true;
+        el.snapStats.innerHTML = '';
+      } else {
+        el.snapStats.hidden = false;
+        el.snapStats.innerHTML = pills
+          .map(
+            (p) =>
+              `<li class="snapStat"><span class="snapStat__k">${escapeHtml(p.k)}</span><span class="snapStat__v">${escapeHtml(p.v)}</span></li>`,
+          )
+          .join('');
+      }
+    }
   }
 
   async function buildWinsAndClosest(doneRaces) {
     if (doneRaces.length === 0) {
       el.winsBars.innerHTML = '';
-      el.winsNote.textContent = 'No completed rounds yet — wins chart will fill as races finish.';
+      el.winsNote.textContent = 'No completed rounds yet — this chart fills as races finish.';
+      el.closestCard.innerHTML = `<div class="editorialCard editorialCard--muted snapClosestCard"><p class="snapClosestCard__empty">Waiting for the first chequered flag.</p></div>`;
       el.closestNote.textContent = '';
-      return;
+      return { closest: null, topWinner: null };
     }
 
-    const wins = new Map(); // constructor -> count
-    let closest = null; // { raceName, margin, winner, runnerUp }
+    const wins = new Map();
+    let closest = null;
 
     const results = await withLimit(
       doneRaces,
@@ -2641,33 +2864,50 @@
     });
 
     const winBars = winsToBars(wins);
+    const totalWins = winBars.reduce((s, x) => s + (x.value || 0), 0);
+    const topWinner = winBars[0] ? { name: winBars[0].label, count: winBars[0].value } : null;
+
     if (winBars.length === 0) {
       el.winsBars.innerHTML = '<div class="emptyHint">No constructor wins parsed yet — results may still be provisional.</div>';
     } else {
-      renderBars(el.winsBars, winBars, { valueFormatter: (v) => `${v}` });
+      renderBars(el.winsBars, winBars, {
+        variant: 'wins',
+        total: totalWins,
+        valueFormatter: (v, it) => {
+          const pct = totalWins > 0 ? Math.round((v / totalWins) * 100) : 0;
+          return `${v} · ${pct}%`;
+        },
+      });
     }
-    el.winsNote.textContent = `Wins by team from Ergast race results (${doneRaces.length} completed round${doneRaces.length === 1 ? '' : 's'}).`;
+    el.winsNote.textContent = `${totalWins} win${totalWins === 1 ? '' : 's'} across ${doneRaces.length} round${doneRaces.length === 1 ? '' : 's'} · Ergast results.`;
 
     if (!closest) {
-      el.closestCard.innerHTML = `<div class="editorialCard editorialCard--muted"><div class="editorialTitle">Closest finish</div><div class="editorialMeta"><div>No P2 time-gap data yet — many sprint or classified finishes omit gaps in the feed.</div><div class="editorialSubhint">Check back after more conventional race endings.</div></div></div>`;
+      el.closestCard.innerHTML = `<div class="editorialCard editorialCard--muted snapClosestCard"><p class="snapClosestCard__empty">No P2 time-gap in the feed yet — sprint formats and classified finishes often omit margins.</p></div>`;
       el.closestNote.textContent = '';
-      return;
+      return { closest: null, topWinner };
     }
 
+    const marginLabel = formatMarginHuman(closest.margin);
     el.closestCard.innerHTML = `
-      <div class="editorialCard">
-        <div class="editorialTitle">${escapeHtml(closest.raceName)}</div>
-        <div class="editorialMeta">
-          <div><strong>${escapeHtml(closest.winner)}</strong> over ${escapeHtml(closest.runnerUp)}</div>
-          <div>Winning margin: <strong>${escapeHtml(closest.margin.toFixed(3))}s</strong></div>
-        </div>
-      </div>
+      <article class="snapClosestCard">
+        <p class="snapClosestCard__kicker">Tightest win</p>
+        <p class="snapClosestCard__margin" aria-label="Winning margin ${escapeHtml(marginLabel)}">${escapeHtml(marginLabel)}</p>
+        <h4 class="snapClosestCard__race">${escapeHtml(closest.raceName)}</h4>
+        <p class="snapClosestCard__duel"><strong>${escapeHtml(closest.winner)}</strong> held off ${escapeHtml(closest.runnerUp)}</p>
+      </article>
     `;
-    el.closestNote.textContent = 'Margins derived from P2 time gap when available.';
+    el.closestNote.textContent = 'Margin from P2 gap when published.';
+    return { closest, topWinner };
   }
 
   async function buildTyreUsage(year) {
-    // This is intentionally lazy + best-effort; OpenF1 session discovery is not guaranteed for all years/rounds.
+    if (el.tyreStack) el.tyreStack.innerHTML = '';
+    if (el.tyreLegend) {
+      el.tyreLegend.hidden = true;
+      el.tyreLegend.innerHTML = '';
+    }
+    if (el.tyreBars) el.tyreBars.innerHTML = '';
+
     try {
       const sessionsRaw = await cachedSeasonJson(openF1SessionsCacheKey(year), async () => {
         const r = await fetchLiveJson('sessions', { year: String(year), session_name: 'Race' });
@@ -2675,11 +2915,10 @@
       });
       const sessions = assertLivePayloadArray('sessions', sessionsRaw);
       if (sessions.length === 0) {
-        el.tyreBars.innerHTML = '';
-        el.tyreNote.textContent = 'Tyre breakdown unavailable (no OpenF1 race sessions found).';
-        return;
+        el.tyreNote.textContent = 'No OpenF1 race sessions found for this year — tyre mix unavailable.';
+        return null;
       }
-      // limit to first N to avoid excessive requests
+
       const sessionKeys = sessions
         .map((s) => s.session_key)
         .filter((k) => k != null && k !== '')
@@ -2702,43 +2941,93 @@
         if (!counts.has(key)) counts.set(key, 0);
         counts.set(key, counts.get(key) + 1);
       });
+      counts.set('__sessions', sessionKeys.length);
 
-      renderBars(
-        el.tyreBars,
-        [...counts.entries()]
-          .filter(([, v]) => v > 0)
-          .map(([k, v]) => ({ label: k, value: v, color: compoundColor(k) })),
-        { valueFormatter: (v) => `${v}` },
-      );
-      el.tyreNote.textContent = 'Best-effort: aggregated from OpenF1 stints for discovered Race sessions.';
+      const summary = summarizeTyreCounts(counts);
+      if (!summary) {
+        el.tyreNote.textContent = 'Stint records returned empty — try again after more races.';
+        return null;
+      }
+
+      renderTyreStrategy(summary);
+      el.tyreNote.textContent = `${summary.total} race stints · ${summary.sessionCount} session${summary.sessionCount === 1 ? '' : 's'} · OpenF1`;
+      return summary;
     } catch {
-      el.tyreBars.innerHTML = '';
       el.tyreNote.textContent = 'Tyre breakdown unavailable (request failed).';
+      return null;
     }
   }
 
+  function renderTyreStrategy(summary) {
+    const { total, entries } = summary;
+    if (el.tyreStack) {
+      el.tyreStack.innerHTML = entries
+        .map(([k, v]) => {
+          const pct = Math.round((v / total) * 1000) / 10;
+          const cls = compoundBarClass(k);
+          return `<span class="tyreStack__seg ${cls}" style="flex:${v} 1 0%;" title="${escapeHtml(compoundDisplayName(k))} ${pct}%"></span>`;
+        })
+        .join('');
+      window.setTimeout(() => el.tyreStack?.classList.add('is-in'), prefersReducedMotion ? 0 : 40);
+    }
+
+    if (el.tyreLegend) {
+      el.tyreLegend.hidden = false;
+      el.tyreLegend.innerHTML = entries
+        .map(([k, v]) => {
+          const pct = Math.round((v / total) * 100);
+          return `<span class="tyreLegend__item ${compoundBarClass(k)}"><span class="tyreChip" aria-hidden="true">${escapeHtml(compoundShort(k))}</span><span class="tyreLegend__pct">${pct}%</span></span>`;
+        })
+        .join('');
+    }
+
+    const items = entries.map(([k, v]) => ({
+      key: k,
+      label: compoundDisplayName(k),
+      value: v,
+      color: compoundColor(k),
+      pct: Math.round((v / total) * 1000) / 10,
+    }));
+
+    renderBars(el.tyreBars, items, {
+      variant: 'tyre',
+      max: total,
+      valueFormatter: (v, it) => `${it.pct}% · ${v} stints`,
+    });
+  }
+
   function renderBars(root, items, opts) {
+    if (!root) return;
     root.innerHTML = '';
     if (!items || items.length === 0) return;
-    const max = Math.max(...items.map((x) => x.value || 0), 1);
+    const variant = opts?.variant || 'default';
+    const scaleMax = opts?.max ?? Math.max(...items.map((x) => x.value || 0), 1);
     items.forEach((it, i) => {
       const row = document.createElement('div');
-      row.className = 'barRow';
+      const compoundCls = variant === 'tyre' ? compoundBarClass(it.key || it.label) : '';
+      row.className = `barRow barRow--${variant} ${compoundCls}`.trim();
+      const chip =
+        variant === 'tyre'
+          ? `<span class="tyreChip tyreChip--row" aria-hidden="true">${escapeHtml(compoundShort(it.key || it.label))}</span>`
+          : '';
+      const teamDot =
+        variant === 'wins'
+          ? `<span class="winDot" style="background:${escapeHtml(it.color || 'var(--accent)')}" aria-hidden="true"></span>`
+          : '';
       row.innerHTML = `
-        <div>
+        <div class="barRow__main">
           <div class="barLabel">
-            <span class="barLabel__name" title="${escapeHtml(it.label)}">${escapeHtml(it.label)}</span>
-            <span class="barValue">${escapeHtml(opts?.valueFormatter ? opts.valueFormatter(it.value) : String(it.value))}</span>
+            <span class="barLabel__lead">${chip}${teamDot}<span class="barLabel__name" title="${escapeHtml(it.label)}">${escapeHtml(it.label)}</span></span>
+            <span class="barValue">${escapeHtml(opts?.valueFormatter ? opts.valueFormatter(it.value, it) : String(it.value))}</span>
           </div>
           <div class="barTrack" role="presentation">
-            <div class="barFill" style="background:${escapeHtml(it.color || 'var(--accent)')};"></div>
+            <div class="barFill" style="--bar-color:${escapeHtml(it.color || 'var(--accent)')};"></div>
           </div>
         </div>
-        <div></div>
       `;
       root.appendChild(row);
       const fill = row.querySelector('.barFill');
-      const pct = Math.round((it.value / max) * 1000) / 10;
+      const pct = Math.round((it.value / scaleMax) * 1000) / 10;
       window.setTimeout(() => {
         row.classList.add('is-in');
         if (fill instanceof HTMLElement) fill.style.width = `${pct}%`;
@@ -2778,9 +3067,11 @@
       <div class="constructorName">${escapeHtml(c.constructorName)}</div>
       <div class="logoMini" aria-hidden="true"><span></span></div>
     `;
-    li.addEventListener('click', () => setAccent(color));
+    const teamKey = teamAccentKey(c.constructorName);
+    li.dataset.teamKey = teamKey;
+    li.addEventListener('click', () => setAccent(color, { teamKey }));
     li.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') setAccent(color);
+      if (e.key === 'Enter' || e.key === ' ') setAccent(color, { teamKey });
     });
     void loadTeamLogoInto(li.querySelector('.logoMini'), title, c.constructorName, c.constructorId);
     return li;
@@ -2940,17 +3231,39 @@
     });
   }
 
+  function syncAccentActiveState() {
+    const key = state.accentTeamKey;
+    const color = state.accentColor;
+    $$('.heroTeamTile').forEach((tile) => {
+      const active = key ? tile.dataset.teamKey === key : tile.dataset.accentColor === color;
+      tile.classList.toggle('is-active', active);
+      tile.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    $$('#top3Cards .card').forEach((card) => {
+      const active = key ? card.dataset.teamKey === key : false;
+      card.classList.toggle('is-accent-active', active);
+    });
+    $$('#constructorsList .constructorRow').forEach((row) => {
+      const active = key ? row.dataset.teamKey === key : false;
+      row.classList.toggle('is-accent-active', active);
+    });
+  }
+
   function setAccent(color, opts = {}) {
+    if (opts.soft && state.accentUserPicked) return;
     const root = document.documentElement;
-    const prev = getComputedStyle(root).getPropertyValue('--accent')?.trim();
-    if (opts.soft && prev && prev.length > 0) return;
+    if (!opts.soft) state.accentUserPicked = true;
+    if (opts.teamKey) state.accentTeamKey = opts.teamKey;
+    state.accentColor = color;
     root.style.setProperty('--team-accent', color);
     root.style.setProperty('--accent', color);
+    document.body.classList.add('has-team-accent');
     const bar = document.getElementById('heroAccentBar');
     if (bar instanceof HTMLElement) {
       bar.style.background = `linear-gradient(90deg, ${color}, transparent 72%)`;
       bar.style.boxShadow = `0 0 28px color-mix(in oklab, ${color} 45%, transparent)`;
     }
+    syncAccentActiveState();
   }
 
   function getTeamColor(name) {
@@ -2974,7 +3287,6 @@
   // ---------------------------
 
   const f1StaticMem = new Map();
-  let f1StaticManifest = null;
 
   function parseYearFromErgastPath(ergastPath) {
     const m = String(ergastPath || '').match(/^(\d{4})/);
@@ -3080,21 +3392,12 @@
     return Boolean(json && typeof json === 'object' && json.MRData && typeof json.MRData === 'object');
   }
 
-  async function loadF1StaticManifest() {
-    if (f1StaticManifest) return f1StaticManifest;
-    try {
-      const r = await fetch(F1_STATIC_MANIFEST_URL, { headers: { Accept: 'application/json' } });
-      if (!r.ok) return null;
-      f1StaticManifest = await r.json();
-      return f1StaticManifest;
-    } catch {
-      return null;
-    }
-  }
-
   async function fetchF1StaticJson(staticUrl) {
     if (!staticUrl) return null;
     if (f1StaticMem.has(staticUrl)) return f1StaticMem.get(staticUrl);
+    // #region agent log
+    const _s0 = performance.now();
+    // #endregion
     try {
       const r = await fetch(staticUrl, { headers: { Accept: 'application/json' } });
       if (!r.ok) return null;
@@ -3104,6 +3407,19 @@
       return json;
     } catch {
       return null;
+    } finally {
+      // #region agent log
+      agentDbg({
+        hypothesisId: 'H5',
+        location: 'season-tracker/app.js:fetchF1StaticJson',
+        message: 'static_json_done',
+        data: {
+          staticUrlTail: staticUrl.slice(-48),
+          elapsedMs: Math.round(performance.now() - _s0),
+          fromMem: false,
+        },
+      });
+      // #endregion
     }
   }
 
@@ -3142,11 +3458,41 @@
 
     const staticUrl = ergastPathToStaticUrl(path);
     if (staticUrl) {
-      const dbPromise = fetchF1DbJson(path, { timeoutMs: F1_DB_TIMEOUT_INITIAL_MS });
-      const staticPromise = fetchF1StaticJson(staticUrl);
+      // #region agent log
+      const raceT0 = performance.now();
+      const dbPromise = fetchF1DbJson(path, { timeoutMs: F1_DB_TIMEOUT_INITIAL_MS }).then((v) => {
+        agentDbg({
+          hypothesisId: 'H1',
+          location: 'season-tracker/app.js:fetchErgastJson',
+          message: 'db_branch_settled',
+          data: { pathTail: path.slice(-40), elapsedMs: Math.round(performance.now() - raceT0), ok: !!v },
+        });
+        return v;
+      });
+      const staticPromise = fetchF1StaticJson(staticUrl).then((v) => {
+        agentDbg({
+          hypothesisId: 'H5',
+          location: 'season-tracker/app.js:fetchErgastJson',
+          message: 'static_branch_settled',
+          data: { pathTail: path.slice(-40), elapsedMs: Math.round(performance.now() - raceT0), ok: !!v },
+        });
+        return v;
+      });
 
       // Race DB + static; do not let slow DB stall first paint.
       const winner = await firstResolvedMatching([staticPromise, dbPromise], (v) => hasUsableMrData(v));
+      // #region agent log
+      agentDbg({
+        hypothesisId: 'H1',
+        location: 'season-tracker/app.js:fetchErgastJson',
+        message: 'race_resolved',
+        data: {
+          pathTail: path.slice(-40),
+          raceMs: Math.round(performance.now() - raceT0),
+          winnerOk: !!(winner && hasUsableMrData(winner)),
+        },
+      });
+      // #endregion
       if (winner) {
         if (historical) return winner;
         if (cacheKeyForRevalidate) revalidateErgastInBackground(path, cacheKeyForRevalidate);

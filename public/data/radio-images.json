@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "attributionNote": "Covers use Project Anthology stills under /images/ or locally mirrored Wikimedia Commons files. Re-run npm run images:radio-anthology to refresh Commons mirrors.",
+  "episodes": {
+    "multi-21-malaysia-2013": {
+      "cover": "/images/Landscape 1280x720/13.png",
+      "coverAlt": "Sebastian Vettel, Red Bull era",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": []
+    },
+    "webber-unbelievable-china-2013": {
+      "cover": "/images/Landscape 1280x720/13.png",
+      "coverAlt": "Mark Webber, Red Bull Racing 2013",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": []
+    },
+    "vettel-brazil-2012-retire-debate": {
+      "cover": "/images/Landscape 1280x720/6.png",
+      "coverAlt": "Felipe Massa, Brazilian Grand Prix 2008 — championship tension",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": []
+    },
+    "raikkonen-leave-me-alone-india-2012": {
+      "cover": "/images/Landscape 1280x720/5.png",
+      "coverAlt": "Kimi Räikkönen, Ferrari 2008",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": []
+    },
+    "hamilton-bwoah-germany-2017": {
+      "cover": "/images/Landscape 1280x720/22.png",
+      "coverAlt": "Lewis Hamilton, Silverstone 2021",
+      "coverCredit": { "note": "Project Anthology still (related archive story)" },
+      "gallery": []
+    },
+    "sainz-smooth-operator-australia-2024": {
+      "cover": "/images/Landscape 1280x720/7.png",
+      "coverAlt": "Scuderia Ferrari F2004",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": []
+    },
+    "alonso-gp2-engine-hungary-2015": {
+      "cover": "/images/Landscape 1280x720/12.png",
+      "coverAlt": "Jenson Button, McLaren-Mercedes",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": []
+    },
+    "norris-last-lap-austria-2020": {
+      "cover": "/images/Landscape 1280x720/12.png",
+      "coverAlt": "McLaren on track",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": []
+    },
+    "ricciardo-honda-looks-great-japan-2019": {
+      "cover": "/images/Landscape 1280x720/10.png",
+      "coverAlt": "Mika Häkkinen, Mercedes era atmosphere",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": []
+    },
+    "verstappen-simply-lovely-baku-2018": {
+      "cover": "/images/Landscape 1280x720/13.png",
+      "coverAlt": "Wet-weather Formula One action",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": []
+    },
+    "button-is-it-a-bird-monaco-2009": {
+      "cover": "/images/Landscape 1280x720/20.png",
+      "coverAlt": "Jenson Button, Brawn GP 2009",
+      "coverCredit": { "note": "Project Anthology still (related archive story)" },
+      "gallery": [
+        {
+          "src": "/images/Landscape 1280x720/21.png",
+          "alt": "Brawn GP, British Grand Prix 2009",
+          "layout": "landscape",
+          "credit": { "note": "Project Anthology still" }
+        }
+      ]
+    },
+    "leclerc-i-am-stupid-monza-2019": {
+      "cover": "/images/radio/leclerc-i-am-stupid-monza-2019/01.webp",
+      "coverAlt": "Charles Leclerc, Ferrari SF90 test days",
+      "coverCredit": {
+        "author": "Artes Max from Spain",
+        "license": "CC BY-SA 2.0",
+        "page": "https://commons.wikimedia.org/wiki/File:2019_Formula_One_Test_Days_-_Charles_Leclerc's_Ferrari_SF90.jpg"
+      },
+      "gallery": [
+        {
+          "src": "/images/radio/leclerc-i-am-stupid-monza-2019/01.webp",
+          "alt": "Charles Leclerc, Ferrari SF90",
+          "layout": "full",
+          "credit": {
+            "author": "Artes Max from Spain",
+            "license": "CC BY-SA 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:2019_Formula_One_Test_Days_-_Charles_Leclerc's_Ferrari_SF90.jpg"
+          }
+        },
+        {
+          "src": "/images/Landscape 1280x720/7.png",
+          "alt": "Scuderia Ferrari on track",
+          "layout": "landscape",
+          "credit": { "note": "Project Anthology still" }
+        }
+      ]
+    },
+    "grosjean-no-push-bahrain-2020": {
+      "cover": "/images/Landscape 1280x720/39.png",
+      "coverAlt": "Monaco 2004 — high-impact racing moment",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": [
+        {
+          "src": "/images/radio/grosjean-no-push-bahrain-2020/01.webp",
+          "alt": "2020 Sakhir Grand Prix race classification",
+          "layout": "landscape",
+          "credit": {
+            "author": "Odor",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:2020_16_SKR_Race.png"
+          }
+        }
+      ]
+    },
+    "verstappen-mate-celebration-brazil-2016": {
+      "cover": "/images/Landscape 1280x720/13.png",
+      "coverAlt": "Wet Grand Prix driving",
+      "coverCredit": { "note": "Project Anthology still" },
+      "gallery": []
+    }
+  }
+}

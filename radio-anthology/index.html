@@ -16,7 +16,7 @@
     -->
     <link rel="preload" href="/fonts/st/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/st/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/circuit-covers.js" as="script" />
+    <link rel="preload" href="/data/radio-images.json" as="fetch" crossorigin />
     <link rel="stylesheet" href="/nav-shell.css" />
     <link rel="stylesheet" href="/cinematic.css" />
     <link rel="stylesheet" href="/radio-anthology/styles.css" />
@@ -41,17 +41,14 @@
 
     <main id="main" class="page" role="main" tabindex="-1">
       <div id="viewIndex" class="raIndex">
-        <section class="raHero raHero--cine" aria-labelledby="heroTitle">
-          <div class="raHero__bg" data-cine-parallax aria-hidden="true">
-            <div class="raHero__pulse cine-hero-glow">
-              <span class="raHero__parallax" data-cine-depth="0.28" aria-hidden="true"></span>
-            </div>
-            <div class="raHero__duotone" aria-hidden="true"></div>
+        <section class="raHero" aria-labelledby="heroTitle">
+          <div class="raHero__bg" aria-hidden="true">
+            <div class="raHero__ambient"></div>
+            <div class="raHero__streak"></div>
+            <div class="raHero__shade raHero__shade--top"></div>
+            <div class="raHero__shade raHero__shade--bottom"></div>
           </div>
-          <div class="raHero__circuit" aria-hidden="true"></div>
           <div class="raHero__vignette" aria-hidden="true"></div>
-          <div class="raHero__grain" aria-hidden="true"></div>
-          <div class="raHero__chromatic" aria-hidden="true"></div>
           <div class="raHero__inner">
             <div class="raHero__pretitle">
               <span class="raHero__rule" aria-hidden="true"></span>
@@ -70,32 +67,9 @@
           </div>
         </section>
 
-        <section class="filters panel panel--glass cine-glass" aria-label="Filter archive">
-          <div class="filters__row">
-            <div class="field">
-              <label class="field__label" for="filterTag">Tag</label>
-              <select id="filterTag" class="select" autocomplete="off"></select>
-            </div>
-            <div class="field">
-              <label class="field__label" for="filterDriver">Driver</label>
-              <select id="filterDriver" class="select" autocomplete="off"></select>
-            </div>
-            <div class="field">
-              <span class="field__label" id="eraLegend">Era</span>
-              <div class="seg" role="group" aria-labelledby="eraLegend">
-                <button type="button" class="seg__btn is-on" data-era="all" aria-pressed="true">All</button>
-                <button type="button" class="seg__btn" data-era="2000s" aria-pressed="false">2000s</button>
-                <button type="button" class="seg__btn" data-era="2010s" aria-pressed="false">2010s</button>
-                <button type="button" class="seg__btn" data-era="2021now" aria-pressed="false">2021–now</button>
-              </div>
-            </div>
-          </div>
-          <p class="filters__meta" id="filterCount" role="status" aria-live="polite">—</p>
-        </section>
-
         <section class="gridSection" aria-label="Radio moments">
+          <p class="gridSection__meta font-mono" id="archiveCount" role="status">—</p>
           <div id="cardGrid" class="raGrid" aria-live="polite"></div>
-          <p id="emptyState" class="empty" hidden>No clips match these filters.</p>
         </section>
       </div>
 
@@ -115,7 +89,6 @@
 
     <script src="/nav-shell.js" defer></script>
     <script src="/cinematic.js" defer></script>
-    <script src="/circuit-covers.js" defer></script>
     <script src="/radio-anthology/app.js" defer></script>
   </body>
 </html>

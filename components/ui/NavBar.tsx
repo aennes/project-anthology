@@ -308,6 +308,18 @@ const NavBar: React.FC<NavBarProps> = ({ variant = 'solid', showCategories = fal
                           News
                         </button>
                       </li>
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            closeMenu();
+                            navigate('/about');
+                          }}
+                          className="font-condensed text-lg text-white hover:text-f1-red transition-colors w-full text-left tracking-wide min-h-[44px] py-1"
+                        >
+                          About
+                        </button>
+                      </li>
                     </ul>
                   </div>
 
@@ -341,17 +353,6 @@ const NavBar: React.FC<NavBarProps> = ({ variant = 'solid', showCategories = fal
                     </div>
                   )}
 
-                  {showCategories && (
-                    <div className="pt-6 border-t border-white/10">
-                      <h3 className="font-mono text-xs text-f1-red uppercase tracking-widest mb-4">
-                        About
-                      </h3>
-                      <p className="font-mono text-sm text-gray-400 leading-relaxed">
-                        An archival project dedicated to the narrative history of Formula 1.
-                        Not just the numbers, but the blood, sweat, and oil.
-                      </p>
-                    </div>
-                  )}
                 </nav>
 
                 <div className="p-6 sm:p-8 border-t border-white/10">

@@ -264,7 +264,7 @@ Constants such as **`SEASON_MIN` (2021)**, **`SEASON_CURRENT`** (`max(SEASON_MIN
 
 ### 7.3 Team logos
 
-- **Local first:** `resolveLocalTeamLogoSlug` maps **constructorId** / **constructor name** to slug; paths **`/images/teams/{slug}.svg`** and **`../images/teams/{slug}.svg`**. In-repo slug filenames are listed in a comment in **`TEAM_LOGO_SLUG_BY_CONSTRUCTOR_ID`** (e.g. `redbull`, `visa_cash_racing_bulls`, …).
+- **Local first:** `public/data/season-tracker-images.json` (from **`npm run images:season-tracker`**) plus **`/images/teams/{slug}.webp`** and **`/images/drivers/{CODE}.webp`** (Commons mirrors). `resolveLocalTeamLogoSlug` maps **constructorId** / **constructor name** to slug (e.g. `redbull`, `sauber`, `visa_cash_racing_bulls`). Runtime fallbacks: OpenF1 **`headshot_url`**, Formula 1 media CDN spec URLs, then Wikimedia **`pageimages`** for team logos.
 - **Wiki fallback:** **`loadTeamLogoFromWiki`** — **`AbortController`** with **`4500`** ms timeout; tries **Commons** `pageimages` for optional **`TEAM_COMMONS_FILES`** entry, then **English Wikipedia** `pageimages` for **`TEAM_WIKI_TITLES`**; thumbnail URL must pass **`isImageSrcAllowed`**; final **`setImageWithFallbacks`** with **`referrerPolicy: 'no-referrer'`**; on failure **`logoFallback`** span.
 
 ### 7.4 Circuit images

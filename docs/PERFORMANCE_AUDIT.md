@@ -32,8 +32,8 @@
 |------|--------|
 | `components/News.tsx` | Stale cache revalidate updates UI; polling paused when tab hidden |
 | `public/circuit-covers.js` | Wiki fetch pool (2-wide, 300ms gap) |
-| `season-tracker/app.js` | `await loadF1StaticManifest()` before active-year resolution |
-| `season-tracker/index.html` | Preload `/data/f1/index.json` |
+| `season-tracker/app.js` | Removed blocking `loadF1StaticManifest()` from init (manifest was unused; fetch could stall startup) |
+| `season-tracker/index.html` | Dropped unused `/data/f1/index.json` preload |
 | `tracks/app.js` | Race-history loads: concurrency 2 + stagger |
 | `tracks/index.html` | Preload `circuit-covers.js` + F1 manifest |
 | `radio-anthology/index.html` | Preload `circuit-covers.js` |

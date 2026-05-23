@@ -12,12 +12,14 @@ interface NewsProps {
 const PLACEHOLDER_IMG = '/favicon.svg';
 /** Re-check the API every 5 min while the page is open. */
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const PAGE_SIZE = 15;
 
 const News: React.FC<NewsProps> = React.memo(() => {
   const [items, setItems] = useState<NewsItem[]>(() => readNewsCache() ?? []);
   const [loading, setLoading] = useState<boolean>(items.length === 0);
   const [error, setError] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState<Record<string, boolean>>({});
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const preloadHero = useCallback((list: NewsItem[]) => {
     list.slice(0, 9).forEach((it) => {
@@ -126,6 +128,16 @@ const News: React.FC<NewsProps> = React.memo(() => {
     [items],
   );
 
+  const visibleItems = useMemo(
+    () => sanitizedItems.slice(0, visibleCount),
+    [sanitizedItems, visibleCount],
+  );
+  const hasMore = visibleCount < sanitizedItems.length;
+
+  const handleLoadMore = useCallback(() => {
+    setVisibleCount((count) => count + PAGE_SIZE);
+  }, []);
+
   const showSkeleton = loading && items.length === 0;
   const showEmpty = !loading && items.length === 0;
 
@@ -136,16 +148,27 @@ const News: React.FC<NewsProps> = React.memo(() => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35 }}
     >
-      <motion.div className="news-page__inner">
-        <header className="news-page__header cine-route-hero">
-          <h1>
+      <header
+        className="news-page__hero cine-letterbox cine-vignette"
+        aria-labelledby="news-hero-title"
+      >
+        <span className="cine-hero-glow" aria-hidden="true" />
+        <span className="cine-hero-grain" aria-hidden="true" />
+        <div className="news-page__hero-inner cine-route-hero">
+          <p className="news-page__eyebrow">Anthology · Headlines</p>
+          <h1 id="news-hero-title">
             <span className="text-f1-red">F1</span> News
           </h1>
-          <p className="news-page__kicker">
+          <p className="news-page__deck">
             Curated from The Race, Autosport &amp; Motorsport.com
           </p>
-        </header>
+          <p className="news-page__detail">Refreshes automatically while you browse</p>
+        </div>
+      </header>
 
+      <div className="news-page__fade" aria-hidden="true" />
+
+      <div className="news-page__body">
         {showSkeleton && (
           <motion.div
             className="news-page__skeleton"
@@ -171,9 +194,9 @@ const News: React.FC<NewsProps> = React.memo(() => {
           </motion.div>
         )}
 
-        {sanitizedItems.length > 0 && (
+        {visibleItems.length > 0 && (
           <div className="news-page__grid">
-            {sanitizedItems.map((item, index) => {
+            {visibleItems.map((item, index) => {
               const isImageLoaded = imageLoaded[item.id] || false;
 
               return (
@@ -259,6 +282,18 @@ const News: React.FC<NewsProps> = React.memo(() => {
           </div>
         )}
 
+        {hasMore && (
+          <div className="news-page__load-more">
+            <button
+              type="button"
+              className="news-page__load-more-btn"
+              onClick={handleLoadMore}
+            >
+              Load more
+            </button>
+          </div>
+        )}
+
         {sanitizedItems.length > 0 && (
           <motion.footer
             className="news-page__footer"
@@ -286,7 +321,7 @@ const News: React.FC<NewsProps> = React.memo(() => {
             </div>
           </motion.footer>
         )}
-      </motion.div>
+      </div>
     </motion.div>
   );
 });

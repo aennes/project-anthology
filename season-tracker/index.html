@@ -10,7 +10,6 @@
     <!-- Typography: self-hosted under /fonts/st/ (see scripts/copy-season-tracker-fonts.mjs + npm run fonts:season-tracker). -->
     <link rel="preload" href="/fonts/st/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/st/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/data/f1/index.json" as="fetch" crossorigin />
     <link rel="stylesheet" href="/nav-shell.css" />
     <link rel="stylesheet" href="/cinematic.css" />
     <link rel="stylesheet" href="/season-tracker/styles.css" />
@@ -86,17 +85,21 @@
             </div>
           </div>
 
-          <div class="hero__aside">
-            <div class="panel panel--glass" id="heroCards">
-              <div class="panel__titleRow">
-                <div class="panel__title">Top 3</div>
-                <div class="panel__hint">Tap a team for accent</div>
+          <div class="hero__rack">
+            <div class="hero__aside">
+              <div class="panel panel--glass panel--top3" id="heroCards">
+                <div class="panel__titleRow">
+                  <div class="panel__title">Top 3</div>
+                  <div class="panel__hint">Tap a team for accent</div>
+                </div>
+                <div class="cards" id="top3Cards"></div>
               </div>
-              <div class="cards" id="top3Cards"></div>
+              <div class="heroTeamBento panel panel--glass panel--teamBento" id="heroTeamBento" aria-label="Constructor accent picker">
+                <div class="heroTeamBento__grid" id="heroTeamGrid" role="list"></div>
+              </div>
             </div>
+            <aside class="idleInsight panel panel--glass" id="idleInsight" hidden aria-live="polite"></aside>
           </div>
-
-          <aside class="idleInsight panel panel--glass" id="idleInsight" hidden aria-live="polite"></aside>
         </div>
         <button type="button" class="heroNextRace" id="heroNextRace" hidden aria-live="polite">
           <span class="heroNextRace__k" id="heroNextRaceLabel">Next race</span>
@@ -194,62 +197,62 @@
         <div class="panel panel--glass">
           <div class="panel__titleRow">
             <div class="panel__title">Stint timelines</div>
-            <div class="panel__hint">Expand a race · hover a stint for laps & compound</div>
+            <div class="panel__hint">Select a race · hover a stint for laps & compound</div>
           </div>
           <div id="nerdPitMount" class="nerdPitMount" aria-live="polite"></div>
         </div>
       </section>
 
-      <section class="section io-section nerd-only" id="nerdSim" aria-label="Championship simulator" data-io>
-        <div class="section__head">
-          <h2 class="section__title">Championship Simulator</h2>
+      <section class="section io-section snap-section" id="snapshot" aria-label="Season snapshot" data-io>
+        <div class="section__head section__head--snap">
+          <div class="section__headMain">
+            <p class="snap__kicker">After the chequered flag</p>
+            <h2 class="section__title">Season Snapshot</h2>
+          </div>
           <div class="section__tools">
-            <div class="small">Remaining rounds · projected points · mathematical title shot (optimistic bound)</div>
+            <span class="snap__badge">Loads on scroll</span>
           </div>
         </div>
-        <div class="panel panel--glass">
-          <div class="panel__titleRow">
-            <div class="panel__title">Forecast</div>
-            <div class="panel__hint">Pick a round, set P1–P20 per driver (blank = auto from current rank).</div>
-          </div>
-          <div id="nerdSimMount" class="nerdSimMount" aria-live="polite"></div>
-        </div>
-      </section>
 
-      <section class="section io-section" id="snapshot" aria-label="Season snapshot" data-io>
-        <div class="section__head">
-          <h2 class="section__title">Season Snapshot</h2>
-          <div class="section__tools">
-            <div class="small">Loads on scroll (cached per session)</div>
+        <div class="snapLead panel panel--glass cine-glass" id="snapLead" aria-live="polite">
+          <div class="snapLead__glow" aria-hidden="true"></div>
+          <div class="snapLead__inner">
+            <h3 class="snapLead__headline" id="snapHeadline">Reading the season…</h3>
+            <p class="snapLead__dek" id="snapDek">Wins, margins, and tyre choices from completed rounds — updated when you scroll here.</p>
+            <ul class="snapLead__stats" id="snapStats" hidden></ul>
           </div>
         </div>
 
         <div class="grid grid--snap cine-bento">
-          <div class="panel panel--glass panel--snap">
+          <div class="panel panel--glass panel--snap panel--snapTyre cine-glass cine-hover-lift">
             <div class="panel__titleRow">
               <div class="panel__title">Tyre strategy</div>
-              <div class="panel__hint">Compound usage across completed races.</div>
+              <div class="panel__hint">Race stints · compound mix</div>
             </div>
-            <div class="bars" id="tyreBars"></div>
-            <div class="small muted" id="tyreNote"></div>
+            <div class="tyreStrategy" id="tyreStrategy">
+              <div class="tyreStack" id="tyreStack" role="img" aria-label="Compound distribution"></div>
+              <div class="tyreLegend" id="tyreLegend" hidden></div>
+              <div class="bars bars--tyre" id="tyreBars"></div>
+            </div>
+            <p class="snapFoot" id="tyreNote"></p>
           </div>
 
-          <div class="panel panel--glass panel--snap">
+          <div class="panel panel--glass panel--snap cine-glass cine-hover-lift">
             <div class="panel__titleRow">
-              <div class="panel__title">Team wins distribution</div>
-              <div class="panel__hint">Wins by constructor.</div>
+              <div class="panel__title">Team wins</div>
+              <div class="panel__hint">Constructors on the top step</div>
             </div>
-            <div class="bars" id="winsBars"></div>
-            <div class="small muted" id="winsNote"></div>
+            <div class="bars bars--wins" id="winsBars"></div>
+            <p class="snapFoot" id="winsNote"></p>
           </div>
 
-          <div class="panel panel--glass panel--snap">
+          <div class="panel panel--glass panel--snap panel--snapClosest cine-glass cine-hover-lift">
             <div class="panel__titleRow">
               <div class="panel__title">Closest finish</div>
-              <div class="panel__hint">Smallest winning margin so far.</div>
+              <div class="panel__hint">Tightest win so far</div>
             </div>
-            <div class="editorial" id="closestCard"></div>
-            <div class="small muted" id="closestNote"></div>
+            <div class="editorial editorial--snap" id="closestCard"></div>
+            <p class="snapFoot" id="closestNote"></p>
           </div>
         </div>
       </section>

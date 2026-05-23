@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "attributionNote": "Team logos and driver portraits mirrored from Wikimedia Commons (CC / public domain). Re-run npm run images:season-tracker to refresh. Live headshots may also use OpenF1 headshot_url (Formula 1 media CDN).",
+  "teams": {
+    "ferrari": {
+      "path": "/images/teams/ferrari.webp",
+      "alt": "Scuderia Ferrari logo"
+    },
+    "mercedes": {
+      "path": "/images/teams/mercedes.webp",
+      "alt": "Mercedes-AMG Petronas Formula One Team logo"
+    },
+    "mclaren": {
+      "path": "/images/teams/mclaren.webp",
+      "alt": "McLaren Formula 1 Team logo"
+    },
+    "redbull": {
+      "path": "/images/teams/redbull.webp",
+      "alt": "Red Bull Racing logo"
+    },
+    "alpine": {
+      "path": "/images/teams/alpine.webp",
+      "alt": "Alpine F1 Team logo"
+    },
+    "williams": {
+      "path": "/images/teams/williams.webp",
+      "alt": "Williams Racing logo"
+    },
+    "haas": {
+      "path": "/images/teams/haas.webp",
+      "alt": "Haas F1 Team logo"
+    },
+    "sauber": {
+      "path": "/images/teams/sauber.webp",
+      "alt": "Kick Sauber logo"
+    },
+    "visa_cash_racing_bulls": {
+      "path": "/images/teams/visa_cash_racing_bulls.webp",
+      "alt": "Racing Bulls Formula One Team logo"
+    },
+    "aston_martin": {
+      "path": "/images/teams/aston_martin.webp",
+      "alt": "Aston Martin F1 Team logo"
+    }
+  },
+  "drivers": {
+    "VER": {
+      "path": "/images/drivers/VER.webp",
+      "alt": "Max Verstappen — Formula One driver portrait"
+    },
+    "PER": {
+      "path": "/images/drivers/PER.webp",
+      "alt": "Sergio Pérez — Formula One driver portrait"
+    },
+    "HAM": {
+      "path": "/images/drivers/HAM.webp",
+      "alt": "Lewis Hamilton — Formula One driver portrait"
+    },
+    "RUS": {
+      "path": "/images/drivers/RUS.webp",
+      "alt": "George Russell — Formula One driver portrait"
+    },
+    "LEC": {
+      "path": "/images/drivers/LEC.webp",
+      "alt": "Charles Leclerc — Formula One driver portrait"
+    },
+    "SAI": {
+      "path": "/images/drivers/SAI.webp",
+      "alt": "Carlos Sainz — Formula One driver portrait"
+    },
+    "NOR": {
+      "path": "/images/drivers/NOR.webp",
+      "alt": "Lando Norris — Formula One driver portrait"
+    },
+    "PIA": {
+      "path": "/images/drivers/PIA.webp",
+      "alt": "Oscar Piastri — Formula One driver portrait"
+    },
+    "ALO": {
+      "path": "/images/drivers/ALO.webp",
+      "alt": "Fernando Alonso — Formula One driver portrait"
+    },
+    "STR": {
+      "path": "/images/drivers/STR.webp",
+      "alt": "Lance Stroll — Formula One driver portrait"
+    },
+    "OCO": {
+      "path": "/images/drivers/OCO.webp",
+      "alt": "Esteban Ocon — Formula One driver portrait"
+    },
+    "GAS": {
+      "path": "/images/drivers/GAS.webp",
+      "alt": "Pierre Gasly — Formula One driver portrait"
+    },
+    "ALB": {
+      "path": "/images/drivers/ALB.webp",
+      "alt": "Alexander Albon — Formula One driver portrait"
+    },
+    "SAR": {
+      "path": "/images/drivers/SAR.webp",
+      "alt": "Logan Sargeant — Formula One driver portrait"
+    },
+    "BOT": {
+      "path": "/images/drivers/BOT.webp",
+      "alt": "Valtteri Bottas — Formula One driver portrait"
+    },
+    "ZHO": {
+      "path": "/images/drivers/ZHO.webp",
+      "alt": "Zhou Guanyu — Formula One driver portrait"
+    },
+    "MAG": {
+      "path": "/images/drivers/MAG.webp",
+      "alt": "Kevin Magnussen — Formula One driver portrait"
+    },
+    "HUL": {
+      "path": "/images/drivers/HUL.webp",
+      "alt": "Nico Hülkenberg — Formula One driver portrait"
+    },
+    "TSU": {
+      "path": "/images/drivers/TSU.webp",
+      "alt": "Yuki Tsunoda — Formula One driver portrait"
+    },
+    "RIC": {
+      "path": "/images/drivers/RIC.webp",
+      "alt": "Daniel Ricciardo — Formula One driver portrait"
+    },
+    "LAW": {
+      "path": "/images/drivers/LAW.webp",
+      "alt": "Liam Lawson — Formula One driver portrait"
+    },
+    "COL": {
+      "path": "/images/drivers/COL.webp",
+      "alt": "Franco Colapinto — Formula One driver portrait"
+    },
+    "BOR": {
+      "path": "/images/drivers/BOR.webp",
+      "alt": "Gabriel Bortoleto — Formula One driver portrait"
+    },
+    "HAD": {
+      "path": "/images/drivers/HAD.webp",
+      "alt": "Isack Hadjar — Formula One driver portrait"
+    },
+    "VET": {
+      "path": "/images/drivers/VET.webp",
+      "alt": "Sebastian Vettel — Formula One driver portrait"
+    },
+    "RAI": {
+      "path": "/images/drivers/RAI.webp",
+      "alt": "Kimi Räikkönen — Formula One driver portrait"
+    },
+    "GIO": {
+      "path": "/images/drivers/GIO.webp",
+      "alt": "Antonio Giovinazzi — Formula One driver portrait"
+    },
+    "LAT": {
+      "path": "/images/drivers/LAT.webp",
+      "alt": "Nicholas Latifi — Formula One driver portrait"
+    },
+    "DEV": {
+      "path": "/images/drivers/DEV.webp",
+      "alt": "Nyck de Vries — Formula One driver portrait"
+    },
+    "BUT": {
+      "path": "/images/drivers/BUT.webp",
+      "alt": "Jenson Button — Formula One driver portrait"
+    },
+    "ROS": {
+      "path": "/images/drivers/ROS.webp",
+      "alt": "Nico Rosberg — Formula One driver portrait"
+    },
+    "MAS": {
+      "path": "/images/drivers/MAS.webp",
+      "alt": "Felipe Massa — Formula One driver portrait"
+    }
+  }
+}

@@ -757,6 +757,96 @@ body {
   padding: 0 24px 100px;
 }
 
+/* —— Circuit gallery (StoryModal-style editorial strip) —— */
+.circuitGallery {
+  margin-top: 40px;
+}
+.circuitGallery__grid {
+  display: grid;
+  gap: 28px 20px;
+}
+@media (min-width: 768px) {
+  .circuitGallery__grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: start;
+  }
+  .circuitGallery__item--full {
+    grid-column: 1 / -1;
+  }
+  .circuitGallery__item--landscape {
+    grid-column: span 7;
+  }
+  .circuitGallery__item--portrait {
+    grid-column: span 5;
+  }
+}
+.circuitGallery__frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--f1-dark);
+}
+.circuitGallery__item--full .circuitGallery__frame {
+  aspect-ratio: 16 / 9;
+}
+.circuitGallery__item--landscape .circuitGallery__frame {
+  aspect-ratio: 16 / 10;
+}
+.circuitGallery__item--portrait .circuitGallery__frame {
+  aspect-ratio: 3 / 4;
+  max-height: min(72vh, 640px);
+}
+.circuitGallery__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.circuitGallery__img.is-loaded {
+  opacity: 1;
+}
+.circuitGallery__frame.has-photo .circuitGallery__shimmer {
+  display: none;
+}
+.circuitGallery__shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 45%,
+    rgba(255, 255, 255, 0) 72%
+  );
+  animation: tracksShimmer 1.4s ease-in-out infinite;
+}
+.circuitGallery__cap {
+  margin: 10px 2px 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.circuitGallery__credit {
+  margin: 4px 2px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted2);
+}
+.circuitGallery__credit a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.circuitGallery__credit a:hover {
+  color: var(--text);
+}
+.circuitGallery__legal {
+  margin-top: 20px;
+}
+
 .sectionBlock {
   margin-top: 48px;
 }

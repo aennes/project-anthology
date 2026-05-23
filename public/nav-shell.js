@@ -11,6 +11,7 @@
     { label: 'Circuit Atlas', href: '/tracks' },
     { label: 'Radio Anthology', href: '/radio-anthology' },
     { label: 'News', href: '/news' },
+    { label: 'About', href: '/about' },
   ];
 
   /** @type {{ menuOpen: boolean, menuBtn: HTMLButtonElement | null, backdrop: HTMLButtonElement | null, drawer: HTMLDialogElement | null, focusTrapCleanup: (() => void) | null, scrollY: number, onEscapeDetail: (() => boolean) | null }} */

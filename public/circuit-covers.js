@@ -313,8 +313,8 @@
   }
 
   /**
-   * Photo-first cover: raster → Wikimedia → gradient/flag fallback (no SVG as main cover).
-   * @param {{ host?: HTMLElement, img: HTMLImageElement, fallbackEl?: HTMLElement | null, ctx: CircuitCoverCtx, wikiTitle: string, alt?: string, loading?: string }} opts
+   * Photo-first cover: manifest/extra → raster → Wikimedia → gradient/flag fallback (no SVG as main cover).
+   * @param {{ host?: HTMLElement, img: HTMLImageElement, fallbackEl?: HTMLElement | null, ctx: CircuitCoverCtx, wikiTitle: string, alt?: string, loading?: string, extraCandidates?: string[] }} opts
    * @returns {Promise<boolean>}
    */
   async function attachCircuitCover(opts) {
@@ -343,7 +343,12 @@
       if (fallbackEl instanceof HTMLElement) fallbackEl.hidden = false;
     };
 
-    const ok = await setImageWithFallbacks(img, circuitRasterCandidates(ctx), {
+    const rasterUrls = dedupePreserveOrder([
+      ...(opts.extraCandidates || []),
+      ...circuitRasterCandidates(ctx),
+    ]);
+
+    const ok = await setImageWithFallbacks(img, rasterUrls, {
       ...imgOpts,
       onSuccess: markPhoto,
       onShowPlaceholder: showFallback,

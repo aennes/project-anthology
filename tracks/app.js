@@ -38,7 +38,11 @@
     historyStarted: false,
     indexScrollY: 0,
     coverObserver: null,
+    galleryObserver: null,
   };
+
+  /** @type {{ version?: number, attributionNote?: string, circuits?: Record<string, { cover?: string, gallery?: Array<{ src: string, alt?: string, layout?: string, credit?: { author?: string, license?: string, page?: string } }> }> }} */
+  let circuitImageManifest = { circuits: {} };
 
   const COUNTRY_CODES = {
     Monaco: 'MCO',
@@ -927,6 +931,108 @@
     return COUNTRY_CODES[c.country] || String(c.country || '').slice(0, 3).toUpperCase();
   }
 
+  function circuitMediaEntry(c) {
+    const id = String(c?.circuitId || '').toLowerCase();
+    return circuitImageManifest?.circuits?.[id] || null;
+  }
+
+  function coverExtraCandidates(c) {
+    const entry = circuitMediaEntry(c);
+    const cover = entry?.cover;
+    return cover ? [cover] : [];
+  }
+
+  function galleryForCircuit(c) {
+    const entry = circuitMediaEntry(c);
+    const list = entry?.gallery;
+    if (!Array.isArray(list)) return [];
+    return list.filter((g) => {
+      if (!g?.src) return false;
+      const page = String(g.credit?.page || '');
+      if (/\.(svg|pdf|djvu)(\?|#|$)/i.test(page)) return false;
+      return true;
+    });
+  }
+
+  function renderGallerySection(c) {
+    const gallery = galleryForCircuit(c);
+    if (gallery.length === 0) return '';
+    const items = gallery
+      .map((img, i) => {
+        const layout = img.layout === 'portrait' || img.layout === 'full' ? img.layout : 'landscape';
+        const alt = img.alt || `${c.name} — track photograph ${i + 1}`;
+        const credit = img.credit;
+        const creditHtml =
+          credit?.page && credit?.license
+            ? `<p class="circuitGallery__credit"><a href="${escapeHtml(credit.page)}" rel="noopener noreferrer" target="_blank">${escapeHtml(credit.author || 'Source')}</a> · ${escapeHtml(credit.license)}</p>`
+            : '';
+        return `
+<figure class="circuitGallery__item circuitGallery__item--${escapeHtml(layout)}" data-gallery-idx="${i}">
+  <div class="circuitGallery__frame">
+    <img class="circuitGallery__img" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" data-src="${escapeHtml(img.src)}" />
+    <span class="circuitGallery__shimmer" aria-hidden="true"></span>
+  </div>
+  ${img.alt ? `<figcaption class="circuitGallery__cap">${escapeHtml(img.alt)}</figcaption>` : ''}
+  ${creditHtml}
+</figure>`;
+      })
+      .join('');
+    return `
+<section class="sectionBlock io-section circuitGallery" aria-labelledby="galleryTitle" data-io>
+  <div class="sectionHead">
+    <h2 class="sectionHead__title" id="galleryTitle">On track</h2>
+    <span class="sectionHead__hint">Circuit photography</span>
+  </div>
+  <div class="circuitGallery__grid">${items}</div>
+  <p class="circuitGallery__legal small muted">${escapeHtml(circuitImageManifest.attributionNote || 'Images from Wikimedia Commons where credited.')}</p>
+</section>`;
+  }
+
+  function wireCircuitGallery(root, c) {
+    const imgs = $$('.circuitGallery__img[data-src]', root);
+    if (imgs.length === 0) return;
+
+    const loadImg = (img) => {
+      const src = img.getAttribute('data-src');
+      if (!src) return;
+      void CC.setImageWithFallbacks(img, [src], {
+        alt: img.alt,
+        loading: 'lazy',
+        decoding: 'async',
+        referrerPolicy: 'no-referrer',
+        onSuccess: () => {
+          img.classList.add('is-loaded');
+          const frame = img.closest('.circuitGallery__frame');
+          if (frame instanceof HTMLElement) frame.classList.add('has-photo');
+        },
+        onShowPlaceholder: () => {
+          const fig = img.closest('.circuitGallery__item');
+          if (fig instanceof HTMLElement) fig.hidden = true;
+        },
+      });
+    };
+
+    if (prefersReducedMotion) {
+      imgs.forEach(loadImg);
+      return;
+    }
+
+    if (state.galleryObserver) state.galleryObserver.disconnect();
+    state.galleryObserver = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          const img = e.target;
+          if (!(img instanceof HTMLImageElement)) continue;
+          state.galleryObserver?.unobserve(img);
+          loadImg(img);
+        }
+      },
+      { rootMargin: '80px 0px', threshold: 0.05 },
+    );
+    imgs.forEach((img) => state.galleryObserver?.observe(img));
+  }
+
   function renderOvertakingDots(n) {
     const v = Math.min(5, Math.max(1, Number(n) || 3));
     return Array.from({ length: 5 }, (_, i) => {
@@ -1012,6 +1118,7 @@
       wikiTitle: c.name,
       alt: c.name,
       loading,
+      extraCandidates: coverExtraCandidates(c),
     });
   }
 
@@ -1084,6 +1191,7 @@
 </section>
 
 <div class="detailBody">
+${renderGallerySection(c)}
 <section class="sectionBlock io-section dnaPanel" aria-labelledby="dnaTitle" data-io>
   <div class="sectionHead">
     <h2 class="sectionHead__title" id="dnaTitle">Circuit DNA</h2>
@@ -1161,6 +1269,7 @@
       void attachCircuitCover(hero, cover, fallback, c, 'eager');
     }
     if (svg instanceof HTMLImageElement) void attachCircuitSvg(svg, c);
+    wireCircuitGallery(art, c);
     setupSectionIo(art);
     window.AnthologyCinematic?.refresh?.();
 
@@ -1466,7 +1575,19 @@
     });
   }
 
-  function init() {
+  async function loadCircuitImageManifest() {
+    try {
+      const r = await fetch('/data/circuit-images.json', { headers: { Accept: 'application/json' } });
+      if (!r.ok) return;
+      const j = await r.json();
+      if (j && typeof j === 'object') circuitImageManifest = j;
+    } catch {
+      // offline or manifest missing — covers fall back to wiki / gradient
+    }
+  }
+
+  async function init() {
+    await loadCircuitImageManifest();
     renderGrid();
     setupSectionIo();
     window.addEventListener('hashchange', onRoute);
@@ -1497,5 +1618,5 @@
     onRoute();
   }
 
-  init();
+  void init();
 })();
