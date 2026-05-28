@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@media (max-width: 767px) {
+  body {
+    padding-bottom: 64px;
+  }
+}
+
 @layer base {
   /* Custom Scrollbar for that technical feel */
   ::-webkit-scrollbar {
@@ -153,9 +159,31 @@
   }
 }
 
-/* ========== Unconditional dark theme ========== */
+/* ========== Unconditional dark theme + design tokens ========== */
 :root {
   color-scheme: dark;
+
+  /* Font stacks — consumed by cinematic.css and page-level CSS */
+  --font-display:   "Bebas Neue", system-ui, sans-serif;
+  --font-condensed: "Barlow Condensed", system-ui, sans-serif;
+  --font-sans:      "DM Sans", system-ui, sans-serif;
+  --font-body:      "DM Sans", system-ui, sans-serif;
+  --font-mono:      "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Color tokens (Stitch palette) */
+  --f1-red:    #ff1801;  /* F1 accent red — PRD canonical */
+  --f1-black:  #0a0a0a;  /* Deepest background */
+  --f1-dark:   #131313;  /* Surface / page background */
+  --f1-carbon: #141414;  /* Card surface */
+  --paper:     #f4f1ea;  /* Warm editorial cream */
+  --muted2:    rgba(244, 241, 234, 0.48); /* Dim text used in cinematic.css */
+
+  /* Spacing tokens */
+  --navbar-height:   52px;
+  --gutter:          24px;
+  --margin-mobile:   16px;
+  --margin-desktop:  64px;
+  --section-gap:     80px;
 }
 
 html {
@@ -190,8 +218,8 @@ html {
   max-width: 54rem;
 }
 .news-page__hero h1 {
-  font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
-  font-size: clamp(3.5rem, 13vw, 8rem);
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 48px;
   letter-spacing: 0.04em;
   line-height: 0.88;
   color: #f4f1ea;
@@ -199,9 +227,9 @@ html {
   text-shadow: 0 10px 48px rgba(0, 0, 0, 0.55);
 }
 .news-page__eyebrow {
-  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
-  font-size: clamp(0.6rem, 1.35vw, 0.72rem);
-  letter-spacing: 0.28em;
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 14px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(255, 24, 1, 0.82);
   margin: 0 0 1rem;
@@ -264,7 +292,7 @@ html {
   text-transform: uppercase;
   color: #f4f1ea;
   padding: 0.85rem 1.75rem;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.04);
   cursor: pointer;
@@ -302,20 +330,16 @@ html {
   flex-direction: column;
   min-height: 280px;
   cursor: pointer;
-  border-radius: 1rem;
+  border-radius: 0;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  transition:
-    border-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  background: #201f1f;
+  border: none;
+  border-left: 3px solid #ff1801;
+  transition: border-left-width 200ms ease;
 }
 @media (prefers-reduced-motion: no-preference) {
   .news-card:hover {
-    transform: translateY(-4px);
-    border-color: color-mix(in oklab, #ff1801 42%, rgba(255, 255, 255, 0.12));
-    box-shadow: 0 16px 48px -12px rgba(255, 24, 1, 0.22);
+    border-left-width: 8px;
   }
 }
 .news-card:focus-visible {
@@ -335,11 +359,13 @@ html {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms ease;
+  filter: grayscale(100%) contrast(1.1);
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms ease, filter 600ms ease;
 }
 @media (prefers-reduced-motion: no-preference) {
   .news-card:hover .news-card__media img {
     transform: scale(1.05);
+    filter: grayscale(0) contrast(1);
   }
 }
 .news-card__media::after {
@@ -354,9 +380,9 @@ html {
   top: 0.65rem;
   right: 0.65rem;
   z-index: 2;
-  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
-  font-size: 0.625rem;
-  letter-spacing: 0.14em;
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 14px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.92);
   padding: 0.25rem 0.5rem;
@@ -369,7 +395,7 @@ html {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  padding: 1rem 1.15rem 1.15rem;
+  padding: 24px;
 }
 .news-card__title {
   font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
@@ -440,7 +466,7 @@ html {
   max-width: 28rem;
   margin-inline: auto;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1rem;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.02);
 }
 .news-page__state p {
@@ -463,7 +489,7 @@ html {
 }
 .news-page__skeleton-card {
   min-height: 280px;
-  border-radius: 1rem;
+  border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: linear-gradient(
     110deg,
@@ -550,8 +576,8 @@ html {
   width: 100%;
 }
 .timeline-page__hero h1 {
-  font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
-  font-size: clamp(3.5rem, 13vw, 8rem);
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 48px;
   letter-spacing: 0.04em;
   line-height: 0.88;
   color: #f4f1ea;
@@ -559,9 +585,9 @@ html {
   text-shadow: 0 10px 48px rgba(0, 0, 0, 0.55);
 }
 .timeline-page__eyebrow {
-  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
-  font-size: clamp(0.6rem, 1.35vw, 0.72rem);
-  letter-spacing: 0.28em;
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 14px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(255, 24, 1, 0.82);
   margin: 0 0 1rem;
@@ -696,9 +722,9 @@ html {
   margin-bottom: clamp(1.75rem, 4vh, 2.75rem);
 }
 .timeline-decade__label span {
-  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
-  font-size: clamp(0.75rem, 1.8vw, 0.95rem);
-  letter-spacing: 0.35em;
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 14px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: #ff1801;
   white-space: nowrap;
@@ -745,13 +771,12 @@ html {
   display: grid;
   gap: 1.25rem;
   cursor: pointer;
-  border-radius: 1.15rem;
+  border-radius: 0;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  transition:
-    border-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  background: #201f1f;
+  border: none;
+  border-left: 3px solid #ff1801;
+  transition: border-left-width 200ms ease;
 }
 @media (min-width: 900px) {
   .timeline-node__card {
@@ -767,8 +792,7 @@ html {
 }
 @media (prefers-reduced-motion: no-preference) {
   .timeline-node__card:hover {
-    border-color: color-mix(in oklab, #ff1801 38%, rgba(255, 255, 255, 0.12));
-    box-shadow: 0 20px 56px -16px rgba(0, 0, 0, 0.65);
+    border-left-width: 8px;
   }
 }
 .timeline-node__media {
@@ -782,11 +806,13 @@ html {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms ease;
+  filter: grayscale(100%) contrast(1.1);
+  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms ease, filter 600ms ease;
 }
 @media (prefers-reduced-motion: no-preference) {
   .timeline-node__card:hover .timeline-node__media img {
     transform: scale(1.06);
+    filter: grayscale(0) contrast(1);
   }
 }
 .timeline-node__media::after {
@@ -815,9 +841,9 @@ html {
   top: 0.85rem;
   right: 0.85rem;
   z-index: 2;
-  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
-  font-size: 0.625rem;
-  letter-spacing: 0.14em;
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 14px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(244, 241, 234, 0.75);
   padding: 0.35rem 0.65rem;
@@ -828,7 +854,7 @@ html {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: clamp(1.15rem, 3vw, 1.75rem);
+  padding: 24px;
 }
 .timeline-node__title {
   font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
@@ -988,10 +1014,11 @@ html {
   margin: 0 0 0.75rem;
 }
 .about-page__heading {
-  font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
   font-size: clamp(2rem, 6vw, 3.25rem);
-  letter-spacing: 0.03em;
-  line-height: 0.95;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
   color: #f4f1ea;
   margin: 0 0 1.25rem;
 }

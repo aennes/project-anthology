@@ -45,10 +45,20 @@ const Timeline: React.FC<TimelineProps> = ({ onStorySelect, onClose }) => {
         <span className="cine-hero-glow" aria-hidden="true" />
         <span className="cine-hero-grain" aria-hidden="true" />
         <div className="timeline-page__hero-inner cine-route-hero">
-          <p className="timeline-page__eyebrow">Anthology · Stories</p>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="h-[2px] w-12 bg-[#ff1801]" />
+            <span className="font-section-divider text-[12px] tracking-[0.2em] uppercase text-[rgba(255,24,1,0.82)]">
+              FORMULA 1 · HISTORICAL ARCHIVE
+            </span>
+            <div className="h-[2px] w-12 bg-[#ff1801]" />
+          </div>
           <h1 id="timeline-hero-title">Chronological Timeline</h1>
+          <div className="h-[2px] w-24 bg-[#ff1801] mt-2 mx-auto" />
           <p className="timeline-page__deck">The narrative history of Formula 1</p>
           <p className="timeline-page__detail">Scroll the decades · Open any story</p>
+        </div>
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden" style={{ zIndex: 9 }} aria-hidden="true">
+          <span className="animate-bounce text-white/50 text-lg leading-none select-none">↓</span>
         </div>
       </header>
 

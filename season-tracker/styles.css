@@ -3262,6 +3262,66 @@ body:not(.is-nerd) .towerWrap.tower--live .towerRow {
 .hero__headlineBig {
   font-size: clamp(3.5rem, 11vw, 7.5rem);
 }
+
+/* ── Stitch overrides ── */
+.hero__headlineBig {
+  font-size: clamp(72px, 10vw, 120px);
+  line-height: 0.88;
+}
+.hero__racePanel {
+  padding: clamp(16px, 2vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: default;
+}
+.racePanel__label {
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted2);
+}
+.racePanel__circuit {
+  font-family: var(--font-condensed);
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1.1;
+}
+.racePanel__countdown {
+  font-family: var(--font-mono);
+  font-size: clamp(1.1rem, 2.2vw, 1.35rem);
+  color: var(--f1-red);
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.racePanel__cta {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  padding: 10px 16px;
+  background: var(--f1-red);
+  color: #fff;
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 200ms ease;
+  align-self: flex-start;
+}
+.racePanel__cta:hover {
+  background: color-mix(in oklab, var(--f1-red) 80%, white);
+}
+.racePanel__cta:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-offset);
+}
 .stat--hero .stat__v {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

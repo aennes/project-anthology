@@ -500,7 +500,37 @@
     'commons.wikimedia.org',
     'en.wikipedia.org',
     'www.wikipedia.org',
+    'res.cloudinary.com',
   ]);
+
+  // ── AI asset cache ──────────────────────────────────────────────────────
+  // Calls /api/generate-assets (unauthenticated → Cloudinary-check only, no Flux generation).
+  // Generation happens offline via `npm run seed:assets`.
+  /** @param {'driver'|'circuit'|'team'|'radio'} type @param {string} entityId @returns {Promise<string|null>} */
+  async function getAIAsset(type, entityId) {
+    const cacheKey = `asset_${type}_${entityId}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) return cached;
+    } catch { /* ignore */ }
+    try {
+      const res = await fetch('/api/generate-assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, entityId }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const url = typeof data?.url === 'string' ? data.url : null;
+      // Only cache real Cloudinary URLs, not placeholder fallbacks
+      if (url && !url.startsWith('/images/placeholders/')) {
+        try { sessionStorage.setItem(cacheKey, url); } catch { /* ignore */ }
+      }
+      return url;
+    } catch {
+      return null;
+    }
+  }
 
   function isImageSrcAllowed(raw) {
     let s = String(raw ?? '').trim();
@@ -1403,10 +1433,6 @@
   function makeAvatarEl(code, nameFallback, preferUrl, headshotYear = SEASON_CURRENT) {
     const wrap = document.createElement('span');
     wrap.className = 'avatar';
-    const prefer = typeof preferUrl === 'string' ? preferUrl.trim() : '';
-    const spec = resolveSpecHeadshotUrl(code, headshotYear);
-    const candidates = dedupePreserveOrder([prefer, spec].filter(Boolean));
-    const allowed = candidates.filter(isImageSrcAllowed);
 
     const showFallback = () => {
       wrap.replaceChildren();
@@ -1414,22 +1440,31 @@
       wrap.textContent = initialsFrom(nameFallback || code);
     };
 
-    if (allowed.length === 0) {
-      showFallback();
-      return wrap;
-    }
+    // Async: resolve AI asset URL first (sessionStorage hit = instant), then blend with existing candidates
+    (async () => {
+      const aiUrl = code ? await getAIAsset('driver', String(code).toLowerCase()) : null;
+      const prefer = typeof preferUrl === 'string' ? preferUrl.trim() : '';
+      const spec = resolveSpecHeadshotUrl(code, headshotYear);
+      const candidates = dedupePreserveOrder([aiUrl, prefer, spec].filter(Boolean));
+      const allowed = candidates.filter(isImageSrcAllowed);
 
-    const img = document.createElement('img');
-    img.alt = '';
-    img.loading = 'lazy';
-    img.decoding = 'async';
-    img.referrerPolicy = 'no-referrer';
-    wrap.appendChild(img);
+      if (allowed.length === 0) { showFallback(); return; }
 
-    void setImageWithFallbacks(img, allowed, {
-      onSuccess: () => wrap.classList.add('is-loaded'),
-      onShowPlaceholder: showFallback,
-    });
+      const img = document.createElement('img');
+      img.alt = '';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.referrerPolicy = 'no-referrer';
+      // Only replace children if not already populated by a prior render cycle
+      if (!wrap.classList.contains('is-loaded') && !wrap.classList.contains('avatar--fallback')) {
+        wrap.replaceChildren(img);
+      }
+
+      void setImageWithFallbacks(img, allowed, {
+        onSuccess: () => wrap.classList.add('is-loaded'),
+        onShowPlaceholder: showFallback,
+      });
+    })();
 
     return wrap;
   }
@@ -3107,8 +3142,28 @@
     if (!(container instanceof HTMLElement)) return;
     container.classList.add('logoMini--pending');
     container.innerHTML = '<span class="logoShimmer" aria-hidden="true"></span>';
+
+    // Try AI-generated team asset (Cloudinary check, instant if seeded)
+    const aiUrl = constructorId ? await getAIAsset('team', String(constructorId).toLowerCase()) : null;
+
     const slug = resolveLocalTeamLogoSlug(constructorName, constructorId);
     const localCandidates = slug ? localTeamLogoUrlCandidates(slug).filter(isImageSrcAllowed) : [];
+
+    // If AI asset is available, prefer it over local/wiki
+    if (aiUrl && isImageSrcAllowed(aiUrl)) {
+      const img = document.createElement('img');
+      img.alt = '';
+      img.decoding = 'async';
+      img.loading = 'lazy';
+      img.className = 'logoMini__img';
+      const ok = await setImageWithFallbacks(img, [aiUrl, ...localCandidates], {
+        onSuccess: () => {
+          container.classList.remove('logoMini--pending');
+          container.replaceChildren(img);
+        },
+      });
+      if (ok) return;
+    }
 
     if (localCandidates.length > 0) {
       const img = document.createElement('img');

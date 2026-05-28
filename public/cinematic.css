@@ -9,7 +9,7 @@
   --cine-ease-out: cubic-bezier(0.2, 1, 0.2, 1);
   --cine-gap: 18px;
   --cine-letterbox: clamp(28px, 5.5vh, 72px);
-  --cine-grain-opacity: 0.34;
+  --cine-grain-opacity: 0.04; /* Stitch spec: 0.04 film grain */
 }
 
 /* —— Film grain (letterboxed hero only — not full page) —— */

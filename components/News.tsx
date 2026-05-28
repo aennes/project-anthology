@@ -128,11 +128,17 @@ const News: React.FC<NewsProps> = React.memo(() => {
     [items],
   );
 
-  const visibleItems = useMemo(
-    () => sanitizedItems.slice(0, visibleCount),
-    [sanitizedItems, visibleCount],
+  // First article becomes the hero when it has a valid image
+  const heroItem = sanitizedItems.length > 0 && sanitizedItems[0].image && sanitizedItems[0].image.startsWith('http')
+    ? sanitizedItems[0]
+    : null;
+  const gridOffset = heroItem ? 1 : 0;
+
+  const gridItems = useMemo(
+    () => sanitizedItems.slice(gridOffset, gridOffset + visibleCount),
+    [sanitizedItems, gridOffset, visibleCount],
   );
-  const hasMore = visibleCount < sanitizedItems.length;
+  const hasMore = visibleCount < sanitizedItems.length - gridOffset;
 
   const handleLoadMore = useCallback(() => {
     setVisibleCount((count) => count + PAGE_SIZE);
@@ -149,20 +155,82 @@ const News: React.FC<NewsProps> = React.memo(() => {
       transition={{ duration: 0.35 }}
     >
       <header
-        className="news-page__hero cine-letterbox cine-vignette"
+        className={`news-page__hero cine-vignette${heroItem ? '' : ' cine-letterbox'}`}
         aria-labelledby="news-hero-title"
+        style={heroItem ? { minHeight: 'clamp(420px, 68vh, 720px)' } : undefined}
       >
-        <span className="cine-hero-glow" aria-hidden="true" />
+        {heroItem ? (
+          <>
+            <img
+              src={heroItem.image!}
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onLoad={() => handleImageLoad(heroItem.id)}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ zIndex: 0 }}
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.85) 100%)', zIndex: 1 }}
+            />
+          </>
+        ) : (
+          <span className="cine-hero-glow" aria-hidden="true" />
+        )}
         <span className="cine-hero-grain" aria-hidden="true" />
-        <div className="news-page__hero-inner cine-route-hero">
-          <p className="news-page__eyebrow">Anthology · Headlines</p>
-          <h1 id="news-hero-title">
-            <span className="text-f1-red">F1</span> News
-          </h1>
-          <p className="news-page__deck">
-            Curated from The Race, Autosport &amp; Motorsport.com
-          </p>
-          <p className="news-page__detail">Refreshes automatically while you browse</p>
+
+        <div className="news-page__hero-inner cine-route-hero" style={{ position: 'relative', zIndex: 8 }}>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="h-[2px] w-12 bg-[#ff1801]" />
+            <span className="font-section-divider text-[12px] tracking-[0.2em] uppercase text-[rgba(255,24,1,0.82)]">
+              ANTHOLOGY · HEADLINES
+            </span>
+            <div className="h-[2px] w-12 bg-[#ff1801]" />
+          </div>
+
+          {heroItem ? (
+            <>
+              <h1
+                id="news-hero-title"
+                className="font-display text-white leading-[0.9] tracking-wide mb-3"
+                style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)' }}
+              >
+                {heroItem.sanitizedTitle}
+              </h1>
+              <div className="h-[2px] w-24 bg-[#ff1801] mx-auto mb-4" />
+              {heroItem.sanitizedSummary && (
+                <p className="font-sans text-base text-white/75 max-w-2xl mx-auto mb-6 leading-relaxed">
+                  {heroItem.sanitizedSummary}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => handleCardClick(heroItem)}
+                className="font-section-divider text-[14px] uppercase tracking-[0.2em] bg-[#ff1801] text-white px-8 py-3 cursor-pointer border-0 hover:bg-[#cc1400] transition-colors duration-200"
+              >
+                Read Full Report →
+              </button>
+            </>
+          ) : (
+            <>
+              <h1 id="news-hero-title">
+                <span className="text-f1-red">F1</span> News
+              </h1>
+              <div className="h-[2px] w-24 bg-[#ff1801] mt-2 mx-auto" />
+              <p className="news-page__deck">
+                Curated from The Race, Autosport &amp; Motorsport.com
+              </p>
+              <p className="news-page__detail">Refreshes automatically while you browse</p>
+            </>
+          )}
+        </div>
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden" style={{ zIndex: 9 }} aria-hidden="true">
+          <span className="animate-bounce text-white/50 text-lg leading-none select-none">↓</span>
         </div>
       </header>
 
@@ -194,9 +262,9 @@ const News: React.FC<NewsProps> = React.memo(() => {
           </motion.div>
         )}
 
-        {visibleItems.length > 0 && (
+        {gridItems.length > 0 && (
           <div className="news-page__grid">
-            {visibleItems.map((item, index) => {
+            {gridItems.map((item, index) => {
               const isImageLoaded = imageLoaded[item.id] || false;
 
               return (

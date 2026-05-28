@@ -7,10 +7,12 @@
     "node": "20.x"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev:api\" \"npx --yes wait-on tcp:127.0.0.1:3001 && vite\"",
-    "dev:api": "npx --yes kill-port 3001 2>nul & tsx server/dev-api-server.ts",
+    "predev": "npx --yes kill-port 3001 5173",
+    "dev": "concurrently --kill-others --names \"api,vite\" -c \"cyan,green\" \"npm run dev:api\" \"npm run dev:vite:await\"",
+    "dev:api": "tsx server/dev-api-server.ts",
     "dev:vite": "vite",
-    "dev:e2e": "concurrently -k \"npm run dev:api\" \"npm run dev:vite -- --port 5173 --strictPort\"",
+    "dev:vite:await": "npx --yes wait-on -t 30000 tcp:127.0.0.1:3001 && vite",
+    "dev:e2e": "concurrently --kill-others -k \"npm run dev:api\" \"npm run dev:vite -- --port 5173 --strictPort\"",
     "fonts:season-tracker": "node scripts/copy-season-tracker-fonts.mjs",
     "sync:f1": "node scripts/sync-f1-snapshots.mjs",
     "sync:f1:seasons": "node scripts/sync-f1-snapshots.mjs --seasons-only",
@@ -35,7 +37,8 @@
     "test:e2e:ui": "playwright test --ui",
     "check:bundle": "node scripts/check-bundle-size.js",
     "vercel:link": "npx vercel link --yes --project project-anthology",
-    "vercel:deploy": "npm run vercel:link && npx vercel deploy --prod --yes"
+    "vercel:deploy": "npm run vercel:link && npx vercel deploy --prod --yes",
+    "seed:assets": "node --env-file=.env.local --import=tsx/esm scripts/seed-assets.ts"
   },
   "dependencies": {
     "@fontsource/barlow-condensed": "^5.2.8",
@@ -52,10 +55,11 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^6.30.3",
+    "replicate": "^1.4.0",
     "sharp": "^0.34.5"
   },
   "optionalDependencies": {
-    "cloudinary": "^1.47.0"
+    "cloudinary": "^1.41.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",

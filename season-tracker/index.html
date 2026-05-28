@@ -87,6 +87,12 @@
 
           <div class="hero__rack">
             <div class="hero__aside">
+              <div class="panel panel--glass hero__racePanel" id="heroNextRace" hidden aria-live="polite">
+                <div class="racePanel__label" id="heroNextRaceLabel">Next race</div>
+                <div class="racePanel__circuit" id="heroNextCircuit"></div>
+                <div class="racePanel__countdown" id="heroCountdown"></div>
+                <a class="racePanel__cta" href="#live" onclick="event.stopPropagation()">Access Live Telemetry</a>
+              </div>
               <div class="panel panel--glass panel--top3" id="heroCards">
                 <div class="panel__titleRow">
                   <div class="panel__title">Top 3</div>
@@ -101,11 +107,6 @@
             <aside class="idleInsight panel panel--glass" id="idleInsight" hidden aria-live="polite"></aside>
           </div>
         </div>
-        <button type="button" class="heroNextRace" id="heroNextRace" hidden aria-live="polite">
-          <span class="heroNextRace__k" id="heroNextRaceLabel">Next race</span>
-          <span class="heroNextRace__circuit" id="heroNextCircuit"></span>
-          <span class="heroNextRace__cd" id="heroCountdown"></span>
-        </button>
         <a class="heroScroll" href="#live" aria-label="Scroll to live timing">
           <span class="heroScroll__chev" aria-hidden="true">↓</span>
         </a>

@@ -8,7 +8,7 @@
     lasvegas: ['vegas'],
   };
 
-  const SAFE_IMAGE_HOSTS = new Set(['upload.wikimedia.org']);
+  const SAFE_IMAGE_HOSTS = new Set(['upload.wikimedia.org', 'res.cloudinary.com']);
   const WIKI_COVER_MISS_PREFIX = 'anthology_wiki_cover_miss_v2:';
   const WIKI_MAX_CONCURRENT = 2;
   const WIKI_GAP_MS = 300;

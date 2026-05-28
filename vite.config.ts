@@ -129,7 +129,8 @@ export default defineConfig(({ mode }) => {
       publicDir: 'public',
       appType: 'spa',
       server: {
-        port: 3000,
+        port: 5173,
+        strictPort: true,
         host: '0.0.0.0',
         proxy: {
           '/api': {

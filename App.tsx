@@ -143,7 +143,7 @@ const Shell: React.FC = () => {
   });
 
   return (
-    <div className="relative min-h-screen bg-f1-black text-paper selection:bg-f1-red selection:text-white overflow-x-hidden">
+    <div className="relative min-h-screen bg-f1-black text-paper selection:bg-f1-red selection:text-white overflow-x-hidden pb-16 md:pb-0">
       <OfflineIndicator />
 
       <NavBar variant="overlay" showCategories />
@@ -161,6 +161,34 @@ const Shell: React.FC = () => {
             <ArchiveSection onStorySelect={handleSelect} />
           </Suspense>
         </ErrorBoundary>
+
+        {/* Stats Strip */}
+        <section
+          className="relative z-10 py-12 px-8"
+          style={{
+            backgroundColor: 'rgba(255,24,1,0.05)',
+            borderTop: '1px solid rgba(255,24,1,0.15)',
+            borderBottom: '1px solid rgba(255,24,1,0.15)',
+          }}
+        >
+          <div className="max-w-screen-2xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 md:gap-0 md:divide-x md:divide-white/10">
+            {([
+              { value: '1,024',  label: 'Grand Prix Archived' },
+              { value: '15,842', label: 'Hours of Footage' },
+              { value: '9.4PB',  label: 'Total Data Volume' },
+              { value: '1950',   label: 'Archive Genesis' },
+            ] as const).map(({ value, label }) => (
+              <div key={label} className="flex flex-col gap-2 md:px-10 first:md:pl-0 last:md:pr-0">
+                <span className="font-mono leading-none" style={{ fontSize: '48px', color: '#ff1801' }}>
+                  {value}
+                </span>
+                <span className="font-condensed text-xs uppercase tracking-[0.1em] text-white/50">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
 
       <AnimatePresence>
@@ -203,7 +231,7 @@ const Shell: React.FC = () => {
 
 const RoutedPageShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <div className="relative min-h-screen bg-f1-black text-paper selection:bg-f1-red selection:text-white overflow-x-hidden cine-route-shell">
+    <div className="relative min-h-screen bg-f1-black text-paper selection:bg-f1-red selection:text-white overflow-x-hidden cine-route-shell pb-16 md:pb-0">
       <NavBar />
       {children}
     </div>

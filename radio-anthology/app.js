@@ -257,6 +257,33 @@
   /** @type {Record<string, RadioImageMeta>} */
   let imageManifest = {};
 
+  // ── AI asset helper ──────────────────────────────────────────────────────
+  /** @param {'radio'|'team'|'circuit'|'driver'} type @param {string} entityId @returns {Promise<string|null>} */
+  async function getAIAsset(type, entityId) {
+    const cacheKey = `asset_${type}_${entityId}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) return cached;
+    } catch { /* ignore */ }
+    try {
+      const res = await fetch('/api/generate-assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, entityId }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const url = typeof data?.url === 'string' ? data.url : null;
+      if (url && !url.startsWith('/images/placeholders/')) {
+        try { sessionStorage.setItem(cacheKey, url); } catch { /* ignore */ }
+        return url;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
@@ -314,30 +341,42 @@
    * @param {RadioEntry} entry
    * @param {'lazy'|'eager'} loading
    */
-  function applyCover(host, img, placeholder, entry, loading = 'lazy') {
+  async function applyCover(host, img, placeholder, entry, loading = 'lazy') {
     const spec = coverSpec(entry);
-    if (!spec?.src) {
-      host.classList.add('is-cover-fallback');
-      if (placeholder) placeholder.hidden = false;
+
+    const applyUrl = (url, alt) => {
+      img.alt = alt || '';
+      img.loading = loading;
+      img.decoding = loading === 'eager' ? 'sync' : 'async';
+      const onOk = () => {
+        img.classList.add('is-loaded');
+        host.classList.add('has-photo');
+        if (placeholder) placeholder.hidden = true;
+      };
+      const onFail = () => {
+        host.classList.add('is-cover-fallback');
+        img.classList.remove('is-loaded');
+        if (placeholder) placeholder.hidden = false;
+      };
+      img.addEventListener('load', onOk, { once: true });
+      img.addEventListener('error', onFail, { once: true });
+      if (img.src !== url) img.src = url;
+      else if (img.complete && img.naturalWidth > 0) onOk();
+    };
+
+    if (spec?.src) {
+      applyUrl(spec.src, spec.alt);
       return;
     }
-    img.alt = spec.alt;
-    img.loading = loading;
-    img.decoding = loading === 'eager' ? 'sync' : 'async';
-    const onOk = () => {
-      img.classList.add('is-loaded');
-      host.classList.add('has-photo');
-      if (placeholder) placeholder.hidden = true;
-    };
-    const onFail = () => {
-      host.classList.add('is-cover-fallback');
-      img.classList.remove('is-loaded');
-      if (placeholder) placeholder.hidden = false;
-    };
-    img.addEventListener('load', onOk, { once: true });
-    img.addEventListener('error', onFail, { once: true });
-    if (img.src !== spec.src) img.src = spec.src;
-    else if (img.complete && img.naturalWidth > 0) onOk();
+
+    const aiUrl = await getAIAsset('radio', entry.constructorId || entry.id);
+    if (aiUrl) {
+      applyUrl(aiUrl, entry.driver ? `${entry.driver} — ${entry.gp_name}` : '');
+      return;
+    }
+
+    host.classList.add('is-cover-fallback');
+    if (placeholder) placeholder.hidden = false;
   }
 
   /** @param {RadioEntry} entry */

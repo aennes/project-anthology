@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#0a0a0a"/>
+  <rect x="0" y="0" width="1280" height="3" fill="#ff1801"/>
+  <rect x="0" y="717" width="1280" height="3" fill="#ff1801"/>
+  <!-- Track outline icon -->
+  <g transform="translate(490,195)">
+    <path d="M50 160 L50 80 C50 45 75 20 110 20 L190 20 C225 20 250 45 250 80 L250 160 C250 240 220 310 150 330 C80 310 50 240 50 160 Z" fill="none" stroke="#ff1801" stroke-width="4" opacity="0.7"/>
+    <path d="M90 160 L90 90 C90 68 102 55 120 55 L180 55 C198 55 210 68 210 90 L210 160 C210 225 190 275 150 290 C110 275 90 225 90 160 Z" fill="none" stroke="rgba(255,24,1,0.3)" stroke-width="2"/>
+    <!-- Start/Finish line -->
+    <line x1="50" y1="200" x2="90" y2="200" stroke="#ffffff" stroke-width="3"/>
+  </g>
+  <text x="640" y="590" font-family="'Barlow Condensed', Arial Narrow, sans-serif" font-size="18" letter-spacing="6" fill="rgba(255,255,255,0.28)" text-anchor="middle">CIRCUIT</text>
+  <text x="640" y="618" font-family="'IBM Plex Mono', monospace" font-size="12" letter-spacing="3" fill="rgba(255,24,1,0.45)" text-anchor="middle">F1 · ANTHOLOGY</text>
+</svg>

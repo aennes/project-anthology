@@ -1221,3 +1221,91 @@ body {
     aspect-ratio: 16 / 10;
   }
 }
+
+/* ── Stitch: atlas hero stats strip ── */
+.atlasHero__statsStrip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 32px;
+}
+.atlasHeroStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.atlasHeroStat__num {
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 600;
+  color: var(--paper);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.atlasHeroStat__label {
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted2);
+}
+.atlasHeroStat__divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── Stitch: circuit technical specs section ── */
+.atlasSpecsSection {
+  padding: 0 20px 80px;
+  max-width: calc(var(--max) + 80px);
+  margin: 0 auto;
+}
+.atlasSpecs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  border-top: 2px solid var(--f1-red);
+}
+.atlasSpec {
+  background: var(--f1-black);
+  padding: clamp(24px, 4vw, 40px) clamp(20px, 3vw, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.atlasSpec__num {
+  font-family: var(--font-mono);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 600;
+  color: var(--paper);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.atlasSpec__unit {
+  font-family: var(--font-condensed);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--f1-red);
+}
+.atlasSpec__label {
+  font-family: var(--font-condensed);
+  font-size: clamp(0.85rem, 1.5vw, 1rem);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-top: 8px;
+  max-width: 28ch;
+}
+@media (max-width: 700px) {
+  .atlasSpecs {
+    grid-template-columns: 1fr;
+  }
+  .atlasHero__statsStrip {
+    gap: 20px;
+  }
+}

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#0a0a0a"/>
+  <rect x="0" y="0" width="1280" height="3" fill="#ff1801"/>
+  <rect x="0" y="717" width="1280" height="3" fill="#ff1801"/>
+  <!-- Radio wave icon -->
+  <g transform="translate(540,220)">
+    <!-- Center dot -->
+    <circle cx="100" cy="140" r="8" fill="#ff1801"/>
+    <!-- Wave arcs -->
+    <path d="M65 105 C65 85 135 85 135 105" fill="none" stroke="#ff1801" stroke-width="4" opacity="0.8" stroke-linecap="round"/>
+    <path d="M38 78 C38 38 162 38 162 78" fill="none" stroke="#ff1801" stroke-width="4" opacity="0.5" stroke-linecap="round"/>
+    <path d="M11 51 C11 -9 189 -9 189 51" fill="none" stroke="#ff1801" stroke-width="4" opacity="0.25" stroke-linecap="round"/>
+    <!-- Antenna line -->
+    <line x1="100" y1="140" x2="100" y2="240" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+    <line x1="40" y1="240" x2="160" y2="240" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+  </g>
+  <text x="640" y="590" font-family="'Barlow Condensed', Arial Narrow, sans-serif" font-size="18" letter-spacing="6" fill="rgba(255,255,255,0.28)" text-anchor="middle">RADIO</text>
+  <text x="640" y="618" font-family="'IBM Plex Mono', monospace" font-size="12" letter-spacing="3" fill="rgba(255,24,1,0.45)" text-anchor="middle">F1 · ANTHOLOGY</text>
+</svg>

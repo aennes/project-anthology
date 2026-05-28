@@ -48,21 +48,17 @@ const resolveHeroImage = (story: Story) => {
   return getDesktopOptimizedImage(originalPath, layout);
 };
 
-// Get aspect ratio for story based on layout
-const getStoryAspectRatio = (storyId: string): string => {
-  const layout = storyLayoutMap[storyId] || 'hero';
-  switch (layout) {
-    case 'full':
-      return '16/9';
-    case 'portrait':
-      return '9/16';
-    case 'hero':
-    default:
-      return '16/9';
-  }
-};
+// Stitch 12-col masonry pattern — repeats every 4 cards
+// Row 1: large (8) + small (4) at 500px
+// Row 2: small (4) + large (8) at 400px
+const CARD_PATTERN = [
+  'lg:col-span-8 lg:h-[500px] aspect-[4/5] lg:aspect-auto',
+  'lg:col-span-4 lg:h-[500px] aspect-video lg:aspect-auto',
+  'lg:col-span-4 lg:h-[400px] aspect-video lg:aspect-auto',
+  'lg:col-span-8 lg:h-[400px] aspect-video lg:aspect-auto',
+] as const;
 
- 
+
 
 interface ArchiveSectionProps {
   onStorySelect: (story: Story) => void;
@@ -144,12 +140,13 @@ const ArchiveSectionComponent: React.FC<ArchiveSectionProps> = ({ onStorySelect 
   return (
     <section data-archive-section className="relative z-20 px-4 md:px-8 lg:px-12 py-24 max-w-[1920px] mx-auto bg-f1-black" style={{ scrollBehavior: 'smooth' }}>
       {/* SECTION HEADER */}
-      <div className="flex flex-col lg:flex-row justify-between items-end mb-20 border-b border-white/10 pb-8 gap-8">
+      <div className="flex flex-col lg:flex-row justify-between items-end mb-20 gap-8">
         <div className="space-y-4">
-          <h2 className="font-display text-6xl md:text-8xl text-white leading-[0.9] tracking-wide">
+          <h2 className="font-section-divider text-[48px] text-white">
             The Archive
           </h2>
-          <p className="font-mono text-[10px] md:text-xs text-f1-red uppercase tracking-[0.2em] flex items-center gap-3">
+          <div className="h-[2px] w-24 bg-[#ff1801] mt-2" />
+          <p className="font-section-divider text-[14px] text-f1-red uppercase tracking-[0.2em] flex items-center gap-3">
             <span className="w-2 h-2 bg-f1-red rounded-full shadow-[0_0_8px_rgba(255,24,1,0.55)]" />
             Sector 2 /// Classified Historical Records
           </p>
@@ -187,78 +184,24 @@ const ArchiveSectionComponent: React.FC<ArchiveSectionProps> = ({ onStorySelect 
          Virtual loading: Only render visible stories for performance
       */}
       <div 
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 lg:gap-8"
+        className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8"
         style={{ 
           scrollBehavior: 'smooth',
           WebkitOverflowScrolling: 'touch'
         }}
       >
         {visibleStories.length > 0 ? visibleStories.map((storyMeta, index) => {
-          // Create a minimal Story object for display (content will be loaded when opened)
           const story: Story = {
             ...storyMeta,
-            content: [], // Content loaded lazily when story is opened
+            content: [],
           };
-          
-          const layout = storyLayoutMap[story.id] || 'hero';
-          const aspectRatio = getStoryAspectRatio(story.id);
-          
-          // Smart Spanning Logic based on layout and position
-          let spanClass = "lg:col-span-4"; // Default: 1/3 width
-          let rowSpan = "min-h-[500px]"; // Default row height
-          
-          if (layout === 'portrait') {
-            // Portrait images: taller, narrower
-            if (index === 0) {
-              spanClass = "lg:col-span-3 md:col-span-1";
-              rowSpan = "min-h-[700px]";
-            } else if (index % 7 === 0) {
-              spanClass = "lg:col-span-3 md:col-span-1";
-              rowSpan = "min-h-[650px]";
-            } else {
-              spanClass = "lg:col-span-3 md:col-span-1";
-              rowSpan = "min-h-[600px]";
-            }
-          } else if (layout === 'full') {
-            // Full/landscape images: wider, shorter
-            if (index === 0) {
-              spanClass = "lg:col-span-8 md:col-span-2";
-              rowSpan = "min-h-[500px]";
-            } else if (index === 3) {
-              spanClass = "lg:col-span-12 md:col-span-2";
-              rowSpan = "min-h-[400px]";
-            } else if (index === 4 || index === 5) {
-              spanClass = "lg:col-span-6 md:col-span-1";
-              rowSpan = "min-h-[450px]";
-            } else {
-              spanClass = "lg:col-span-4 md:col-span-1";
-              rowSpan = "min-h-[500px]";
-            }
-          } else {
-            // Hero/landscape: balanced layout
-            if (index === 0) {
-              spanClass = "lg:col-span-8 md:col-span-2";
-              rowSpan = "min-h-[550px]";
-            } else if (index === 3) {
-              spanClass = "lg:col-span-12 md:col-span-2";
-              rowSpan = "min-h-[450px]";
-            } else if (index === 4 || index === 5) {
-              spanClass = "lg:col-span-6 md:col-span-1";
-              rowSpan = "min-h-[500px]";
-            } else {
-              spanClass = "lg:col-span-4 md:col-span-1";
-              rowSpan = "min-h-[550px]";
-            }
-          }
 
           return (
             <ArchiveCard
               key={story.id}
               story={story}
               index={index}
-              spanClass={`${spanClass} ${rowSpan}`}
-              aspectRatio={aspectRatio}
-              layout={layout}
+              spanClass={CARD_PATTERN[index % 4]}
               onClick={() => onStorySelect(story)}
             />
           );
@@ -475,7 +418,7 @@ const ArchiveCard: React.FC<{
           >
             <span className={anthologyYearBadge}>{story.year}</span>
             <span className="h-[1px] flex-grow bg-white/10 group-hover:bg-white/30 transition-colors duration-500" />
-            <span className="font-mono text-gray-300 text-[10px] md:text-xs uppercase tracking-[0.2em]">
+            <span className="font-section-divider text-[14px] text-gray-300 uppercase tracking-[0.2em]">
               {story.category}
             </span>
           </motion.div>

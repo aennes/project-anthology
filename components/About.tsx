@@ -56,10 +56,19 @@ const About: React.FC = () => {
         <span className="cine-hero-glow" aria-hidden="true" />
         <span className="cine-hero-grain" aria-hidden="true" />
         <div className="about-page__hero-inner cine-route-hero">
-          <p className="about-page__eyebrow">Project Anthology</p>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="h-[2px] w-12 bg-[#ff1801]" />
+            <span className="font-section-divider text-[12px] tracking-[0.2em] uppercase text-[rgba(255,24,1,0.82)]">
+              THE ARCHIVE PROJECT
+            </span>
+            <div className="h-[2px] w-12 bg-[#ff1801]" />
+          </div>
           <h1 id="about-hero-title">About</h1>
           <p className="about-page__deck">A cinematic archive of Formula 1</p>
           <p className="about-page__detail">Stories · Circuits · Seasons · Radio</p>
+        </div>
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden" style={{ zIndex: 9 }} aria-hidden="true">
+          <span className="animate-bounce text-white/50 text-lg leading-none select-none">↓</span>
         </div>
       </header>
 

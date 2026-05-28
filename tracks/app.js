@@ -78,6 +78,32 @@
     return;
   }
 
+  // ── AI asset helper (Cloudinary-check only — generation happens via seed:assets) ──
+  /** @param {'circuit'|'driver'|'team'|'radio'} type @param {string} entityId @returns {Promise<string|null>} */
+  async function getAIAsset(type, entityId) {
+    const cacheKey = `asset_${type}_${entityId}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) return cached;
+    } catch { /* ignore */ }
+    try {
+      const res = await fetch('/api/generate-assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, entityId }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const url = typeof data?.url === 'string' ? data.url : null;
+      if (url && !url.startsWith('/images/placeholders/')) {
+        try { sessionStorage.setItem(cacheKey, url); } catch { /* ignore */ }
+      }
+      return url && !url.startsWith('/images/placeholders/') ? url : null;
+    } catch {
+      return null;
+    }
+  }
+
   /** @param {Partial<Circuit> & Pick<Circuit, 'circuitId'|'name'|'country'|'flag_emoji'|'first_f1_race_year'|'lap_length_km'|'total_laps_typical'|'iconic_moment'>} partial */
   function seedCircuit(partial) {
     const id = String(partial.circuitId || '').trim().toLowerCase();
@@ -1110,6 +1136,8 @@
   }
 
   async function attachCircuitCover(card, img, fallbackEl, c, loading = 'lazy') {
+    // AI asset (Cloudinary) takes priority — instant if sessionStorage hit, fast on Cloudinary hit
+    const aiUrl = await getAIAsset('circuit', c.circuitId);
     await CC.attachCircuitCover({
       host: card,
       img,
@@ -1118,7 +1146,7 @@
       wikiTitle: c.name,
       alt: c.name,
       loading,
-      extraCandidates: coverExtraCandidates(c),
+      extraCandidates: [aiUrl, ...coverExtraCandidates(c)].filter(Boolean),
     });
   }
 

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#0a0a0a"/>
+  <rect x="0" y="0" width="1280" height="3" fill="#ff1801"/>
+  <rect x="0" y="717" width="1280" height="3" fill="#ff1801"/>
+  <!-- Checkered flag icon -->
+  <g transform="translate(570,215)">
+    <rect x="0" y="0" width="140" height="120" fill="none" stroke="#ff1801" stroke-width="3" opacity="0.7"/>
+    <!-- Checkered pattern (4x3 grid) -->
+    <rect x="0" y="0" width="35" height="30" fill="rgba(255,24,1,0.4)"/>
+    <rect x="70" y="0" width="35" height="30" fill="rgba(255,24,1,0.4)"/>
+    <rect x="35" y="30" width="35" height="30" fill="rgba(255,24,1,0.4)"/>
+    <rect x="105" y="30" width="35" height="30" fill="rgba(255,24,1,0.4)"/>
+    <rect x="0" y="60" width="35" height="30" fill="rgba(255,24,1,0.4)"/>
+    <rect x="70" y="60" width="35" height="30" fill="rgba(255,24,1,0.4)"/>
+    <rect x="35" y="90" width="35" height="30" fill="rgba(255,24,1,0.4)"/>
+    <rect x="105" y="90" width="35" height="30" fill="rgba(255,24,1,0.4)"/>
+    <!-- Flagpole -->
+    <line x1="-4" y1="0" x2="-4" y2="170" stroke="#ff1801" stroke-width="4"/>
+  </g>
+  <text x="640" y="590" font-family="'Barlow Condensed', Arial Narrow, sans-serif" font-size="18" letter-spacing="6" fill="rgba(255,255,255,0.28)" text-anchor="middle">TEAM</text>
+  <text x="640" y="618" font-family="'IBM Plex Mono', monospace" font-size="12" letter-spacing="3" fill="rgba(255,24,1,0.45)" text-anchor="middle">F1 · ANTHOLOGY</text>
+</svg>
