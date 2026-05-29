@@ -81,8 +81,8 @@
 :root {
   --f1-black: #0a0a0a;
   --f1-red: #ff1801;
-  --f1-dark: #15151e;
-  --f1-carbon: #1f1f25;
+  --f1-dark: #131313;
+  --f1-carbon: #141414;
   --paper: #f4f1ea;
   --gray-300: #d1d5db;
   --gray-400: #9ca3af;
@@ -192,29 +192,6 @@ body.has-team-accent .page-subbar {
   box-shadow: var(--ring-offset);
 }
 
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 60;
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-bottom: 1px solid var(--border);
-  background: rgba(10, 10, 10, 0.95);
-}
-.topbar__inner {
-  max-width: calc(var(--max) + 48px);
-  margin: 0 auto;
-  padding: 12px 24px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.topbar__right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 .back {
   display: flex;
   align-items: center;
@@ -2414,9 +2391,6 @@ body.has-team-accent .tab.is-active {
 }
 
 @media (max-width: 520px) {
-  .topbar__inner {
-    padding: 10px 14px;
-  }
   .hero {
     padding: 26px 14px 18px;
   }

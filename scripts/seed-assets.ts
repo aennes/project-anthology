@@ -1,160 +1,196 @@
 /**
- * Seed AI assets for the current F1 season.
+ * Seed Cloudinary assets using app lookup IDs and curated Wikimedia source hints.
  * Run: npm run seed:assets
- *
- * For each driver / team / circuit: checks Cloudinary first (SKIP if found),
- * then generates via Flux Pro and uploads.
- * Reports: SKIP {id} | GENERATED {id} → {url} | FAILED {id}
  */
-
 import { getOrGenerateAsset, checkAssetExists, resolveTimeOfDay } from '../utils/assetPipeline.js';
-import type { AssetType, AssetMetadata } from '../utils/assetPipeline.js';
+import type { AssetMetadata, AssetType } from '../utils/assetPipeline.js';
+import { DRIVER_HEADSHOT_SOURCES, TEAM_LOGO_SOURCES } from './season-tracker-image-sources.mjs';
+import { CIRCUIT_IMAGE_SOURCES } from './circuit-image-sources.mjs';
+import { RADIO_IMAGE_SOURCES } from './radio-image-sources.mjs';
 
 const JOLPICA = 'https://api.jolpi.ca/ergast/f1';
 const YEAR = new Date().getFullYear();
 
-// Approximate team accent colors for prompt quality
-const TEAM_COLORS: Record<string, { primary: string; secondary: string }> = {
-  red_bull:     { primary: '#1E41FF', secondary: '#CC1E4A' },
-  ferrari:      { primary: '#DC0000', secondary: '#FFFFFF' },
-  mercedes:     { primary: '#00D2BE', secondary: '#C0C0C0' },
-  mclaren:      { primary: '#FF8000', secondary: '#000000' },
-  alpine:       { primary: '#0090FF', secondary: '#FF2D55' },
-  aston_martin: { primary: '#006F62', secondary: '#CEDC00' },
-  williams:     { primary: '#005AFF', secondary: '#FFFFFF' },
-  haas:         { primary: '#FFFFFF', secondary: '#E8002D' },
-  kick_sauber:  { primary: '#52E252', secondary: '#000000' },
-  rb:           { primary: '#1535CC', secondary: '#FF8000' },
-  sauber:       { primary: '#52E252', secondary: '#000000' },
+type DriverStanding = {
+  Driver?: { code?: string; givenName?: string; familyName?: string };
+  Constructors?: Array<{ constructorId?: string; name?: string }>;
 };
 
-function teamColors(constructorId: string) {
-  return TEAM_COLORS[constructorId] ?? { primary: '#ff1801', secondary: '#ffffff' };
-}
+const TEAM_SLUG_TO_CONSTRUCTOR: Record<string, string> = {
+  ferrari: 'ferrari',
+  mercedes: 'mercedes',
+  mclaren: 'mclaren',
+  redbull: 'red_bull',
+  alpine: 'alpine',
+  williams: 'williams',
+  haas: 'haas',
+  sauber: 'sauber',
+  visa_cash_racing_bulls: 'rb',
+  aston_martin: 'aston_martin',
+};
 
-async function fetchJson(url: string) {
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
-  return res.json() as Promise<unknown>;
-}
+const RADIO_ID_TO_CONSTRUCTOR: Record<string, string> = {
+  'multi-21-malaysia-2013': 'red_bull',
+  'webber-unbelievable-china-2013': 'red_bull',
+  'vettel-brazil-2012-retire-debate': 'red_bull',
+  'raikkonen-leave-me-alone-india-2012': 'lotus_f1',
+  'hamilton-bwoah-germany-2017': 'mercedes',
+  'sainz-smooth-operator-australia-2024': 'ferrari',
+  'alonso-gp2-engine-hungary-2015': 'mclaren',
+  'norris-last-lap-austria-2020': 'mclaren',
+  'ricciardo-honda-looks-great-japan-2019': 'renault',
+  'verstappen-simply-lovely-baku-2018': 'red_bull',
+  'button-is-it-a-bird-monaco-2009': 'brawn',
+  'leclerc-i-am-stupid-monza-2019': 'ferrari',
+  'grosjean-no-push-bahrain-2020': 'haas',
+  'verstappen-mate-celebration-brazil-2016': 'red_bull',
+};
 
 let generated = 0;
 let skipped = 0;
 let failed = 0;
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+async function fetchJson<T>(url: string): Promise<T> {
+  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
+  return res.json() as Promise<T>;
+}
 
 async function processAsset(type: AssetType, entityId: string, meta: AssetMetadata) {
+  const normalizedId = String(entityId || '').trim().toLowerCase();
+  if (!normalizedId) return;
   try {
-    // Fast pre-check: if Cloudinary already has it, skip without calling fal.ai
-    const existing = await checkAssetExists(type, entityId);
+    const existing = await checkAssetExists(type, normalizedId);
     if (existing) {
-      console.log(`SKIP   ${type}/${entityId}`);
+      console.log(`SKIP      ${type}/${normalizedId}`);
       skipped++;
       return;
     }
   } catch {
-    // Cloudinary unreachable → try anyway
+    // Continue; getOrGenerateAsset handles fallback behavior and errors.
   }
 
   try {
-    const url = await getOrGenerateAsset(type, entityId, meta);
+    const url = await getOrGenerateAsset(type, normalizedId, meta);
     if (url.startsWith('/images/placeholders/')) {
-      console.error(`FAILED ${type}/${entityId}  (pipeline returned placeholder)`);
       failed++;
-    } else {
-      console.log(`GENERATED ${type}/${entityId} → ${url}`);
-      generated++;
+      console.error(`FAILED    ${type}/${normalizedId} (placeholder returned)`);
+      return;
     }
+    generated++;
+    console.log(`GENERATED ${type}/${normalizedId} -> ${url}`);
   } catch (err) {
-    console.error(`FAILED ${type}/${entityId}: ${err instanceof Error ? err.message : String(err)}`);
     failed++;
+    console.error(`FAILED    ${type}/${normalizedId}: ${err instanceof Error ? err.message : String(err)}`);
   }
-  // Rate-limit guard: Replicate free tier ~5 req/min, 1 burst
-  await sleep(11000);
+}
+
+async function seedDrivers() {
+  const standingsRaw = await fetchJson<{ MRData?: { StandingsTable?: { StandingsLists?: Array<{ DriverStandings?: DriverStanding[] }> } } }>(
+    `${JOLPICA}/${YEAR}/driverStandings.json?limit=40`,
+  );
+  const standings = standingsRaw?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings || [];
+  const standingsByCode = new Map<string, DriverStanding>();
+  for (const s of standings) {
+    const code = String(s.Driver?.code || '').trim().toUpperCase();
+    if (code) standingsByCode.set(code, s);
+  }
+  console.log(`Drivers source rows: ${DRIVER_HEADSHOT_SOURCES.length}`);
+  for (const source of DRIVER_HEADSHOT_SOURCES) {
+    const codeUpper = String(source.code || '').trim().toUpperCase();
+    const code = codeUpper.toLowerCase();
+    if (!code) continue;
+    const standing = standingsByCode.get(codeUpper);
+    const constructor = standing?.Constructors?.[0];
+    await processAsset('driver', code, {
+      teamName: constructor?.name || constructor?.constructorId || '',
+      wikiTitles: [source.name],
+      commonsSearch: `${source.name} Formula One driver portrait`,
+      searchTerms: [
+        `${source.name} Formula One`,
+        `${source.name} F1 portrait`,
+        `${codeUpper} Formula One driver`,
+      ],
+    });
+  }
+}
+
+async function seedTeams() {
+  console.log(`Team source rows: ${TEAM_LOGO_SOURCES.length}`);
+  for (const source of TEAM_LOGO_SOURCES) {
+    const constructorId = TEAM_SLUG_TO_CONSTRUCTOR[source.slug];
+    if (!constructorId) continue;
+    await processAsset('team', constructorId, {
+      teamName: source.alt,
+      wikiTitles: source.wikiTitles,
+      commonsSearch: source.commonsSearch,
+      searchTerms: [source.commonsSearch, ...source.wikiTitles],
+    });
+  }
+}
+
+async function seedCircuits() {
+  const circuitApi = await fetchJson<{ MRData?: { CircuitTable?: { Circuits?: Array<{ circuitId?: string; circuitName?: string; Location?: { country?: string } }> } } }>(
+    `${JOLPICA}/${YEAR}/circuits.json?limit=40`,
+  );
+  const circuitById = new Map<string, { name?: string; country?: string }>();
+  for (const c of circuitApi?.MRData?.CircuitTable?.Circuits || []) {
+    const id = String(c.circuitId || '').trim().toLowerCase();
+    if (!id) continue;
+    circuitById.set(id, { name: c.circuitName, country: c.Location?.country });
+  }
+  console.log(`Circuit source rows: ${CIRCUIT_IMAGE_SOURCES.length}`);
+  for (const source of CIRCUIT_IMAGE_SOURCES) {
+    const id = String(source.id || '').trim().toLowerCase();
+    if (!id) continue;
+    const apiMeta = circuitById.get(id);
+    await processAsset('circuit', id, {
+      circuitName: apiMeta?.name || source.wikiTitles?.[0] || id,
+      country: apiMeta?.country || '',
+      timeOfDay: resolveTimeOfDay(id),
+      wikiTitles: source.wikiTitles,
+      commonsSearch: source.commonsSearch,
+      searchTerms: [source.commonsSearch, ...(source.wikiTitles || [])],
+    });
+  }
+}
+
+async function seedRadio() {
+  const seenKeys = new Set<string>();
+  console.log(`Radio source rows: ${RADIO_IMAGE_SOURCES.length}`);
+  for (const source of RADIO_IMAGE_SOURCES) {
+    const constructorId = RADIO_ID_TO_CONSTRUCTOR[source.id];
+    const key = String(constructorId || source.id || '').trim().toLowerCase();
+    if (!key || seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    await processAsset('radio', key, {
+      teamName: constructorId || source.id,
+      commonsSearch: source.coverSearch,
+      searchTerms: [source.coverSearch, ...(source.gallerySearch || [])],
+    });
+  }
 }
 
 async function main() {
-  console.log(`\n🏎  Seeding F1 assets — season ${YEAR}\n`);
+  console.log(`\nSeeding Cloudinary assets with curated Wikimedia hints (${YEAR})\n`);
+  await seedDrivers();    // driver.code (lowercase)
+  await seedTeams();      // constructorId
+  await seedCircuits();   // circuitId
+  await seedRadio();      // constructorId || id
 
-  // ── Drivers ──────────────────────────────────────────────────────────────
-  const driversRaw = await fetchJson(`${JOLPICA}/${YEAR}/drivers.json?limit=30`) as {
-    MRData?: { DriverTable?: { Drivers?: { driverId: string }[] } };
-  };
-  const drivers = driversRaw?.MRData?.DriverTable?.Drivers ?? [];
-
-  // Map driverId → constructorId via standings
-  const standingsRaw = await fetchJson(`${JOLPICA}/${YEAR}/driverStandings.json?limit=30`) as {
-    MRData?: { StandingsTable?: { StandingsLists?: { DriverStandings?: { Driver: { driverId: string }; Constructors: { constructorId: string }[] }[] }[] } };
-  };
-  const driverStandings =
-    standingsRaw?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings ?? [];
-  const driverTeam = new Map<string, string>();
-  for (const s of driverStandings) {
-    if (s.Driver?.driverId && s.Constructors?.[0]?.constructorId) {
-      driverTeam.set(s.Driver.driverId, s.Constructors[0].constructorId);
-    }
-  }
-
-  console.log(`Drivers: ${drivers.length}`);
-  for (const d of drivers) {
-    const cid = driverTeam.get(d.driverId) ?? 'unknown';
-    const colors = teamColors(cid);
-    await processAsset('driver', d.driverId, {
-      teamName: cid.replace(/_/g, ' '),
-      primaryColor: colors.primary,
-      secondaryColor: colors.secondary,
-    });
-  }
-
-  // ── Constructors ─────────────────────────────────────────────────────────
-  const constructorsRaw = await fetchJson(`${JOLPICA}/${YEAR}/constructors.json?limit=20`) as {
-    MRData?: { ConstructorTable?: { Constructors?: { constructorId: string; name: string }[] } };
-  };
-  const constructors = constructorsRaw?.MRData?.ConstructorTable?.Constructors ?? [];
-
-  console.log(`\nTeams: ${constructors.length}`);
-  for (const c of constructors) {
-    const colors = teamColors(c.constructorId);
-    await processAsset('team', c.constructorId, {
-      teamName: c.name,
-      primaryColor: colors.primary,
-      secondaryColor: colors.secondary,
-    });
-  }
-
-  // ── Circuits ─────────────────────────────────────────────────────────────
-  const circuitsRaw = await fetchJson(`${JOLPICA}/${YEAR}/circuits.json?limit=30`) as {
-    MRData?: { CircuitTable?: { Circuits?: { circuitId: string; circuitName: string; Location?: { country?: string } }[] } };
-  };
-  const circuits = circuitsRaw?.MRData?.CircuitTable?.Circuits ?? [];
-
-  console.log(`\nCircuits: ${circuits.length}`);
-  for (const c of circuits) {
-    await processAsset('circuit', c.circuitId, {
-      circuitName: c.circuitName,
-      country: c.Location?.country ?? '',
-      timeOfDay: resolveTimeOfDay(c.circuitId),
-    });
-  }
-
-  // ── Summary ───────────────────────────────────────────────────────────────
   const total = generated + skipped + failed;
-  const costUsd = (generated * 0.05).toFixed(2);
-
   console.log(`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Generated : ${generated}
-  Skipped   : ${skipped}
-  Failed    : ${failed}
-  Total     : ${total}
-  Est. cost : $${costUsd}  (Flux Pro ~$0.05/image)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+--------------------------------
+Generated: ${generated}
+Skipped:   ${skipped}
+Failed:    ${failed}
+Total:     ${total}
+--------------------------------`);
 
   if (failed > 0) process.exit(1);
 }
 
 main().catch((err) => {
-  console.error('\n[seed-assets] fatal:', err);
+  console.error('[seed-assets] fatal:', err);
   process.exit(1);
 });

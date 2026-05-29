@@ -542,7 +542,7 @@
     if (s.startsWith('/')) {
       if (s.startsWith('//')) return false;
       if (s.includes('..') || s.includes('\\') || s.includes('\0')) return false;
-      return s.startsWith('/images/teams/') || s.startsWith('/circuits/');
+      return s.startsWith('/images/teams/') || s.startsWith('/images/drivers/') || s.startsWith('/circuits/');
     }
     if (s.startsWith('../')) {
       if (s.includes('\0') || s.includes('..\\')) return false;
@@ -3135,7 +3135,7 @@
 
   /** Same-origin paths: production `/images/...`; from `/season-tracker/` `../images/...` also resolves to `/images/`. */
   function localTeamLogoUrlCandidates(slug) {
-    return [`/images/teams/${slug}.svg`, `../images/teams/${slug}.svg`];
+    return [`/images/teams/${slug}.webp`, `../images/teams/${slug}.webp`];
   }
 
   async function loadTeamLogoInto(container, wikiTitle, constructorName, constructorId) {

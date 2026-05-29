@@ -1,10 +1,9 @@
 /**
- * Server-side AI asset pipeline.
- * Checks Cloudinary first; generates via Replicate Flux 1.1 Pro if missing; uploads with cinematic transforms.
+ * Server-side asset pipeline.
+ * Checks Cloudinary first; if missing, fetches a copyright-safe Wikimedia image and uploads it.
  * Browser pages call /api/generate-assets — this module is Node-only.
  */
 import { v2 as cloudinary } from 'cloudinary';
-import Replicate from 'replicate';
 
 export type AssetType = 'driver' | 'circuit' | 'team' | 'radio';
 
@@ -15,6 +14,9 @@ export interface AssetMetadata {
   circuitName?: string;
   country?: string;
   timeOfDay?: string;
+  wikiTitles?: string[];
+  commonsSearch?: string;
+  searchTerms?: string[];
   [key: string]: unknown;
 }
 
@@ -28,7 +30,17 @@ const PLACEHOLDER: Record<AssetType, string> = {
   radio: '/images/placeholders/radio.svg',
 };
 
-// Night-race circuits get floodlit prompts
+type WikimediaCandidate = {
+  src: string;
+  width: number;
+  height: number;
+  title?: string;
+  author?: string;
+  license?: string;
+  page?: string;
+};
+
+// Night-race circuits remain useful metadata for seeding hints
 const NIGHT_CIRCUITS = new Set([
   'bahrain', 'singapore', 'jeddah', 'las_vegas', 'lasvegas', 'yas_marina', 'abu_dhabi',
 ]);
@@ -37,54 +49,6 @@ export function resolveTimeOfDay(circuitId: string): string {
   const id = String(circuitId).toLowerCase();
   return NIGHT_CIRCUITS.has(id) ? 'night under floodlights' : 'golden hour dusk';
 }
-
-function buildPrompt(type: AssetType, meta: AssetMetadata): string {
-  const team = meta.teamName ?? 'Formula 1 team';
-  const primary = meta.primaryColor ?? '#ff1801';
-  const secondary = meta.secondaryColor ?? '#ffffff';
-  const circuit = meta.circuitName ?? 'Formula 1 circuit';
-  const country = meta.country ?? '';
-  const timeOfDay = meta.timeOfDay ?? 'golden hour dusk';
-
-  switch (type) {
-    case 'driver':
-      return (
-        `Formula 1 racing driver seen from behind, ${team} livery racing suit ` +
-        `with ${primary} and ${secondary} accents, helmet with ${team} design, ` +
-        `dramatic overhead stadium floodlights casting hard shadows, ` +
-        `cinematic black and white photography, shallow depth of field, ` +
-        `atmospheric smoke and heat haze, high contrast editorial sports photography, ` +
-        `dark moody background, photorealistic, 8k`
-      );
-    case 'circuit':
-      return (
-        `Formula 1 racing circuit ${circuit} ${country}, asphalt ribbon perspective shot at ${timeOfDay}, ` +
-        `dramatic natural or artificial lighting, cinematic anamorphic wide angle lens, ` +
-        `desaturated near monochrome with deep blacks, atmospheric ground fog, ultra high contrast, ` +
-        `editorial motorsport photography, empty track no people, 8k`
-      );
-    case 'team':
-      return (
-        `Formula 1 ${team} pit lane equipment and garage interior, ${primary} team colors as accent lighting, ` +
-        `carbon fiber surfaces, technical machinery, motion blur suggesting speed, ` +
-        `cinematic documentary photography, high contrast black and white with ${primary} color grade, ` +
-        `editorial sports photography, no people visible`
-      );
-    case 'radio':
-      return (
-        `Formula 1 pit wall at night, radio transmission equipment, team engineers at monitors, ` +
-        `dramatic blue and red indicator lights, shallow depth of field, cinematic documentary photography, ` +
-        `dark moody atmosphere, high contrast, ${primary} color accents, editorial sports photography`
-      );
-  }
-}
-
-const ASPECT_RATIO: Record<AssetType, string> = {
-  driver: '3:4',
-  circuit: '16:9',
-  team: '16:9',
-  radio: '16:9',
-};
 
 async function checkCloudinary(type: AssetType, entityId: string): Promise<string | null> {
   const publicId = `${CLOUDINARY_FOLDER}/${type}/${entityId}`;
@@ -96,60 +60,177 @@ async function checkCloudinary(type: AssetType, entityId: string): Promise<strin
   }
 }
 
+function uniqueTerms(values: Array<string | undefined>): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    const v = String(value || '').trim();
+    if (!v) continue;
+    const k = v.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(v);
+  }
+  return out;
+}
+
+function licenseAllowed(shortName: string): boolean {
+  const s = String(shortName || '').toLowerCase();
+  return (
+    s.includes('public domain') ||
+    s.includes('cc0') ||
+    s.includes('cc by') ||
+    s.includes('cc-by') ||
+    s.includes('cc by-sa') ||
+    s.includes('cc-by-sa')
+  );
+}
+
+function isRasterSource(url: string): boolean {
+  return !/\.(svg|pdf|djvu)(\?|#|$)/i.test(String(url || ''));
+}
+
+function metaValue(extMetadata: unknown, key: string): string {
+  if (!Array.isArray(extMetadata)) return '';
+  const hit = extMetadata.find(
+    (m) => m && typeof m === 'object' && String((m as { name?: string }).name || '').toLowerCase() === key.toLowerCase(),
+  ) as { value?: string } | undefined;
+  return String(hit?.value || '').trim();
+}
+
+async function commonsSearchImages(search: string, limit = 8): Promise<WikimediaCandidate[]> {
+  const params = new URLSearchParams({
+    action: 'query',
+    format: 'json',
+    origin: '*',
+    generator: 'search',
+    gsrnamespace: '6',
+    gsrlimit: String(limit),
+    gsrsearch: search,
+    prop: 'imageinfo',
+    iiprop: 'url|size|extmetadata',
+    iiurlwidth: '1800',
+  });
+  const r = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`);
+  if (!r.ok) return [];
+  const j = (await r.json()) as { query?: { pages?: Record<string, unknown> } };
+  const pages = Object.values(j?.query?.pages || {});
+  const out: WikimediaCandidate[] = [];
+  for (const p of pages) {
+    if (!p || typeof p !== 'object') continue;
+    const page = p as {
+      title?: string;
+      imageinfo?: Array<{ thumburl?: string; url?: string; thumbwidth?: number; thumbheight?: number; width?: number; height?: number; extmetadata?: unknown }>;
+    };
+    const info = page.imageinfo?.[0];
+    if (!info) continue;
+    const src = String(info.thumburl || info.url || '');
+    const width = Number(info.thumbwidth || info.width || 0);
+    const height = Number(info.thumbheight || info.height || 0);
+    if (!src || !isRasterSource(src) || width < 480 || height < 320) continue;
+    const author = metaValue(info.extmetadata, 'Artist') || metaValue(info.extmetadata, 'Credit');
+    const license = metaValue(info.extmetadata, 'LicenseShortName');
+    if (!licenseAllowed(license)) continue;
+    const fileTitle = String(page.title || '').replace(/^File:/, '').replace(/ /g, '_');
+    out.push({
+      src,
+      width,
+      height,
+      title: String(page.title || ''),
+      author,
+      license,
+      page: fileTitle ? `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(fileTitle)}` : undefined,
+    });
+  }
+  return out;
+}
+
+async function wikipediaPageImage(title: string): Promise<WikimediaCandidate | null> {
+  const params = new URLSearchParams({
+    action: 'query',
+    format: 'json',
+    origin: '*',
+    prop: 'pageimages|info',
+    pithumbsize: '1800',
+    piprop: 'thumbnail',
+    inprop: 'url',
+    redirects: '1',
+    titles: title,
+  });
+  const r = await fetch(`https://en.wikipedia.org/w/api.php?${params}`);
+  if (!r.ok) return null;
+  const j = (await r.json()) as { query?: { pages?: Record<string, unknown> } };
+  const pages = Object.values(j?.query?.pages || {});
+  for (const page of pages) {
+    if (!page || typeof page !== 'object') continue;
+    const p = page as { thumbnail?: { source?: string; width?: number; height?: number } };
+    const source = String(p.thumbnail?.source || '');
+    const width = Number(p.thumbnail?.width || 0);
+    const height = Number(p.thumbnail?.height || 0);
+    if (!source || !isRasterSource(source) || width < 480 || height < 320) continue;
+    if (!source.includes('upload.wikimedia.org')) continue;
+    return { src: source, width, height, title };
+  }
+  return null;
+}
+
+async function resolveWikimediaCandidate(
+  type: AssetType,
+  entityId: string,
+  meta: AssetMetadata,
+): Promise<WikimediaCandidate | null> {
+  const typeHint =
+    type === 'driver' ? 'Formula 1 driver portrait'
+      : type === 'team' ? 'Formula 1 team logo'
+        : type === 'circuit' ? 'Formula 1 circuit'
+          : 'Formula 1 radio team photo';
+  const wikiTitles = Array.isArray(meta.wikiTitles) ? meta.wikiTitles : [];
+  for (const title of wikiTitles) {
+    const pick = await wikipediaPageImage(title);
+    if (pick) return pick;
+  }
+  const searchTerms = uniqueTerms([
+    ...(Array.isArray(meta.searchTerms) ? meta.searchTerms : []),
+    meta.commonsSearch,
+    meta.teamName,
+    meta.circuitName,
+    meta.country ? `${meta.circuitName || ''} ${meta.country}`.trim() : undefined,
+    `${entityId} ${typeHint}`,
+    `${typeHint}`,
+  ]);
+  for (const term of searchTerms) {
+    const picks = await commonsSearchImages(term, 10);
+    if (picks.length > 0) return picks[0];
+  }
+  return null;
+}
+
 async function generateAndUpload(
   type: AssetType,
   entityId: string,
   meta: AssetMetadata,
 ): Promise<string> {
-  const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
-
-  const prompt = buildPrompt(type, meta);
-  const aspectRatio = ASPECT_RATIO[type];
-
-  // Retry up to 3 times on 429, honouring retry_after
-  let output: unknown;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      output = await replicate.run('black-forest-labs/flux-1.1-pro', {
-        input: { prompt, aspect_ratio: aspectRatio },
-      });
-      break;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const retryMatch = msg.match(/"retry_after"\s*:\s*(\d+)/);
-      const is429 = msg.includes('429') || msg.includes('Too Many Requests');
-      if (is429 && attempt < 2) {
-        const waitSec = retryMatch ? parseInt(retryMatch[1], 10) + 2 : 15;
-        console.warn(`[assetPipeline] 429 — waiting ${waitSec}s before retry ${attempt + 2}/3`);
-        await new Promise((r) => setTimeout(r, waitSec * 1000));
-      } else {
-        throw err;
-      }
-    }
-  }
-
-  const raw: unknown = Array.isArray(output) ? output[0] : output;
-  const imageUrl = raw instanceof URL
-    ? raw.href
-    : (typeof raw === 'object' && raw !== null && typeof (raw as { url?: unknown }).url === 'function')
-      ? String((raw as { url: () => URL | string }).url())
-      : String(raw ?? '');
-
-  if (!imageUrl) throw new Error('Replicate returned no image URL');
+  const pick = await resolveWikimediaCandidate(type, entityId, meta);
+  if (!pick?.src) throw new Error('No suitable Wikimedia image found');
 
   const publicId = `${CLOUDINARY_FOLDER}/${type}/${entityId}`;
-  const uploadResult = await cloudinary.uploader.upload(imageUrl, {
+  await cloudinary.uploader.upload(pick.src, {
     public_id: publicId,
     resource_type: 'image',
     format: 'webp',
     overwrite: false,
-    transformation: [{ effect: 'contrast:15' }, { effect: 'sharpen:80' }],
+    transformation: [{ quality: 'auto' }],
   });
 
-  return uploadResult.secure_url as string;
+  return cloudinary.url(publicId, {
+    secure: true,
+    resource_type: 'image',
+    format: 'webp',
+    quality: 'auto',
+  });
 }
 
-/** Full pipeline: Cloudinary check → Flux generation → Cloudinary upload → URL. */
+/** Full pipeline: Cloudinary check → Wikimedia fetch → Cloudinary upload → URL. */
 export async function getOrGenerateAsset(
   type: AssetType,
   entityId: string,

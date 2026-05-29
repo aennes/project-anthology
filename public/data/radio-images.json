@@ -3,67 +3,67 @@
   "attributionNote": "Covers use Project Anthology stills under /images/ or locally mirrored Wikimedia Commons files. Re-run npm run images:radio-anthology to refresh Commons mirrors.",
   "episodes": {
     "multi-21-malaysia-2013": {
-      "cover": "/images/Landscape 1280x720/13.png",
+      "cover": "",
       "coverAlt": "Sebastian Vettel, Red Bull era",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": []
     },
     "webber-unbelievable-china-2013": {
-      "cover": "/images/Landscape 1280x720/13.png",
+      "cover": "",
       "coverAlt": "Mark Webber, Red Bull Racing 2013",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": []
     },
     "vettel-brazil-2012-retire-debate": {
-      "cover": "/images/Landscape 1280x720/6.png",
+      "cover": "",
       "coverAlt": "Felipe Massa, Brazilian Grand Prix 2008 — championship tension",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": []
     },
     "raikkonen-leave-me-alone-india-2012": {
-      "cover": "/images/Landscape 1280x720/5.png",
+      "cover": "",
       "coverAlt": "Kimi Räikkönen, Ferrari 2008",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": []
     },
     "hamilton-bwoah-germany-2017": {
-      "cover": "/images/Landscape 1280x720/22.png",
+      "cover": "",
       "coverAlt": "Lewis Hamilton, Silverstone 2021",
       "coverCredit": { "note": "Project Anthology still (related archive story)" },
       "gallery": []
     },
     "sainz-smooth-operator-australia-2024": {
-      "cover": "/images/Landscape 1280x720/7.png",
+      "cover": "",
       "coverAlt": "Scuderia Ferrari F2004",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": []
     },
     "alonso-gp2-engine-hungary-2015": {
-      "cover": "/images/Landscape 1280x720/12.png",
+      "cover": "",
       "coverAlt": "Jenson Button, McLaren-Mercedes",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": []
     },
     "norris-last-lap-austria-2020": {
-      "cover": "/images/Landscape 1280x720/12.png",
+      "cover": "",
       "coverAlt": "McLaren on track",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": []
     },
     "ricciardo-honda-looks-great-japan-2019": {
-      "cover": "/images/Landscape 1280x720/10.png",
+      "cover": "",
       "coverAlt": "Mika Häkkinen, Mercedes era atmosphere",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": []
     },
     "verstappen-simply-lovely-baku-2018": {
-      "cover": "/images/Landscape 1280x720/13.png",
+      "cover": "",
       "coverAlt": "Wet-weather Formula One action",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": []
     },
     "button-is-it-a-bird-monaco-2009": {
-      "cover": "/images/Landscape 1280x720/20.png",
+      "cover": "",
       "coverAlt": "Jenson Button, Brawn GP 2009",
       "coverCredit": { "note": "Project Anthology still (related archive story)" },
       "gallery": [
@@ -95,7 +95,7 @@
           }
         },
         {
-          "src": "/images/Landscape 1280x720/7.png",
+          "src": "/images/placeholders/radio.svg",
           "alt": "Scuderia Ferrari on track",
           "layout": "landscape",
           "credit": { "note": "Project Anthology still" }
@@ -103,7 +103,7 @@
       ]
     },
     "grosjean-no-push-bahrain-2020": {
-      "cover": "/images/Landscape 1280x720/39.png",
+      "cover": "",
       "coverAlt": "Monaco 2004 — high-impact racing moment",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": [
@@ -120,7 +120,7 @@
       ]
     },
     "verstappen-mate-celebration-brazil-2016": {
-      "cover": "/images/Landscape 1280x720/13.png",
+      "cover": "",
       "coverAlt": "Wet Grand Prix driving",
       "coverCredit": { "note": "Project Anthology still" },
       "gallery": []

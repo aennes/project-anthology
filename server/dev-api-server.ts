@@ -8,10 +8,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { URL } from 'url';
 import { loadEnv } from 'vite';
+import { checkAssetExists, type AssetType } from '../utils/assetPipeline';
 
 const PORT = 3001;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, '..');
+const VALID_ASSET_TYPES = new Set<AssetType>(['driver', 'circuit', 'team', 'radio']);
 
 /** Match Vite / scripts: read `.env` + `.env.local` into `process.env` for API handlers (not loaded by tsx by default). */
 function mergeViteEnvIntoProcess() {
@@ -129,6 +131,50 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/f1-db' || pathname === '/api/f1-db/') {
       const mod = await import('../api/f1-db');
       await mod.default(patchedReq as any, patchedRes as any);
+      return;
+    }
+    if (pathname === '/api/generate-assets' || pathname === '/api/generate-assets/') {
+      if (method !== 'POST') {
+        patchedRes.status(405);
+        patchedRes.json({ error: 'Method not allowed' });
+        return;
+      }
+
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) {
+        chunks.push(chunk as Buffer);
+      }
+
+      let body: { type?: unknown; entityId?: unknown } = {};
+      try {
+        body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}') as { type?: unknown; entityId?: unknown };
+      } catch {
+        patchedRes.status(400);
+        patchedRes.json({ error: 'Invalid JSON body' });
+        return;
+      }
+
+      const type = String(body.type ?? '');
+      const entityId = String(body.entityId ?? '').trim();
+      if (!entityId || !VALID_ASSET_TYPES.has(type as AssetType)) {
+        patchedRes.status(400);
+        patchedRes.json({ error: 'type must be driver|circuit|team|radio and entityId is required' });
+        return;
+      }
+      if (!/^[\w-]{1,80}$/.test(entityId)) {
+        patchedRes.status(400);
+        patchedRes.json({ error: 'Invalid entityId format' });
+        return;
+      }
+
+      try {
+        const url = await checkAssetExists(type as AssetType, entityId);
+        patchedRes.status(200);
+        patchedRes.json({ url: url ?? `/images/placeholders/${type}.svg` });
+      } catch {
+        patchedRes.status(200);
+        patchedRes.json({ url: `/images/placeholders/${type}.svg` });
+      }
       return;
     }
     if (pathname === '/api/debug-agent-log' || pathname === '/api/debug-agent-log/') {

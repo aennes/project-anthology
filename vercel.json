@@ -19,9 +19,6 @@
       "maxDuration": 10
     }
   },
-  "crons": [
-    { "path": "/api/generate-assets", "schedule": "0 6 15 1 *" }
-  ],
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/season-tracker", "destination": "/season-tracker/index.html" },
