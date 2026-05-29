@@ -148,8 +148,19 @@
    */
   const SEASON_LOCAL_TTL_CURRENT_MS = 2 * 60 * 60 * 1000;
   const SEASON_LOCAL_TTL_HISTORICAL_MS = 7 * 24 * 60 * 60 * 1000;
+  const SEASON_LOCAL_TTL_CURRENT_RACE_WEEKEND_MS = 5 * 60 * 1000;
+  const SEASON_SESSION_TTL_CURRENT_MS = 20 * 60 * 1000;
+  const SEASON_SESSION_TTL_CURRENT_RACE_WEEKEND_MS = 2 * 60 * 1000;
+  const SEASON_SESSION_TTL_OPENF1_MS = 60 * 1000;
+  const SEASON_REVALIDATE_RACE_WEEKEND_MS = 60 * 1000;
+  const SEASON_REVALIDATE_DEFAULT_MS = 5 * 60 * 1000;
   /** After a failed fetch with no stale payload, avoid hammering the proxy. */
   const SEASON_NEGATIVE_CACHE_MS = 90 * 1000;
+
+  function isRaceWeekendUtc(now = new Date()) {
+    const day = now.getUTCDay();
+    return day === 5 || day === 6 || day === 0;
+  }
 
   function seasonLocalStorageKey(sessionKey) {
     return `f1_season_local_${sessionKey}`;
@@ -168,8 +179,18 @@
 
   function seasonLocalTtlMs(sessionKey) {
     const y = parseYearFromSeasonCacheKey(sessionKey);
+    if (isOpenF1SeasonCacheKey(sessionKey)) return SEASON_SESSION_TTL_OPENF1_MS;
     if (y != null && y < SEASON_CURRENT) return SEASON_LOCAL_TTL_HISTORICAL_MS;
+    if (y === SEASON_CURRENT && isRaceWeekendUtc()) return SEASON_LOCAL_TTL_CURRENT_RACE_WEEKEND_MS;
     return SEASON_LOCAL_TTL_CURRENT_MS;
+  }
+
+  function seasonSessionTtlMs(sessionKey) {
+    if (isOpenF1SeasonCacheKey(sessionKey)) return SEASON_SESSION_TTL_OPENF1_MS;
+    const y = parseYearFromSeasonCacheKey(sessionKey);
+    if (y != null && y < SEASON_CURRENT) return Number.POSITIVE_INFINITY;
+    if (y === SEASON_CURRENT && isRaceWeekendUtc()) return SEASON_SESSION_TTL_CURRENT_RACE_WEEKEND_MS;
+    return SEASON_SESSION_TTL_CURRENT_MS;
   }
 
   function isOpenF1SeasonCacheKey(sessionKey) {
@@ -234,6 +255,35 @@
 
   function seasonCacheKey(year, suffix) {
     return `f1_season_${CACHE_VERSION}_${year}_${suffix}`;
+  }
+
+  function seasonCacheKeyToErgastPath(fullKey) {
+    const k = String(fullKey || '');
+    const roundMatch = k.match(new RegExp(`^f1_season_${CACHE_VERSION}_(\\d{4})_round_(\\d+)_(.+)$`));
+    if (roundMatch) {
+      const year = Number(roundMatch[1]);
+      const round = Number(roundMatch[2]);
+      const suffix = roundMatch[3];
+      if (suffix === 'results') return `${year}/${round}/results.json`;
+      if (suffix.startsWith('results-')) {
+        const lim = suffix.slice('results-'.length);
+        if (/^\d+$/.test(lim)) return `${year}/${round}/results/${lim}.json`;
+      }
+      if (suffix === 'qualifying') return `${year}/${round}/qualifying.json`;
+      if (suffix.startsWith('qualifying-')) {
+        const lim = suffix.slice('qualifying-'.length);
+        if (/^\d+$/.test(lim)) return `${year}/${round}/qualifying/${lim}.json`;
+      }
+      return null;
+    }
+    const seasonMatch = k.match(new RegExp(`^f1_season_${CACHE_VERSION}_(\\d{4})_(.+)$`));
+    if (!seasonMatch) return null;
+    const year = Number(seasonMatch[1]);
+    const suffix = seasonMatch[2];
+    if (suffix === 'calendar') return `${year}.json`;
+    if (suffix === 'driverStandings') return `${year}/driverStandings.json`;
+    if (suffix === 'constructorStandings') return `${year}/constructorStandings.json`;
+    return null;
   }
 
   function openF1SessionsCacheKey(year) {
@@ -464,6 +514,9 @@
     calendar: [],
     standings: null,
     constructors: null,
+    loadedSeasonYear: null,
+    seasonSwitchToken: 0,
+    seasonRevalidateAt: new Map(),
     driverMetaByNumber: new Map(), // number -> { code, name, team, headshotUrl? }
     headshotByCode: new Map(), // DriverCode -> url (OpenF1 + spec CDN try)
     teamByDriverId: new Map(), // Ergast driverId -> team
@@ -1344,7 +1397,7 @@
       const y = SEASON_CURRENT - i;
       if (y >= SEASON_MIN) tabYears.push(y);
     }
-    const activeYear = await resolveActiveSeasonYear();
+    const activeYear = SEASON_CURRENT;
     // #region agent log
     agentDbg({
       hypothesisId: 'H3',
@@ -1521,11 +1574,7 @@
       btn.addEventListener('click', async () => {
         const year = Number(btn.dataset.year);
         if (!year || year === state.year) return;
-        $$('.tab').forEach((b) => b.classList.toggle('is-active', b === btn));
-        $$('.tab').forEach((b) => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
-        state.year = year;
-        await warmSeason(year);
-        await renderHistorical(year);
+        await selectSeasonYear(year);
         void refreshIdleInsight();
       });
     });
@@ -1555,16 +1604,56 @@
     });
   }
 
+  async function loadSeasonResource(year, suffix, path) {
+    try {
+      return await cachedSeasonJson(seasonCacheKey(year, suffix), (k) => fetchErgastJson(path, k));
+    } catch (err) {
+      logDataError('loadSeasonResource', err, { year, suffix });
+      return null;
+    }
+  }
+
   async function warmSeason(year) {
-    if (year !== state.activeSeason && year !== SEASON_CURRENT) return;
     const [drivers, constructors, calendar] = await Promise.all([
-      cachedSeasonJson(seasonCacheKey(year, 'driverStandings'), (k) => fetchErgastJson(`${year}/driverStandings.json`, k)),
-      cachedSeasonJson(seasonCacheKey(year, 'constructorStandings'), (k) => fetchErgastJson(`${year}/constructorStandings.json`, k)),
-      cachedSeasonJson(seasonCacheKey(year, 'calendar'), (k) => fetchErgastJson(`${year}.json`, k)),
+      loadSeasonResource(year, 'driverStandings', `${year}/driverStandings.json`),
+      loadSeasonResource(year, 'constructorStandings', `${year}/constructorStandings.json`),
+      loadSeasonResource(year, 'calendar', `${year}.json`),
     ]);
+    state.loadedSeasonYear = year;
     state.standings = drivers;
     state.constructors = constructors;
     state.calendar = extractCalendar(calendar);
+  }
+
+  function setSelectedSeasonUnavailableMessage(year) {
+    const latest = state.activeSeason !== year ? `Latest published standings are in ${state.activeSeason}.` : '';
+    el.liveStatus.textContent = `No published season snapshot for ${year} yet. ${latest}`.trim();
+  }
+
+  async function selectSeasonYear(year) {
+    const token = Date.now() + Math.random();
+    state.seasonSwitchToken = token;
+    state.year = year;
+    syncActiveSeasonTab(year);
+    setHeroLoading();
+    await warmSeason(year);
+    if (state.seasonSwitchToken !== token) return;
+    await renderSeason(year);
+    await renderHistorical(year);
+    if (state.snapshotLoaded) {
+      state.snapshotLoaded = false;
+      void loadSnapshot();
+    }
+    if (year === SEASON_CURRENT) {
+      void decideLiveAndStart();
+      return;
+    }
+    state.live = false;
+    clearLiveDataBanner();
+    stopLivePolling();
+    syncTimingBentoMode();
+    if (el.liveBadge) el.liveBadge.hidden = true;
+    el.liveStatus.textContent = `Live telemetry follows ${SEASON_CURRENT} only. Showing ${year} standings.`;
   }
 
   async function resolveActiveSeasonYear() {
@@ -1613,23 +1702,14 @@
   }
 
   async function renderSeason(year) {
+    if (state.loadedSeasonYear !== year) {
+      await warmSeason(year);
+    }
     setHeroLoading();
     el.tagSeason.textContent = `Season ${year}`;
 
-    const driversJson =
-      state.standings ||
-      (await cachedSeasonJson(seasonCacheKey(year, 'driverStandings'), (k) => fetchErgastJson(`${year}/driverStandings.json`, k)));
-    const constructorsJson =
-      state.constructors ||
-      (await cachedSeasonJson(seasonCacheKey(year, 'constructorStandings'), (cacheKey) =>
-        fetchErgastJson(`${year}/constructorStandings.json`, cacheKey),
-      ));
-    const calendarJson =
-      state.calendar.length
-        ? null
-        : await cachedSeasonJson(seasonCacheKey(year, 'calendar'), (k) => fetchErgastJson(`${year}.json`, k));
-
-    if (!state.calendar.length && calendarJson) state.calendar = extractCalendar(calendarJson);
+    const driversJson = state.standings;
+    const constructorsJson = state.constructors;
 
     const driverStandings = extractDriverStandings(driversJson);
     const constructorStandings = extractConstructorStandings(constructorsJson);
@@ -1639,6 +1719,9 @@
     renderConstructors(constructorStandings);
     syncTimingBentoMode();
     renderCalendar(state.calendar);
+    if (driverStandings.length === 0 && constructorStandings.length === 0 && state.calendar.length === 0) {
+      setSelectedSeasonUnavailableMessage(year);
+    }
   }
 
   async function renderHistorical(year) {
@@ -1646,8 +1729,8 @@
     el.histHint.textContent = `Loading ${year}…`;
 
     const [driversJson, constructorsJson] = await Promise.all([
-      cachedSeasonJson(seasonCacheKey(year, 'driverStandings'), (k) => fetchErgastJson(`${year}/driverStandings.json`, k)),
-      cachedSeasonJson(seasonCacheKey(year, 'constructorStandings'), (k) => fetchErgastJson(`${year}/constructorStandings.json`, k)),
+      loadSeasonResource(year, 'driverStandings', `${year}/driverStandings.json`),
+      loadSeasonResource(year, 'constructorStandings', `${year}/constructorStandings.json`),
     ]);
 
     const driverStandings = extractDriverStandings(driversJson);
@@ -1858,6 +1941,11 @@
     el.towerHint.textContent = 'Standings format (not live).';
     el.timingTower.className = 'tower tower--static';
     el.timingTower.innerHTML = '';
+    if (!Array.isArray(driverStandings) || driverStandings.length === 0) {
+      el.timingTower.innerHTML =
+        '<li class="towerRow towerRow--empty"><span class="towerRow__main">No driver standings published for this season yet.</span></li>';
+      return;
+    }
     driverStandings.forEach((d) => {
       el.timingTower.appendChild(makeTowerRowStatic(d));
     });
@@ -1865,6 +1953,11 @@
 
   function renderConstructors(constructorStandings) {
     el.constructorsList.innerHTML = '';
+    if (!Array.isArray(constructorStandings) || constructorStandings.length === 0) {
+      el.constructorsList.innerHTML =
+        '<li class="constructorRow constructorRow--empty"><span>No constructor standings published yet.</span></li>';
+      return;
+    }
     constructorStandings.forEach((c) => el.constructorsList.appendChild(makeConstructorRow(c)));
     if (prefersReducedMotion) {
       el.constructorsList.querySelectorAll('.constructorRow').forEach((row) => row.classList.add('is-in'));
@@ -1890,6 +1983,10 @@
 
   function renderCalendar(calendar) {
     el.calendarRail.innerHTML = '';
+    if (!Array.isArray(calendar) || calendar.length === 0) {
+      el.calendarRail.innerHTML = '<p class="small muted">No race calendar has been published for this season yet.</p>';
+      return;
+    }
     const now = new Date();
     const next = getSeasonRacePhase(calendar).race;
     calendar.forEach((r) => {
@@ -2069,6 +2166,13 @@
   }
 
   async function decideLiveAndStart() {
+    if (state.year !== SEASON_CURRENT) {
+      state.live = false;
+      clearLiveDataBanner();
+      stopLivePolling();
+      syncTimingBentoMode();
+      return;
+    }
     const sessionsRes = await fetchLiveJson('sessions', { session_key: 'latest' });
     const sessionsForGate = sessionsRes.ok ? assertLivePayloadArray('sessions', sessionsRes.data) : [];
     const live =
@@ -2679,7 +2783,7 @@
     // - find completed races from Ergast calendar
     // - fetch Ergast winner info per round to compute wins & closest margin
     // - tyre usage: only possible via OpenF1 stints, so we attempt to map Race sessions by year + session_name=Race
-    const yr = state.activeSeason || SEASON_CURRENT;
+    const yr = state.year || SEASON_CURRENT;
     const calendarJson = await cachedSeasonJson(seasonCacheKey(yr, 'calendar'), (k) => fetchErgastJson(`${yr}.json`, k));
     const calendar = extractCalendar(calendarJson);
     const now = new Date();
@@ -3510,8 +3614,24 @@
   async function fetchErgastJson(path, cacheKeyForRevalidate) {
     const year = parseYearFromErgastPath(path);
     const historical = year != null && year < SEASON_CURRENT;
+    const raceWeekendCurrent = year === SEASON_CURRENT && isRaceWeekendUtc();
 
     const staticUrl = ergastPathToStaticUrl(path);
+    if (raceWeekendCurrent) {
+      const dbJson = await fetchF1DbJson(path, { timeoutMs: F1_DB_TIMEOUT_NONCRITICAL_MS });
+      if (dbJson) return dbJson;
+      try {
+        const apiJson = await fetchErgastApiJson(path);
+        if (hasUsableMrData(apiJson)) return apiJson;
+      } catch (err) {
+        logDataError('fetchErgastJson:raceWeekendApi', err, { path });
+      }
+      if (staticUrl) {
+        const staticJson = await fetchF1StaticJson(staticUrl);
+        if (staticJson) return staticJson;
+      }
+    }
+
     if (staticUrl) {
       // #region agent log
       const raceT0 = performance.now();
@@ -3671,7 +3791,18 @@
     const raw = sessionStorage.getItem(fullKey);
     if (raw) {
       try {
-        const data = JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        const wrapped = parsed && typeof parsed === 'object' && typeof parsed.t === 'number' && 'd' in parsed;
+        const data = wrapped ? parsed.d : parsed;
+        const createdAt = wrapped ? Number(parsed.t) : 0;
+        const ttl = seasonSessionTtlMs(fullKey);
+        if (Number.isFinite(ttl)) {
+          const age = Date.now() - createdAt;
+          if (!createdAt || age < 0 || age >= ttl) {
+            sessionStorage.removeItem(fullKey);
+            return null;
+          }
+        }
         if (isCacheableSeasonPayload(fullKey, data)) return data;
         sessionStorage.removeItem(fullKey);
       } catch {
@@ -3681,7 +3812,7 @@
     const loc = readSeasonLocalBundle(fullKey);
     if (loc?.isFresh && isCacheableSeasonPayload(fullKey, loc.data)) {
       try {
-        sessionStorage.setItem(fullKey, JSON.stringify(loc.data));
+        sessionStorage.setItem(fullKey, JSON.stringify({ t: Date.now(), d: loc.data }));
       } catch {
         // ignore quota
       }
@@ -3700,17 +3831,41 @@
   function writeCachedSeasonJson(fullKey, data) {
     if (!isCacheableSeasonPayload(fullKey, data)) return;
     try {
-      sessionStorage.setItem(fullKey, JSON.stringify(data));
+      sessionStorage.setItem(fullKey, JSON.stringify({ t: Date.now(), d: data }));
     } catch {
       // ignore quota
     }
     writeSeasonLocalBundle(fullKey, data);
   }
 
+  function maybeRevalidateSeasonCache(fullKey) {
+    if (isOpenF1SeasonCacheKey(fullKey)) return;
+    const y = parseYearFromSeasonCacheKey(fullKey);
+    if (y !== SEASON_CURRENT) return;
+    const path = seasonCacheKeyToErgastPath(fullKey);
+    if (!path) return;
+    const now = Date.now();
+    const minGap = isRaceWeekendUtc() ? SEASON_REVALIDATE_RACE_WEEKEND_MS : SEASON_REVALIDATE_DEFAULT_MS;
+    const last = Number(state.seasonRevalidateAt.get(fullKey) || 0);
+    if (now - last < minGap) return;
+    state.seasonRevalidateAt.set(fullKey, now);
+    void (async () => {
+      try {
+        const data = await fetchErgastJson(path, fullKey);
+        if (isCacheableSeasonPayload(fullKey, data)) writeCachedSeasonJson(fullKey, data);
+      } catch (err) {
+        logDataError('maybeRevalidateSeasonCache', err, { path, fullKey });
+      }
+    })();
+  }
+
   async function cachedSeasonJson(key, loader) {
     const fullKey = key;
     const cached = readCachedSeasonJson(fullKey);
-    if (cached) return cached;
+    if (cached) {
+      maybeRevalidateSeasonCache(fullKey);
+      return cached;
+    }
 
     if (!isOpenF1SeasonCacheKey(fullKey) && readSeasonNegative(fullKey)) {
       throw new Error('season_cache_negative');

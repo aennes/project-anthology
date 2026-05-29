@@ -4,14 +4,22 @@ import { asFirstString, getAllowedOrigin } from './proxy-helpers';
 
 const SEASON_RESOURCES = new Set(['calendar', 'driverStandings', 'constructorStandings']);
 
-function f1DbCacheControl(year: number, ok: boolean): string {
+export function isRaceWeekendUtc(now: Date = new Date()): boolean {
+  const day = now.getUTCDay();
+  return day === 5 || day === 6 || day === 0;
+}
+
+export function f1DbCacheControl(year: number, ok: boolean, now: Date = new Date()): string {
   if (!ok) return 's-maxage=30, stale-while-revalidate=120';
-  const current = new Date().getFullYear();
+  const current = now.getFullYear();
   if (year < current) {
     return 'public, s-maxage=604800, stale-while-revalidate=86400';
   }
   if (year === current) {
-    return 'public, s-maxage=3600, stale-while-revalidate=1800';
+    if (isRaceWeekendUtc(now)) {
+      return 'public, s-maxage=90, stale-while-revalidate=120';
+    }
+    return 'public, s-maxage=900, stale-while-revalidate=900';
   }
   return 'public, s-maxage=300, stale-while-revalidate=600';
 }

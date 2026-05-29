@@ -9,16 +9,24 @@ import {
 const ERGAST_BASE = 'https://api.jolpi.ca/ergast/f1';
 
 /** Longer edge cache for completed seasons; current year stays shorter. */
-function ergastCacheControl(path: string, ok: boolean): string {
+export function isRaceWeekendUtc(now: Date = new Date()): boolean {
+  const day = now.getUTCDay();
+  return day === 5 || day === 6 || day === 0;
+}
+
+export function ergastCacheControl(path: string, ok: boolean, now: Date = new Date()): string {
   if (!ok) return 's-maxage=60, stale-while-revalidate=300';
   const m = path.match(/^(\d{4})(?:\/|\.json)/);
   const year = m ? Number(m[1]) : NaN;
-  const current = new Date().getFullYear();
+  const current = now.getFullYear();
   if (Number.isFinite(year) && year < current) {
     return 'public, s-maxage=604800, stale-while-revalidate=86400';
   }
   if (Number.isFinite(year) && year === current) {
-    return 'public, s-maxage=7200, stale-while-revalidate=3600';
+    if (isRaceWeekendUtc(now)) {
+      return 'public, s-maxage=120, stale-while-revalidate=180';
+    }
+    return 'public, s-maxage=1800, stale-while-revalidate=900';
   }
   return 's-maxage=300, stale-while-revalidate=3600';
 }
