@@ -1,15 +1,24 @@
-/* Shared top nav + drawer for vanilla mini-apps (matches React NavBar). */
+/* Shared nav for vanilla mini-apps — mirrors the React NavBar.
+   Desktop/tablet top bar + mobile bottom bar (no hamburger/drawer). */
 :root {
-  --anthology-nav-h: 4.75rem;
+  --anthology-nav-h: 52px;
   --anthology-nav-z: 80;
-  --anthology-drawer-z: 90;
+  --anthology-bottomnav-h: 64px;
 }
 
 body.has-anthology-nav {
   padding-top: var(--anthology-nav-h);
 }
 
-.anthology-nav {
+/* Clear the fixed bottom bar on viewports where it is shown. */
+@media (max-width: 1023px) {
+  body.has-anthology-nav {
+    padding-bottom: var(--anthology-bottomnav-h);
+  }
+}
+
+/* ─────────────────────────── Top bar ─────────────────────────── */
+.anthology-topbar {
   position: fixed;
   top: 0;
   left: 0;
@@ -17,248 +26,237 @@ body.has-anthology-nav {
   z-index: var(--anthology-nav-z);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  min-height: var(--anthology-nav-h);
-  padding: 1.25rem 1.5rem;
+  height: var(--anthology-nav-h);
+  padding: 0 1.25rem;
   box-sizing: border-box;
-  mix-blend-mode: difference;
-  color: #fff;
-  pointer-events: none;
-}
-
-.anthology-nav.is-solid {
-  mix-blend-mode: normal;
   background: rgba(10, 10, 10, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 2px solid #ff1801;
 }
 
-.anthology-nav > * {
-  pointer-events: auto;
+@media (min-width: 640px) {
+  .anthology-topbar {
+    padding: 0 2rem;
+  }
 }
 
-.anthology-nav__home {
-  margin: 0;
-  padding: 0.25rem 0.5rem;
-  border: 0;
-  background: transparent;
+.anthology-topbar__home {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  flex-shrink: 0;
   font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   text-decoration: none;
-  color: inherit;
-  opacity: 0.9;
-  cursor: pointer;
-  border-radius: 0.25rem;
-  line-height: 1.35;
-  text-align: left;
+  color: #ff1801;
+  white-space: nowrap;
+  transition: color 0.15s ease;
 }
 
-.anthology-nav__home:hover {
-  opacity: 1;
+.anthology-topbar__home:hover {
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.anthology-nav__home:focus-visible {
+.anthology-topbar__home:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #ff1801;
 }
 
-.anthology-nav__home em {
-  font-style: normal;
+.anthology-topbar__links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-left: auto;
+}
+
+@media (min-width: 1024px) {
+  .anthology-topbar__links {
+    gap: 2.5rem;
+  }
+}
+
+.anthology-topbar__link {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding-bottom: 3px;
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.15s ease;
+}
+
+.anthology-topbar__link:hover {
+  color: #ffb4a7;
+}
+
+.anthology-topbar__link.is-active {
+  color: #fff;
+}
+
+.anthology-topbar__link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #ff1801;
+}
+
+.anthology-topbar__dot {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: #ff1801;
+}
+
+/* ────────────────────────── Bottom bar ────────────────────────── */
+.anthology-bottomnav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--anthology-nav-z);
+  display: flex;
+  height: var(--anthology-bottomnav-h);
+  background: #0a0a0a;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anthology-bottomnav__cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  text-decoration: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.anthology-bottomnav__cell:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px #ff1801;
+}
+
+.anthology-bottomnav__dot {
+  width: 5px;
+  height: 5px;
+  margin-bottom: 1px;
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.anthology-bottomnav__cell.is-active {
   color: #ff1801;
 }
 
-.anthology-nav__menu {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0.625rem 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: transparent;
-  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
-  font-size: 0.625rem;
-  font-weight: 400;
-  letter-spacing: 0.2em;
+.anthology-bottomnav__cell.is-active .anthology-bottomnav__dot {
+  background: #ff1801;
+}
+
+.anthology-bottomnav__icon {
+  display: inline-flex;
+  color: inherit;
+}
+
+.anthology-bottomnav__label {
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 10px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  transition:
-    color 0.3s ease,
-    background 0.3s ease,
-    border-color 0.3s ease,
-    box-shadow 0.3s ease;
+  color: inherit;
 }
 
-.anthology-nav__menu:hover {
-  color: #fff;
-  background: #ff1801;
-  border-color: #ff1801;
-  box-shadow:
-    0 0 8px rgba(255, 24, 1, 0.45),
-    0 0 24px rgba(255, 24, 1, 0.28);
-}
-
-.anthology-nav__menu:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #ff1801;
-}
-
-.anthology-nav__menu[aria-expanded="true"] {
-  background: #ff1801;
-  border-color: #ff1801;
-  color: #fff;
-  box-shadow: 0 0 12px rgba(255, 24, 1, 0.5);
-}
-
-.anthology-nav__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: calc(var(--anthology-drawer-z) - 1);
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-}
-
-.anthology-nav__drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  z-index: var(--anthology-drawer-z);
-  width: min(100%, 28rem);
-  max-width: 28rem;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  background: #0a0a0a;
-  color: #f4f1ea;
-  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.45);
-  transform: translateX(100%);
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+.anthology-bottomnav__more {
+  position: relative;
+  flex: 1;
   display: flex;
-  flex-direction: column;
+}
+
+.anthology-bottomnav__more .anthology-bottomnav__cell {
+  width: 100%;
+}
+
+/* ─────────────────────────── More popup ─────────────────────────── */
+.anthology-bottomnav__popup {
+  position: absolute;
+  bottom: 64px;
+  right: 4px;
+  width: 140px;
+  background: #161616;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  box-shadow: none;
   overflow: hidden;
 }
 
-.anthology-nav__drawer[open] {
-  transform: translateX(0);
-}
-
-.anthology-nav__drawer[hidden] {
+.anthology-bottomnav__popup[hidden] {
   display: none;
 }
 
-.anthology-nav__drawerHead {
+.anthology-bottomnav__popupItem {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.anthology-nav__drawerTitle {
-  margin: 0;
-  font-family: var(--font-display, "Bebas Neue", system-ui, sans-serif);
-  font-size: 1.5rem;
-  font-weight: 400;
-  letter-spacing: 0.04em;
-}
-
-.anthology-nav__drawerClose {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0.5rem;
-  border: 0;
-  background: transparent;
-  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
-  font-size: 0.875rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #fff;
-  cursor: pointer;
-}
-
-.anthology-nav__drawerClose:hover {
-  color: #ff1801;
-}
-
-.anthology-nav__drawerClose:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #ff1801;
-}
-
-.anthology-nav__drawerBody {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem;
-}
-
-.anthology-nav__sectionLabel {
-  margin: 0 0 1rem;
-  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
-  font-size: 0.75rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #ff1801;
-}
-
-.anthology-nav__links {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.anthology-nav__link {
-  display: block;
-  width: 100%;
-  padding: 0.35rem 0;
-  border: 0;
-  background: transparent;
-  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
-  font-size: 1.125rem;
-  letter-spacing: 0.04em;
-  text-align: left;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
   text-decoration: none;
-  color: #fff;
-  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.anthology-nav__link:hover {
+.anthology-bottomnav__popupItem.is-active {
   color: #ff1801;
 }
 
-.anthology-nav__link:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #ff1801;
+.anthology-bottomnav__popupIcon {
+  display: inline-flex;
+  color: inherit;
 }
 
-.anthology-nav__drawerFoot {
-  padding: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, monospace);
-  font-size: 0.625rem;
-  letter-spacing: 0.18em;
+.anthology-bottomnav__popupLabel {
+  font-family: var(--font-condensed, "Barlow Condensed", system-ui, sans-serif);
+  font-size: 10px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: inherit;
 }
 
-.anthology-nav__drawerFoot em {
-  font-style: normal;
-  color: #ff1801;
+/* ─────────────────────────── Visibility ─────────────────────────── */
+/* Top bar: hidden on mobile (bottom bar covers it). */
+@media (max-width: 767px) {
+  :root {
+    --anthology-nav-h: 0px;
+  }
+  .anthology-topbar {
+    display: none;
+  }
 }
 
-/* Page sub-bar sits below fixed anthology nav */
+/* Bottom bar: hidden on desktop (lg+). */
+@media (min-width: 1024px) {
+  .anthology-bottomnav {
+    display: none;
+  }
+}
+
+/* Page sub-bar sits below the fixed top bar. */
 .page-subbar {
   position: sticky;
   top: var(--anthology-nav-h);
@@ -288,15 +286,4 @@ body.has-anthology-nav {
 
 .page-subbar .topbar__moments {
   margin-left: auto;
-}
-
-@media (max-width: 640px) {
-  .anthology-nav {
-    padding: 1rem;
-  }
-
-  .anthology-nav__home {
-    font-size: 0.65rem;
-    max-width: 58vw;
-  }
 }
