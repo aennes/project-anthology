@@ -82,8 +82,9 @@ class ErrorTracker {
   }
 
   captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info', context?: ErrorContext): void {
+    const consoleMethod = level === 'warning' ? 'warn' : level;
     if (!this.isEnabled) {
-      console[level]('Message captured:', message, context);
+      console[consoleMethod]('Message captured:', message, context);
       return;
     }
 
@@ -97,7 +98,7 @@ class ErrorTracker {
         Sentry.captureMessage(message, level);
       });
     }).catch(() => {
-      console[level]('Message captured (Sentry unavailable):', message, context);
+      console[consoleMethod]('Message captured (Sentry unavailable):', message, context);
     });
   }
 

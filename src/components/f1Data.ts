@@ -161,7 +161,7 @@ function parseDrivers(data: any): DriverStanding[] {
       wins: Number(entry?.wins ?? 0),
     }))
     .filter(
-      (entry) =>
+      (entry: DriverStanding) =>
         Number.isFinite(entry.position) &&
         entry.position > 0 &&
         Number.isFinite(entry.points) &&
@@ -178,7 +178,7 @@ function parseConstructors(data: any): ConstructorStanding[] {
       name: entry?.Constructor?.name ?? 'Unknown Constructor',
       points: Number(entry?.points ?? 0),
     }))
-    .filter((entry) => Number.isFinite(entry.position) && entry.position > 0 && Number.isFinite(entry.points) && Boolean(entry.name));
+    .filter((entry: ConstructorStanding) => Number.isFinite(entry.position) && entry.position > 0 && Number.isFinite(entry.points) && Boolean(entry.name));
 }
 
 function parseRaces(calendarData: any, resultsData: any): RaceWeekend[] {
@@ -209,7 +209,7 @@ function parseRaces(calendarData: any, resultsData: any): RaceWeekend[] {
         winnerCode: winnerByRound.get(round),
       };
     })
-    .filter((race) => Number.isFinite(race.round) && race.round > 0 && Boolean(race.raceName) && Boolean(race.circuitName));
+    .filter((race: RaceWeekend) => Number.isFinite(race.round) && race.round > 0 && Boolean(race.raceName) && Boolean(race.circuitName));
 }
 
 export function getDefaultSeasonYear(now: Date = new Date()): number {

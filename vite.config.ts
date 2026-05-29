@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { Connect } from 'vite';
+import type { IncomingMessage, ServerResponse } from 'http';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -39,7 +39,7 @@ function vanillaStaticSitesDevPlugin(): Plugin {
     name: 'anthology-vanilla-static-sites-dev',
     configureServer(server) {
       server.middlewares.use(
-        (req: Connect.IncomingMessage, res: Connect.ServerResponse, next: Connect.NextFunction) => {
+        (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => {
           const rawUrl = req.url ?? '/';
           let pathname: string;
           try {
@@ -110,8 +110,8 @@ function vanillaStaticSitesDevPlugin(): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    
+    loadEnv(mode, '.', '');
+
     // Environment validation (production only)
     if (mode === 'production') {
       // Optional: Validate required environment variables
@@ -207,7 +207,7 @@ export default defineConfig(({ mode }) => {
           },
           format: {
             comments: false, // Remove comments
-            ecma: 2022, // Target modern ECMAScript
+            ecma: 2020, // Target modern ECMAScript (terser ECMA max)
           },
           mangle: {
             safari10: false, // Don't mangle Safari 10 (not needed for modern browsers)
@@ -262,6 +262,7 @@ export default defineConfig(({ mode }) => {
                 // Group small utils together
                 return 'utils';
               }
+              return undefined;
             },
             // Optimize chunk file names
             chunkFileNames: 'assets/js/[name]-[hash].js',
