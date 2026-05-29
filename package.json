@@ -18,9 +18,9 @@
     "sync:f1:seasons": "node scripts/sync-f1-snapshots.mjs --seasons-only",
     "sync:f1:supabase": "node scripts/sync-f1-to-supabase.mjs",
     "sync:f1:supabase:seasons": "node scripts/sync-f1-to-supabase.mjs --seasons-only",
-    "build": "npm run images:gen && npm run images:optimize-story-38-40 && (npm run fonts:season-tracker || npm run nop) && vite build && node scripts/copy-season-tracker.mjs && node scripts/copy-tracks.mjs",
+    "build": "npm run images:gen && npm run images:optimize-story-38-40 && (npm run fonts:season-tracker || npm run nop) && vite build && node scripts/copy-tracks.mjs",
     "nop": "node -e \"process.exit(0)\"",
-    "build:vercel": "(npm run images:gen || npm run nop) && (npm run images:circuit-images || npm run nop) && (npm run images:radio-anthology || npm run nop) && (npm run images:season-tracker || npm run nop) && (npm run images:optimize-story-38-40 || npm run nop) && (npm run fonts:season-tracker || npm run nop) && vite build && node scripts/copy-season-tracker.mjs && node scripts/copy-tracks.mjs",
+    "build:vercel": "(npm run images:gen || npm run nop) && (npm run images:circuit-images || npm run nop) && (npm run images:radio-anthology || npm run nop) && (npm run images:season-tracker || npm run nop) && (npm run images:optimize-story-38-40 || npm run nop) && (npm run fonts:season-tracker || npm run nop) && vite build && node scripts/copy-tracks.mjs",
     "build:check": "npm run build && node scripts/check-bundle-size.js",
     "preview": "vite preview",
     "images:gen": "node scripts/generate-responsive-images.js",
@@ -38,7 +38,14 @@
     "check:bundle": "node scripts/check-bundle-size.js",
     "vercel:link": "npx vercel link --yes --project project-anthology",
     "vercel:deploy": "npm run vercel:link && npx vercel deploy --prod --yes",
-    "seed:assets": "node --env-file=.env.local --import=tsx/esm scripts/seed-assets.ts"
+    "seed:assets": "node --env-file=.env.local --import=tsx/esm scripts/seed-assets.ts",
+    "seed:circuits": "tsx scripts/seed-circuit-images.ts",
+    "pipeline:discover": "tsx scripts/asset-pipeline.ts discover",
+    "pipeline:rank":     "tsx scripts/asset-pipeline.ts rank",
+    "pipeline:stage":    "tsx scripts/asset-pipeline.ts stage",
+    "pipeline:approve":  "tsx scripts/asset-pipeline.ts approve",
+    "pipeline:plan":     "tsx scripts/asset-pipeline.ts plan-upload",
+    "pipeline:verify":   "tsx scripts/asset-pipeline.ts verify"
   },
   "dependencies": {
     "@fontsource/barlow-condensed": "^5.2.8",

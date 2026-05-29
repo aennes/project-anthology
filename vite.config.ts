@@ -9,7 +9,6 @@ import react from '@vitejs/plugin-react';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 
 const VANILLA_STATIC_SITES: Array<{ prefix: string; dir: string }> = [
-  { prefix: '/season-tracker', dir: 'season-tracker' },
   { prefix: '/radio-anthology', dir: 'radio-anthology' },
   { prefix: '/tracks', dir: 'tracks' },
 ];

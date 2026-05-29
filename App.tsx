@@ -1,6 +1,6 @@
 import React, { useEffect, useState, Suspense, useCallback, lazy } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Routes, Route, useLocation, useMatch, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useMatch, useNavigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import ShortcutsModal from './components/ui/ShortcutsModal';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -20,6 +20,8 @@ const StoryModal = lazy(() => import('./components/StoryModal'));
 const Timeline = lazy(() => import('./components/Timeline'));
 const News = lazy(() => import('./components/News'));
 const About = lazy(() => import('./components/About'));
+const SeasonTracker = lazy(() => import('./src/components/SeasonTracker'));
+const LiveTiming = lazy(() => import('./src/components/LiveTiming'));
 
 const routePageSuspenseFallback = (
   <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center bg-f1-black px-6 pt-28 pb-20">
@@ -230,9 +232,16 @@ const Shell: React.FC = () => {
 };
 
 const RoutedPageShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isLiveTimingRoute = location.pathname === '/season-tracker/live';
+
   return (
     <div className="relative min-h-screen bg-f1-black text-paper selection:bg-f1-red selection:text-white overflow-x-hidden cine-route-shell pb-16 md:pb-0">
-      <NavBar />
+      <NavBar
+        backLabel={isLiveTimingRoute ? '← SEASON TRACKER' : undefined}
+        onBack={isLiveTimingRoute ? () => navigate('/season-tracker') : undefined}
+      />
       {children}
     </div>
   );
@@ -299,6 +308,42 @@ const AboutShell: React.FC = () => {
   );
 };
 
+const SeasonTrackerShell: React.FC = () => {
+  useMetadata({
+    title: `Season Tracker — ${metadata.name}`,
+    description: 'Season standings, calendar, and race results powered by live F1 data.',
+    type: 'website',
+  });
+
+  return (
+    <RoutedPageShell>
+      <Suspense fallback={routePageSuspenseFallback}>
+        <ErrorBoundary>
+          <SeasonTracker />
+        </ErrorBoundary>
+      </Suspense>
+    </RoutedPageShell>
+  );
+};
+
+const LiveTimingShell: React.FC = () => {
+  useMetadata({
+    title: `Live Timing — ${metadata.name}`,
+    description: 'Live timing telemetry and race control feed.',
+    type: 'website',
+  });
+
+  return (
+    <RoutedPageShell>
+      <Suspense fallback={routePageSuspenseFallback}>
+        <ErrorBoundary>
+          <LiveTiming />
+        </ErrorBoundary>
+      </Suspense>
+    </RoutedPageShell>
+  );
+};
+
 const App: React.FC = () => {
   useEffect(() => {
     // Kick off a fresh /api/news fetch in the background on first load
@@ -313,6 +358,9 @@ const App: React.FC = () => {
       <Route path="/timeline" element={<TimelineShell />} />
       <Route path="/news" element={<NewsShell />} />
       <Route path="/about" element={<AboutShell />} />
+      <Route path="/season-tracker" element={<SeasonTrackerShell />} />
+      <Route path="/season-tracker/live" element={<LiveTimingShell />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

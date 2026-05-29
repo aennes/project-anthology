@@ -6,7 +6,7 @@
       "gallery": [
         {
           "src": "/circuits/gallery/monaco/01.webp",
-          "alt": "Circuit de Monaco is a street circuit laid out on the city streets of Monte Carlo and La Condamine around the harbour of the principality of Monaco . It is home to the Formula One Monaco Grand Prix , Formula E Monaco ePrix , and the Historic Grand Prix of Monaco . Image taken on April 1, 2018, by a Planet Labs SkySat satellite.",
+          "alt": "Circuit de Monaco is a street circuit laid out on the city streets of Monte Carlo and La Condamine around the harbour of the principality o…",
           "layout": "full",
           "credit": {
             "author": "Planet Labs, Inc.",
@@ -16,7 +16,7 @@
         },
         {
           "src": "/circuits/gallery/monaco/02.webp",
-          "alt": "Circuit de Monaco is a street circuit laid out on the city streets of Monte Carlo and La Condamine around the harbour of the principality of Monaco . It is home to the Formula One Monaco Grand Prix , Formula E Monaco ePrix , and the Historic Grand Prix of Monaco . Image taken on April 1, 2018, by a Planet Labs SkySat satellite.",
+          "alt": "Circuit de Monaco is a street circuit laid out on the city streets of Monte Carlo and La Condamine around the harbour of the principality o…",
           "layout": "landscape",
           "credit": {
             "author": "Planet Labs, Inc.",
@@ -28,192 +28,952 @@
       "cover": "/circuits/monaco.webp"
     },
     "spa": {
-      "gallery": [],
+      "gallery": [
+        {
+          "src": "/circuits/gallery/spa/01.webp",
+          "alt": "Circuit de Spa-Francorchamps , a motor-racing circuit located in Stavelot , Belgium that is the venue of the Formula One Belgian Grand Prix…",
+          "layout": "full",
+          "credit": {
+            "author": "Planet Labs, Inc.",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_de_Spa-Francorchamps%2C_April_22%2C_2018_SkySat.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/spa/02.webp",
+          "alt": "The layout of the Circuit de Spa-Francorchamps used between 2004 and 2006. It is 6.976 kilometers (4.335 Miles) long, goes in a clockwise d…",
+          "layout": "landscape",
+          "credit": {
+            "author": "SimLola661",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_de_Spa-Francorchamps_2004-2006.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/spa/03.webp",
+          "alt": "Le circuit de Spa-Francorchamps 4 Heures de Spa-Francorchamps 2022",
+          "layout": "portrait",
+          "credit": {
+            "author": "United Autosports",
+            "license": "CC BY-SA 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:2022_4_Hours_of_Spa-Francorchamps_-_Circuit.jpg"
+          }
+        }
+      ],
       "cover": "/circuits/spa.webp"
     },
     "monza": {
-      "gallery": [],
+      "gallery": [
+        {
+          "src": "/circuits/gallery/monza/01.webp",
+          "alt": "Monza Circuit 1950",
+          "layout": "full",
+          "credit": {
+            "author": "Kroelleboelle",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Autodromo_Nazionale_Monza_1950.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/monza/02.webp",
+          "alt": "This map was created from OpenStreetMap project data, collected by the community. This map may be incomplete, and may contain errors. Don't…",
+          "layout": "landscape",
+          "credit": {
+            "author": "OpenStreetMap contributors",
+            "license": "CC BY-SA 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Autodromo_Nazionale_Monza.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/monza/03.webp",
+          "alt": "The Autodromo nazionale di Monza , a historic race track located near the city of Monza , north of Milan , in Italy and home to the the For…",
+          "layout": "portrait",
+          "credit": {
+            "author": "Planet Labs, Inc.",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Autodromo_Nazionale_Monza%2C_April_22%2C_2018_SkySat.jpg"
+          }
+        }
+      ],
       "cover": "/circuits/monza.webp"
     },
     "silverstone": {
-      "gallery": [],
+      "gallery": [
+        {
+          "src": "/circuits/gallery/silverstone/01.webp",
+          "alt": "Track diagram of Silverstone Circuit in the UK in 1990 configuration. Made to scale from aerial photographs.",
+          "layout": "full",
+          "credit": {
+            "author": "Tom McKay",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Silverstone_Circuit_1990.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/silverstone/02.webp",
+          "alt": "Track diagram of Silverstone Circuit in the UK in 1989 configuration with Woodcote chicane. Made to scale from aerial photographs.",
+          "layout": "landscape",
+          "credit": {
+            "author": "Tom McKay",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Silverstone_Circuit_1989.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/silverstone/03.webp",
+          "alt": "Track diagram of Silverstone Circuit in the UK in 1999 configuration. Made to scale from aerial photographs.",
+          "layout": "portrait",
+          "credit": {
+            "author": "Tom McKay",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Silverstone_Circuit_1999.png"
+          }
+        }
+      ],
       "cover": "/circuits/silverstone.webp"
     },
     "suzuka": {
       "gallery": [
         {
           "src": "/circuits/gallery/suzuka/01.webp",
-          "alt": "Track map as of 2005 for use with Suzuka Circuit .",
+          "alt": "The qualifying session of the Suzuka 300km endurance race, 2010 (Yamaha YZF-R1, Team Etching Factory).",
           "layout": "full",
           "credit": {
-            "author": "Will Pittenger",
-            "license": "CC BY-SA 3.0",
-            "page": "https://commons.wikimedia.org/wiki/File:Suzuka_circuit_map--2005.svg"
+            "author": "Laitche",
+            "license": "CC BY 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Suzuka_300km_Endurance_-_Qualifying_2010.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/suzuka/02.webp",
+          "alt": "Suzuka Circuit Inō Station after 2009 Japanese Grand Prix .",
+          "layout": "landscape",
+          "credit": {
+            "author": "Norimasa Hayashida",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Suzuka_Circuit_In%C5%8D_Station_after_2009_Japanese_GP_(a).jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/suzuka/03.webp",
+          "alt": "鈴鹿サーキットのピットのある建物を撮影。",
+          "layout": "portrait",
+          "credit": {
+            "author": "Tokumeigakarinoaoshima",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Suzuka_Circuit_Pit_Building.jpg"
           }
         }
       ],
       "cover": "/circuits/suzuka.webp"
     },
     "interlagos": {
-      "gallery": [],
+      "gallery": [
+        {
+          "src": "/circuits/gallery/interlagos/01.webp",
+          "alt": "Autódromo José Carlos Pace - Interlagos 1999",
+          "layout": "full",
+          "credit": {
+            "author": "MotorOilStains",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Autodromo-jose-_carlos-pace-interlagos-1999.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/interlagos/02.webp",
+          "alt": "Interlagos - Autódromo José Carlos Pace",
+          "layout": "landscape",
+          "credit": {
+            "author": "© OpenStreetMap contributors, CC-BY-SA 2.0 / MotorOilStains",
+            "license": "CC BY-SA 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Interlagos-autodromo-jose-carlos-pace-(openstreetmap).png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/interlagos/03.webp",
+          "alt": "Interlagos - Autódromo José Carlos Pace 1957",
+          "layout": "portrait",
+          "credit": {
+            "author": "© OpenStreetMap contributors, CC-BY-SA 2.0 / MotorOilStains",
+            "license": "CC BY-SA 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Interlagos-autodromo-jose-carlos-pace-1957-(openstreetmap).png"
+          }
+        }
+      ],
       "cover": "/circuits/interlagos.webp"
     },
     "bahrain": {
-      "gallery": [],
+      "gallery": [
+        {
+          "src": "/circuits/gallery/bahrain/01.webp",
+          "alt": "Main Grand Stand at the Bahrain International Circuit . B.I.C.",
+          "layout": "full",
+          "credit": {
+            "author": "emily faulk from Saudi Arabia",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Bahrain_Track_Grand_Stand.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/bahrain/02.webp",
+          "alt": "View of the stands from outside the main grandstands at the Formula One race in Bahrain.",
+          "layout": "landscape",
+          "credit": {
+            "author": "Andrew Griffith from United Kingdom",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Bahrain_Grandstands_2010.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/bahrain/03.webp",
+          "alt": "The Back Straight at Bahrain",
+          "layout": "portrait",
+          "credit": {
+            "author": "Derek Morrison from Kuwait, Kuwait",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Bahrain_International_Circuit_back_straight.jpg"
+          }
+        }
+      ],
       "cover": "/circuits/bahrain.webp"
     },
     "jeddah": {
       "gallery": [
         {
           "src": "/circuits/gallery/jeddah/01.webp",
-          "alt": "First version of the Jeddah Street Circuit, without pit lane.",
+          "alt": "Jeddah Street Circuit",
           "layout": "full",
           "credit": {
-            "author": "GabrielStella",
-            "license": "CC BY-SA 3.0",
-            "page": "https://commons.wikimedia.org/wiki/File:Jeddah_Street_Circuit_2021.svg"
+            "author": "Wojtex13",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Jeddah.circuit.jpg"
           }
         },
         {
           "src": "/circuits/gallery/jeddah/02.webp",
-          "alt": "Jeddah Corniche Circuit Logo",
+          "alt": "Hamilton's gear position in the Saudi Arabian Grand Prix",
           "layout": "landscape",
           "credit": {
-            "author": "w:Jeddah Corniche Circuit",
-            "license": "Public domain",
-            "page": "https://commons.wikimedia.org/wiki/File:Jeddah_Corniche_Circuit_Logo.svg"
+            "author": "Kilawyn Punx",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Saudi_Arabian_Grand_Prix-2021.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/jeddah/03.webp",
+          "alt": "Trazado del Circuito de la Corniche de Yeda",
+          "layout": "portrait",
+          "credit": {
+            "author": "Juan2910",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Jeddah_Corniche_Circuit_2022.png"
           }
         }
-      ]
+      ],
+      "cover": "/circuits/jeddah.webp"
     },
     "albert_park": {
       "gallery": [
         {
           "src": "/circuits/gallery/albert_park/01.webp",
-          "alt": "Albert Park Circuit (2021-present)",
+          "alt": "Melbourne Grand Prix Circuit pit building",
           "layout": "full",
           "credit": {
-            "author": "AEPA Racing",
+            "author": "Ozzmosis",
+            "license": "CC BY-SA 2.5",
+            "page": "https://commons.wikimedia.org/wiki/File:Melbourne_Grand_Prix_Circuit_pit_building.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/albert_park/02.webp",
+          "alt": "Melbourne Grand Prix Circuit",
+          "layout": "landscape",
+          "credit": {
+            "author": "Rob Young from United Kingdom",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Melbourne_Grand_Prix_Circuit_(870527196).jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/albert_park/03.webp",
+          "alt": "The Melbourne Grand Prix Circuit around Albert Park Lake , located a few kilometres south of central Melbourne and home to the Australian G…",
+          "layout": "portrait",
+          "credit": {
+            "author": "Planet Labs, Inc.",
             "license": "CC BY-SA 4.0",
-            "page": "https://commons.wikimedia.org/wiki/File:Albert_Park_Circuit_2021.svg"
+            "page": "https://commons.wikimedia.org/wiki/File:Melbourne_Grand_Prix_Circuit%2C_March_22%2C_2018_SkySat.jpg"
           }
         }
-      ]
+      ],
+      "cover": "/circuits/albert_park.webp"
     },
     "americas": {
       "gallery": [
         {
           "src": "/circuits/gallery/americas/01.webp",
-          "alt": "The Observation Tower from turn 3 on race day at Circuit of the Americas in Austin, Texas. This 250 foot (77 meter) high landmark was designed by Miro Rivera Architects. The flared out red pipes become the roof for an amphitheater.",
+          "alt": "Grading work at the new Austin Formula One Circuit that will host the United States Grand Prix beginning in 2012 near Austin, Texas, United…",
           "layout": "full",
+          "credit": {
+            "author": "Larry D. Moore",
+            "license": "CC BY 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Austin_f1_circuit_2011_03_12.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/americas/02.webp",
+          "alt": "The Observation Tower from turn 3 on race day at Circuit of the Americas in Austin, Texas. This 250 foot (77 meter) high landmark was desig…",
+          "layout": "landscape",
           "credit": {
             "author": "Earl McGehee",
             "license": "CC BY-SA 3.0",
             "page": "https://commons.wikimedia.org/wiki/File:Tower_at_Circuit_of_the_Americas.jpg"
           }
+        },
+        {
+          "src": "/circuits/gallery/americas/03.webp",
+          "alt": "Cirque du Soleil Kooza TM at Circuit of the Americas TM , Austin, Texas, United States.",
+          "layout": "portrait",
+          "credit": {
+            "author": "Larry D. Moore",
+            "license": "CC BY 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Cirque_du_Soleil_at_Circuit_of_the_Americas_2015.jpg"
+          }
         }
-      ]
+      ],
+      "cover": "/circuits/americas.webp"
     },
     "baku": {
       "gallery": [
         {
           "src": "/circuits/gallery/baku/01.webp",
-          "alt": "A map of the Formula One motor circuit in Baku as it was used for the 2016 European Grand Prix and the 2017, 2018, 2019, and 2021 Azerbaijani Grands Prix. This map is valid for races which use this layout and corner numbering scheme, please upload a new file for races which use different layouts or corner numbering schemes rather than replacing this file. As this is a free-hand map drawn by an enthusiast rather than a professional cartographer's work it may contain some errors, although checking it against other maps it appears accurate enough for most purposes. The track is shown in black with a grey outline, while the pit lane is shown in blue. A scale showing the length of one kilometre (with increments of 100 metres) is given, to allow viewers to contextualise and understand what they are looking at. Corner numbers and other important text is given an off-white background to avoid transparency issues rendering it illegible on certain devices. A line with a chequered flag pattern crossing the track and pit lane shows the location of the start/finish line also known as the control or timing line; while the location of pole position is indicated by a white line, crossing only the track, marked with a large mauve arrow, which indicates the direction of travel. The salmon arrow marked \"N\" shows the direction of north.",
+          "alt": "Aerial View of Baku",
           "layout": "full",
           "credit": {
-            "author": "HumanBodyPiloter5",
-            "license": "CC0",
-            "page": "https://commons.wikimedia.org/wiki/File:Baku_Formula_One_circuit_map.svg"
+            "author": "Khortan",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Aerial_View_of_Baku%2C_May_2012.jpg"
           }
         },
         {
           "src": "/circuits/gallery/baku/02.webp",
-          "alt": "For use with Baku City Circuit.",
+          "alt": "Baku Formula 1 Street Circuit 2016. Revised layout per official venue web site: www.bakucitycircuit.com (event-guide/circuit-map), which mo…",
           "layout": "landscape",
           "credit": {
-            "author": "ごひょううべこ",
+            "author": "© OpenStreetMap contributors, CC-BY-SA 2.0 / MotorOilStains",
+            "license": "CC BY-SA 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Baku-F1-Street-Circuit-Openstreetmaps-rev1.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/baku/03.webp",
+          "alt": "Baku Formula 1 Street Circuit 2016. Revised layout per official venue web site: www.bakucitycircuit.com (event-guide/circuit-map), which mo…",
+          "layout": "portrait",
+          "credit": {
+            "author": "MotorOilStains",
             "license": "CC BY-SA 4.0",
-            "page": "https://commons.wikimedia.org/wiki/File:2023_F1_CourseLayout_Azerbaijan.svg"
+            "page": "https://commons.wikimedia.org/wiki/File:Baku-F1-Street-Circuit-rev1.png"
+          }
+        }
+      ],
+      "cover": "/circuits/baku.webp"
+    },
+    "catalunya": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/catalunya/01.webp",
+          "alt": "Circuit de Catalunya, Barcelona (Ank Kumar)",
+          "layout": "full",
+          "credit": {
+            "author": "Ank Kumar",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_de_Catalunya%2C_Barcelona_(Ank_Kumar)_01.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/catalunya/02.webp",
+          "alt": "Circuit de Catalunya, Barcelona (Ank Kumar)",
+          "layout": "landscape",
+          "credit": {
+            "author": "Ank Kumar",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_de_Catalunya%2C_Barcelona_(Ank_Kumar)_02.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/catalunya/03.webp",
+          "alt": "Circuit de Catalunya, Barcelona (Ank Kumar)",
+          "layout": "portrait",
+          "credit": {
+            "author": "Ank Kumar",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_de_Catalunya%2C_Barcelona_(Ank_Kumar)_04.jpg"
+          }
+        }
+      ],
+      "cover": "/circuits/catalunya.webp"
+    },
+    "hungaroring": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/hungaroring/01.webp",
+          "alt": "Hungary Formula One Circuit, Hungaroring (Ank Kumar)",
+          "layout": "full",
+          "credit": {
+            "author": "Ank Kumar",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Hungary_Formula_One_Circuit%2C_Hungaroring_(Ank_Kumar)_07.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/hungaroring/02.webp",
+          "alt": "Hungary Formula One Circuit, Hungaroring (Ank Kumar)",
+          "layout": "landscape",
+          "credit": {
+            "author": "Ank Kumar",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Hungary_Formula_One_Circuit%2C_Hungaroring_(Ank_Kumar)_08.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/hungaroring/03.webp",
+          "alt": "Hungary Formula One Circuit, Hungaroring (Ank Kumar)",
+          "layout": "portrait",
+          "credit": {
+            "author": "Ank Kumar",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Hungary_Formula_One_Circuit%2C_Hungaroring_(Ank_Kumar)_12.jpg"
+          }
+        }
+      ],
+      "cover": "/circuits/hungaroring.webp"
+    },
+    "imola": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/imola/01.webp",
+          "alt": "Dino ed Enzo Ferrari Circuit in Imola, Italy",
+          "layout": "full",
+          "credit": {
+            "author": "by Grantuking",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:WTCC08_Dino_ed_Enzo_Ferrari_Circuit_Imola.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/imola/02.webp",
+          "alt": "Imola Circuit view",
+          "layout": "landscape",
+          "credit": {
+            "author": "Marpol",
+            "license": "Public domain",
+            "page": "https://commons.wikimedia.org/wiki/File:Autodromo_aerea_poster.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/imola/03.webp",
+          "alt": "Imola (Italy), \"Enzo e Dino Ferrari\" Autodrome, June 1998. A general view of circuit tower, at the time known as \"Marlboro Tower\" for reaso…",
+          "layout": "portrait",
+          "credit": {
+            "author": "Daniele Costantini",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Imola_Circuit%2C_1998_-_Marlboro_Tower.jpg"
+          }
+        }
+      ],
+      "cover": "/circuits/imola.webp"
+    },
+    "istanbul": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/istanbul/01.webp",
+          "alt": "Turn 1 &amp; pit lane exit at Istanbul Park",
+          "layout": "full",
+          "credit": {
+            "author": "Homonihilis",
+            "license": "CC BY 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Istanbul_park_turn_1_and_pit_lane_exit.JPG"
+          }
+        },
+        {
+          "src": "/circuits/gallery/istanbul/02.webp",
+          "alt": "Pit lane at Istanbul Park",
+          "layout": "landscape",
+          "credit": {
+            "author": "Homonihilis",
+            "license": "CC BY 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Istanbul_park_pit_lane.JPG"
+          }
+        },
+        {
+          "src": "/circuits/gallery/istanbul/03.webp",
+          "alt": "Start-Finish line at Istanbul Park",
+          "layout": "portrait",
+          "credit": {
+            "author": "Homonihilis",
+            "license": "CC BY 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Istanbul_park_start_finish_lane.JPG"
+          }
+        }
+      ],
+      "cover": "/circuits/istanbul.webp"
+    },
+    "losail": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/losail/01.webp",
+          "alt": "DSC_0043",
+          "layout": "full",
+          "credit": {
+            "author": "daly3d abd from Qatar, Doha",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Qatar_MotoGP_2010.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/losail/02.webp",
+          "alt": "Title board of the Losail International Circuit in Qatar",
+          "layout": "landscape",
+          "credit": {
+            "author": "Trinidade",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Title_board_LIS.JPG"
+          }
+        },
+        {
+          "src": "/circuits/gallery/losail/03.webp",
+          "alt": "Spectators watching the 2013 MotGP race at the Losail International Circuit in Qatar",
+          "layout": "portrait",
+          "credit": {
+            "author": "Trinidade",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Grand_Stand.JPG"
+          }
+        }
+      ],
+      "cover": "/circuits/losail.webp"
+    },
+    "madring": {
+      "gallery": [
+        {
+          "src": "/circuits/gallery/madring/01.webp",
+          "alt": "Madring Circuit — track view",
+          "layout": "full",
+          "credit": {
+            "author": "Wikimedia contributor",
+            "license": "Public domain",
+            "page": "https://commons.wikimedia.org/wiki/File:Long-branch_Madr.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/madring/02.webp",
+          "alt": "אחות של אמא שלי זל ממרוקו תחפושת שעברה מאם לבת",
+          "layout": "landscape",
+          "credit": {
+            "author": "הבת שלחה לנו",
+            "license": "Public domain",
+            "page": "https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_2385_MADR_%D7%AA%D7%97%D7%A4%D7%95%D7%A9%D7%AA_%D7%9E%D7%90%D7%9D_%D7%9C%D7%91%D7%AA.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/madring/03.webp",
+          "alt": "Stema Ministerul Agriculturii și Dezvoltării Rurale.",
+          "layout": "portrait",
+          "credit": {
+            "author": "Ministerul Agriculturii și Dezvoltării Rurale",
+            "license": "Public domain",
+            "page": "https://commons.wikimedia.org/wiki/File:MADR.PNG"
           }
         }
       ]
     },
-    "catalunya": {
-      "gallery": []
-    },
-    "hungaroring": {
-      "gallery": []
-    },
-    "imola": {
-      "gallery": []
-    },
-    "istanbul": {
-      "gallery": []
-    },
-    "losail": {
-      "gallery": []
-    },
-    "madring": {
-      "gallery": []
-    },
     "marina_bay": {
-      "gallery": []
+      "gallery": [
+        {
+          "src": "/circuits/gallery/marina_bay/01.webp",
+          "alt": "Scrutineering Garage at the Marina Bay Street Circuit, after the 2008 Singapore Grand Prix, with Massa's F2008 in the garage",
+          "layout": "full",
+          "credit": {
+            "author": "Oahiyeel",
+            "license": "Public domain",
+            "page": "https://commons.wikimedia.org/wiki/File:Marina_Bay_Street_Circuit_Scrutineering_Garage.JPG"
+          }
+        },
+        {
+          "src": "/circuits/gallery/marina_bay/02.webp",
+          "alt": "Formula 1 シンガポールGP",
+          "layout": "landscape",
+          "credit": {
+            "author": "Kam2y",
+            "license": "CC BY 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Marina_Bay_Street_Circuit_Home_straight.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/marina_bay/03.webp",
+          "alt": "The Marina Bay Street Circuit , a street circuit around Marina Bay , Singapore , and the venue for the Singapore Grand Prix . Image taken o…",
+          "layout": "portrait",
+          "credit": {
+            "author": "Planet Labs, Inc.",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Marina_Bay_Street_Circuit%2C_May_8%2C_2018_SkySat.jpg"
+          }
+        }
+      ],
+      "cover": "/circuits/marina_bay.webp"
     },
     "miami": {
-      "gallery": []
+      "gallery": [
+        {
+          "src": "/circuits/gallery/miami/01.webp",
+          "alt": "Miami International Autodrome - Miami Gardens",
+          "layout": "full",
+          "credit": {
+            "author": "Anthony Alessio Tralongo",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Miami_International_Autodrome.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/miami/02.webp",
+          "alt": "Start of the Porsche Sprint Challenge North America at the F1 Miami GP",
+          "layout": "landscape",
+          "credit": {
+            "author": "USACJack",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Start_of_the_Porsche_Sprint_Challenge_North_America_at_the_F1_Miami_GP_-_2022.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/miami/03.webp",
+          "alt": "Trazado del Autodromo Internacional de Miami",
+          "layout": "portrait",
+          "credit": {
+            "author": "Juan2910",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Miami_International_Autodrome_2022.png"
+          }
+        }
+      ],
+      "cover": "/circuits/miami.webp"
     },
     "portimao": {
-      "gallery": []
+      "gallery": [
+        {
+          "src": "/circuits/gallery/portimao/01.webp",
+          "alt": "\"Autódromo Internacional do Algarve\" circuit map",
+          "layout": "full",
+          "credit": {
+            "author": "Chris Ssk",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Aut%C3%B3dromo_Internacional_do_Algarve.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/portimao/02.webp",
+          "alt": "Autódromo Internacional do Algarve, Portimão, Portugal",
+          "layout": "landscape",
+          "credit": {
+            "author": "Pascal Richier pascoual",
+            "license": "CC0",
+            "page": "https://commons.wikimedia.org/wiki/File:Algarve_International_Circuit_(Unsplash).jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/portimao/03.webp",
+          "alt": "O Autódromo Internacional do Algarve (algumas vezes chamado também de Circuito de Portimão) é um circuito de corridas de 4,684 km (2,916 mi…",
+          "layout": "portrait",
+          "credit": {
+            "author": "Vitor Oliveira from Torres Vedras, PORTUGAL",
+            "license": "CC BY-SA 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Algarve_Race_Resort_-_Aut%C3%B3dromo_Internacional_de_Portim%C3%A3o_-_Portugal_%F0%9F%87%B5%F0%9F%87%B9_(53713343083).jpg"
+          }
+        }
+      ],
+      "cover": "/circuits/portimao.webp"
     },
     "red_bull_ring": {
-      "gallery": []
+      "gallery": [
+        {
+          "src": "/circuits/gallery/red_bull_ring/01.webp",
+          "alt": "The Red Bull Ring , a motorsport race track in Spielberg , Styria , Austria and host of the Austrian Grand Prix . Image taken on April 18,…",
+          "layout": "full",
+          "credit": {
+            "author": "Planet Labs, Inc.",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Red_Bull_Ring%2C_April_18%2C_2018_SkySat.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/red_bull_ring/02.webp",
+          "alt": "Départ des 4 Heures de Monza 2017",
+          "layout": "landscape",
+          "credit": {
+            "author": "United Autosports",
+            "license": "CC BY-SA 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:United_Autosports_ELMS_Red_Bull_Ring_2017-218.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/red_bull_ring/03.webp",
+          "alt": "Podium des 4 Heures du Red Bull Ring 2017 avec Will Owen, Hugo de Sadeleer, Filipe Albuquerque, Memo Rojas, Nicolas Minassian, Léo Roussel,…",
+          "layout": "portrait",
+          "credit": {
+            "author": "United Autosports",
+            "license": "CC BY-SA 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:United_Autosports_ELMS_Red_Bull_Ring_2017-189.jpg"
+          }
+        }
+      ],
+      "cover": "/circuits/red_bull_ring.webp"
     },
     "ricard": {
-      "gallery": []
+      "gallery": [
+        {
+          "src": "/circuits/gallery/ricard/01.webp",
+          "alt": "The Circuit Paul Ricard from 1970 to 1999.",
+          "layout": "full",
+          "credit": {
+            "author": "Arz",
+            "license": "Public domain",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_Paul_Ricard.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/ricard/02.webp",
+          "alt": "The Circuit Paul Ricard from 1970 to 1999.",
+          "layout": "landscape",
+          "credit": {
+            "author": "Hmdwgf",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_Paul_Ricard_Le_Castellet_1970-1999.png"
+          }
+        },
+        {
+          "src": "/circuits/gallery/ricard/03.webp",
+          "alt": "La piste du Driving Center",
+          "layout": "portrait",
+          "credit": {
+            "author": "Francois Oreca",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_du_Driving_Center.png"
+          }
+        }
+      ],
+      "cover": "/circuits/ricard.webp"
     },
     "rodriguez": {
-      "gallery": []
+      "gallery": [
+        {
+          "src": "/circuits/gallery/rodriguez/01.webp",
+          "alt": "The Autódromo Hermanos Rodríguez , a motorsport race track in Mexico City , Mexico and host of the Formula One Mexican Grand Prix . Image t…",
+          "layout": "full",
+          "credit": {
+            "author": "Planet Labs, Inc.",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Aut%C3%B3dromo_Hermanos_Rodr%C3%ADguez%2C_June_4%2C_2018_SkySat.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/rodriguez/02.webp",
+          "alt": "The Autódromo Hermanos Rodríguez , a motorsport race track in Mexico City , Mexico and host of the Formula One Mexican Grand Prix . Image t…",
+          "layout": "landscape",
+          "credit": {
+            "author": "Planet Labs, Inc.",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Aut%C3%B3dromo_Hermanos_Rodr%C3%ADguez%2C_June_4%2C_2018_SkySat_(cropped).jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/rodriguez/03.webp",
+          "alt": "Trazado de Formula E para el Autódromo Hermanos Rodríguez",
+          "layout": "portrait",
+          "credit": {
+            "author": "Juan2910",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Autodromo_Hermanos_Rodr%C3%ADguez_(FE_Layout).png"
+          }
+        }
+      ],
+      "cover": "/circuits/rodriguez.webp"
     },
     "shanghai": {
-      "gallery": []
+      "gallery": [
+        {
+          "src": "/circuits/gallery/shanghai/01.webp",
+          "alt": "Shanghai International Circuit — track view",
+          "layout": "full",
+          "credit": {
+            "author": "Wikimedia contributor",
+            "license": "CC BY-SA 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Shanghai_F1_Circui_01.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/shanghai/02.webp",
+          "alt": "Shanghai International Circuit. DSCN6113",
+          "layout": "landscape",
+          "credit": {
+            "author": "J Lian from Boston, USA",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Shanghai_International_Circuit_1.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/shanghai/03.webp",
+          "alt": "Shanghai International Circuit. DSCN6116",
+          "layout": "portrait",
+          "credit": {
+            "author": "J Lian from Boston, USA",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Shanghai_International_Circuit_2.jpg"
+          }
+        }
+      ],
+      "cover": "/circuits/shanghai.webp"
     },
     "sochi": {
-      "gallery": []
+      "gallery": [
+        {
+          "src": "/circuits/gallery/sochi/01.webp",
+          "alt": "2014 Russian Grand Prix start lane.",
+          "layout": "full",
+          "credit": {
+            "author": "Premier.gov.ru press service",
+            "license": "CC BY 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:F1_Grand_Prix_Russia_2014_start_lane.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/sochi/02.webp",
+          "alt": "On the Sochi Olympic Park Circuit",
+          "layout": "landscape",
+          "credit": {
+            "author": "Sergei Kazantsev",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:On_the_Sochi_Olympic_Park_Circuit.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/sochi/03.webp",
+          "alt": "Сочи Автодром, вид на трибуну T4 из зоны свободного размещения",
+          "layout": "portrait",
+          "credit": {
+            "author": "Липунов Г. А.",
+            "license": "CC0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_Sochi-2015_T4.jpg"
+          }
+        }
+      ],
+      "cover": "/circuits/sochi.webp"
     },
     "vegas": {
       "gallery": [],
       "cover": "/circuits/vegas.webp"
     },
     "villeneuve": {
-      "gallery": []
+      "gallery": [
+        {
+          "src": "/circuits/gallery/villeneuve/01.webp",
+          "alt": "Summary: F1 Circuit Gilles-Villeneuve, Montréal, Quebec Author: Colocho Date: April 10th, 2006",
+          "layout": "full",
+          "credit": {
+            "author": "No machine-readable author provided. Colocho assumed (based on copyright claims).",
+            "license": "CC BY-SA 2.5",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_Gilles-Villeneuve1.JPG"
+          }
+        },
+        {
+          "src": "/circuits/gallery/villeneuve/02.webp",
+          "alt": "Circuit Gilles Villeneuve Hairpin",
+          "layout": "landscape",
+          "credit": {
+            "author": "magicfab",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_Gilles_Villeneuve_Hairpin.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/villeneuve/03.webp",
+          "alt": "The Circuit Gilles Villeneuve in Montreal",
+          "layout": "portrait",
+          "credit": {
+            "author": "Maria Azzurra Mugnai",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_Gilles_Villeneuve_MAM.JPG"
+          }
+        }
+      ],
+      "cover": "/circuits/villeneuve.webp"
     },
     "yas_marina": {
       "gallery": [
         {
           "src": "/circuits/gallery/yas_marina/01.webp",
-          "alt": "The Yas Marina Circuit , the venue for the Abu Dhabi Grand Prix , situated on Yas Island , about 30 minutes from the UAE capital of Abu Dhabi . Image taken on October 12, 2018, by a Planet Labs SkySat satellite.",
+          "alt": "\"Walkathon\" in November 2009 on the Yas Marina Circuit in Abu Dhabi",
           "layout": "full",
           "credit": {
-            "author": "Planet Labs, Inc.",
-            "license": "CC BY-SA 4.0",
-            "page": "https://commons.wikimedia.org/wiki/File:Yas_Marina_Circuit%2C_October_12%2C_2018_SkySat_(cropped).jpg"
+            "author": "Nepenthes",
+            "license": "CC BY-SA 2.5",
+            "page": "https://commons.wikimedia.org/wiki/File:Yas_Marina_Circuit_005.JPG"
           }
         },
         {
           "src": "/circuits/gallery/yas_marina/02.webp",
-          "alt": "Layout of the Yas Marina Circuit",
+          "alt": "Formel 1-Rennstrecke, Dragster-Rennstrecke, Abu Dhabi, Rennstrecke Vereinigte Arabische Emirate, Ferrari World, Bauwerk in Abu Dhabi",
           "layout": "landscape",
           "credit": {
-            "author": "Anthony Alessio Tralongo",
-            "license": "CC BY-SA 4.0",
-            "page": "https://commons.wikimedia.org/wiki/File:Yas_Marina_Circuit.png"
+            "author": "Dapaan",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Yas_Marina_Circuit_%2B_Ferrari_World_-Abu_Dhabi.jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/yas_marina/03.webp",
+          "alt": "Yas Marina Circuit",
+          "layout": "portrait",
+          "credit": {
+            "author": "Pi3.124",
+            "license": "CC BY-SA 3.0",
+            "page": "https://commons.wikimedia.org/wiki/File:YasMarina1.jpeg"
           }
         }
       ],
       "cover": "/circuits/yas_marina.webp"
     },
     "zandvoort": {
-      "gallery": []
+      "gallery": [
+        {
+          "src": "/circuits/gallery/zandvoort/01.webp",
+          "alt": "Collectie Collectie Fotoburo de Boer Inventarisnummer NL-HlmNHA_54036948 NL-HlmNHA_1478_4776 AL Beschrijving Circuit Zandvoort aangepast aa…",
+          "layout": "full",
+          "credit": {
+            "author": "Boer, Poppe de",
+            "license": "CC0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_Zandvoort_aangepast_aan_internationale_normen._NL-HlmNHA_54036948.JPG"
+          }
+        },
+        {
+          "src": "/circuits/gallery/zandvoort/02.webp",
+          "alt": "Circuit Park Zandvoort",
+          "layout": "landscape",
+          "credit": {
+            "author": "dronepicr",
+            "license": "CC BY 2.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Luftbild_der_Circuit_Park_Zandvoort_Rennstrecke_Formel_1_(46940306055).jpg"
+          }
+        },
+        {
+          "src": "/circuits/gallery/zandvoort/03.webp",
+          "alt": "A circuit map of Circuit Zandvoort from 1980 to 1989. The track was 4.226 kilometers (2.626 Miles) long.",
+          "layout": "portrait",
+          "credit": {
+            "author": "SimLola661",
+            "license": "CC BY-SA 4.0",
+            "page": "https://commons.wikimedia.org/wiki/File:Circuit_Zandvoort_1980-1989.png"
+          }
+        }
+      ],
+      "cover": "/circuits/zandvoort.webp"
     }
   }
 }
